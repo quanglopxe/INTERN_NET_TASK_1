@@ -1,6 +1,9 @@
-﻿using XuongMay.Contract.Repositories.Interface;
+﻿using Microsoft.AspNetCore.Identity;
+using XuongMay.Contract.Repositories.Interface;
 using XuongMay.Contract.Services.Interface;
 using XuongMay.ModelViews.UserModelViews;
+using XuongMay.Repositories.Context;
+using XuongMay.Repositories.Entity;
 
 namespace XuongMay.Services.Service
 {
@@ -12,16 +15,27 @@ namespace XuongMay.Services.Service
             _unitOfWork = unitOfWork;
         }
 
-        public Task<IList<UserResponseModel>> GetAll()
+        private readonly UserManager<ApplicationUser> userManager;
+        private readonly DatabaseContext context;
+        public UserService(DatabaseContext context, UserManager<ApplicationUser> userManager)
         {
-            IList<UserResponseModel> users = new List<UserResponseModel>
+            this.context = context;
+            this.userManager = userManager;
+        }
+        public async Task<ApplicationUser> GetUserByEmail(string email)
+        {
+            return await userManager.FindByEmailAsync(email);
+        }
+        public async Task<IdentityResult> CreateUser(RegisterModelView userModel)
+        {
+            var newUser = new ApplicationUser
             {
-                new UserResponseModel { Id = "1" },
-                new UserResponseModel { Id = "2" },
-                new UserResponseModel { Id = "3" }
+                UserName = userModel.Username,
+                Email = userModel.Email,
+                PhoneNumber = userModel.PhoneNumber
             };
 
-            return Task.FromResult(users);
+            return await userManager.CreateAsync(newUser, userModel.Password);
         }
     }
 }
