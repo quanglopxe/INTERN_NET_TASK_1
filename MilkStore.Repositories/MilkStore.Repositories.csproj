@@ -22,8 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\XuongMay.Contract.Repositories\XuongMay.Contract.Repositories.csproj" />
-    <ProjectReference Include="..\XuongMay.ModelViews\XuongMay.ModelViews.csproj" />
+    <ProjectReference Include="..\MilkStore.Contract.Repositories\MilkStore.Contract.Repositories.csproj" />
+    <ProjectReference Include="..\MilkStore.ModelViews\MilkStore.ModelViews.csproj" />
   </ItemGroup>
 
 </Project>
