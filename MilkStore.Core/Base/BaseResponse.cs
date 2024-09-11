@@ -1,7 +1,7 @@
-﻿using XuongMay.Core.Constants;
-using XuongMay.Core.Utils;
+﻿using MilkStore.Core.Constants;
+using MilkStore.Core.Utils;
 
-namespace XuongMay.Core.Base
+namespace MilkStore.Core.Base
 {
     public class BaseResponse<T>
     {

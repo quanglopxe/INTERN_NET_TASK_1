@@ -1,6 +1,6 @@
-﻿using XuongMay.Core.Base;
+﻿using MilkStore.Core.Base;
 
-namespace XuongMay.Contract.Repositories.Entity
+namespace MilkStore.Contract.Repositories.Entity
 {
     public class AuditLog : BaseEntity
     {

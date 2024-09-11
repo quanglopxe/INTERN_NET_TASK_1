@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using XuongMay.Core.Utils;
+using MilkStore.Core.Utils;
 
-namespace XuongMay.Core.Base
+namespace MilkStore.Core.Base
 {
     public abstract class BaseEntity
     {

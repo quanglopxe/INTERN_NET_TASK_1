@@ -1,9 +1,13 @@
-﻿using XuongMay.ModelViews.UserModelViews;
+﻿using Microsoft.AspNetCore.Identity;
+using MilkStore.ModelViews.AuthModelViews;
+using MilkStore.ModelViews.UserModelViews;
+using MilkStore.Repositories.Entity;
 
-namespace XuongMay.Contract.Services.Interface
+namespace MilkStore.Contract.Services.Interface
 {
     public interface IUserService
     {
-        Task<IList<UserResponseModel>> GetAll();
+        Task<ApplicationUser> GetUserByEmail(string email);
+        Task<IdentityResult> CreateUser(RegisterModelView userModel);
     }
 }

@@ -1,12 +1,12 @@
-﻿using XuongMay.Core.Constants;
+﻿using MilkStore.Core.Constants;
 
-namespace XuongMay.Core.Base
+namespace MilkStore.Core.Base
 {
     public class BaseException : Exception
     {
         public class CoreException : Exception
         {
-            public CoreException(string code, string message, int statusCode =(int) StatusCodeHelper.ServerError)
+            public CoreException(string code, string message, int statusCode = (int)StatusCodeHelper.ServerError)
                 : base(message)
             {
                 Code = code;

@@ -1,13 +1,22 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using XuongMay.Contract.Repositories.Entity;
-using XuongMay.Repositories.Entity;
+using MilkStore.Contract.Repositories.Entity;
+using MilkStore.Core.Model;
+using MilkStore.Repositories.Entity;
 
-namespace XuongMay.Repositories.Context
+namespace MilkStore.Repositories.Context
 {
     public class DatabaseContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid, ApplicationUserClaims, ApplicationUserRoles, ApplicationUserLogins, ApplicationRoleClaims, ApplicationUserTokens>
     {
         public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options) { }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlServer("MyCnn", b => b.MigrationsAssembly("MilkStore.API"));
+            }
+        }
 
         // user
         public virtual DbSet<ApplicationUser> ApplicationUsers => Set<ApplicationUser>();
@@ -19,5 +28,6 @@ namespace XuongMay.Repositories.Context
         public virtual DbSet<ApplicationUserTokens> ApplicationUserTokens => Set<ApplicationUserTokens>();
 
         public virtual DbSet<UserInfo> UserInfos => Set<UserInfo>();
+        public virtual DbSet<Order> Orders => Set<Order>();
     }
 }
