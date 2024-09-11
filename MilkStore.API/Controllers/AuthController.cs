@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using XuongMay.Contract.Services.Interface;
-using XuongMay.Core.Base;
-using XuongMay.ModelViews.AuthModelViews;
+using MilkStore.Contract.Services.Interface;
+using MilkStore.Core.Base;
+using MilkStore.ModelViews.AuthModelViews;
 
-namespace XuongMayBE.API.Controllers
+namespace MilkStore.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

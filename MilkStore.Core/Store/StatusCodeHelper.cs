@@ -1,6 +1,6 @@
-﻿using XuongMay.Core.Utils;
+﻿using MilkStore.Core.Utils;
 
-namespace XuongMay.Core.Constants
+namespace MilkStore.Core.Constants
 {
     public enum StatusCodeHelper
     {

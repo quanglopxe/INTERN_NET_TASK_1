@@ -1,4 +1,4 @@
-﻿namespace XuongMay.Core.Utils
+﻿namespace MilkStore.Core.Utils
 {
     public class CoreHelper
     {

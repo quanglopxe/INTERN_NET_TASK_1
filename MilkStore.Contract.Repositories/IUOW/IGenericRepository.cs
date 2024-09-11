@@ -1,6 +1,6 @@
-﻿using XuongMay.Core;
+﻿using MilkStore.Core;
 
-namespace XuongMay.Contract.Repositories.Interface
+namespace MilkStore.Contract.Repositories.Interface
 {
     public interface IGenericRepository<T> where T : class
     {

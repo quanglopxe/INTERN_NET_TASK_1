@@ -1,6 +1,6 @@
-﻿using XuongMay.Core.Constants;
+﻿using MilkStore.Core.Constants;
 
-namespace XuongMay.Core.Base
+namespace MilkStore.Core.Base
 {
     public class BaseException : Exception
     {

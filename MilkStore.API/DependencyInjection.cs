@@ -4,14 +4,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using XuongMay.Contract.Repositories.Entity;
-using XuongMay.Contract.Services.Interface;
-using XuongMay.Repositories.Context;
-using XuongMay.Repositories.Entity;
-using XuongMay.Services;
-using XuongMay.Services.Service;
+using MilkStore.Contract.Repositories.Entity;
+using MilkStore.Contract.Services.Interface;
+using MilkStore.Repositories.Context;
+using MilkStore.Repositories.Entity;
+using MilkStore.Services;
+using MilkStore.Services.Service;
 
-namespace XuongMayBE.API
+namespace MilkStore.API
 {
     public static class DependencyInjection
     {
