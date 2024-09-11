@@ -1,7 +1,7 @@
 ﻿using MilkStore.Contract.Repositories.IUOW;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.ModelViews.OrderModelViews;
-using MilkStore.Core.Model;
+using MilkStore.Contract.Repositories.Entity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +24,7 @@ namespace MilkStore.Services.Service
             return await _repository.GetAllAsync();
         }
 
-        public async Task<Order> GetByIdAsync(Guid id)
+        public async Task<Order> GetByIdAsync(string id)
         {
             return await _repository.GetByIdAsync(id);
         }
@@ -34,12 +34,12 @@ namespace MilkStore.Services.Service
             await _repository.AddAsync(item);
         }
 
-        public async Task UpdateAsync(Guid id, OrderModelView item)
+        public async Task UpdateAsync(string id, OrderModelView item)
         {
             await _repository.UpdateAsync(id, item);
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(string id)
         {
             await _repository.DeleteAsync(id);
         }

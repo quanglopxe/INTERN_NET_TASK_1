@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MilkStore.ModelViews.OrderModelViews;
 using MilkStore.Contract.Services.Interface;
-using MilkStore.Core.Model;
+using MilkStore.Contract.Repositories.Entity;
 
 namespace MilkStore.API.Controllers
 {
@@ -24,7 +24,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Order>> GetById(Guid id)
+        public async Task<ActionResult<Order>> GetById(string id)
         {
             var item = await _orderService.GetByIdAsync(id);
             if (item == null)
@@ -42,7 +42,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, OrderModelView item)
+        public async Task<IActionResult> Update(string id, OrderModelView item)
         {
             var items = await _orderService.GetByIdAsync(id);
             if (items == null)
@@ -54,7 +54,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete(string id)
         {
             await _orderService.DeleteAsync(id);
             return NoContent();

@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
-using MilkStore.Core.Model;
 using MilkStore.Repositories.Entity;
 
 namespace MilkStore.Repositories.Context

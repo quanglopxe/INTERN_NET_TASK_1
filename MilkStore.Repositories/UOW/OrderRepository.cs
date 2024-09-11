@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.IUOW;
 using MilkStore.ModelViews.OrderModelViews;
-using MilkStore.Core.Model;
+using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Repositories.Context;
 using System;
 using System.Collections.Generic;
@@ -24,7 +24,7 @@ namespace MilkStore.Repositories.UOW
             return await _context.Orders.ToListAsync();
         }
 
-        public async Task<Order> GetByIdAsync(Guid id)
+        public async Task<Order> GetByIdAsync(string id)
         {
             return await _context.Orders.FindAsync(id);
         }
@@ -45,7 +45,7 @@ namespace MilkStore.Repositories.UOW
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Guid id, OrderModelView ord)
+        public async Task UpdateAsync(string id, OrderModelView ord)
         {
             var orderss = await GetByIdAsync(id);
             orderss.UserId = ord.UserId;
@@ -59,7 +59,7 @@ namespace MilkStore.Repositories.UOW
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(string id)
         {
             var ord = await _context.Orders.FindAsync(id);
             if (ord != null)
