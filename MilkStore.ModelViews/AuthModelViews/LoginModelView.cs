@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace XuongMay.ModelViews.AuthModelViews
+namespace MilkStore.ModelViews.AuthModelViews
 {
     public class LoginModelView
     {

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
-using XuongMay.ModelViews.AuthModelViews;
-using XuongMay.Repositories.Entity;
+using MilkStore.ModelViews.AuthModelViews;
+using MilkStore.Repositories.Entity;
 
 public interface IAuthService
 {

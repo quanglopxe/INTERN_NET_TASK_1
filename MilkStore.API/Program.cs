@@ -1,5 +1,5 @@
 using dotenv.net;
-using XuongMayBE.API;
+using MilkStore.API;
 
 DotEnv.Load();
 var builder = WebApplication.CreateBuilder(args);

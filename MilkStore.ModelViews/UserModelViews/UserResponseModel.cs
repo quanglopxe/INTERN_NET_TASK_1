@@ -1,4 +1,4 @@
-﻿namespace XuongMay.ModelViews.UserModelViews
+﻿namespace MilkStore.ModelViews.UserModelViews
 {
     public class UserResponseModel
     {

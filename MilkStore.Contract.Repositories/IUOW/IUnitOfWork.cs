@@ -1,4 +1,4 @@
-﻿namespace XuongMay.Contract.Repositories.Interface
+﻿namespace MilkStore.Contract.Repositories.Interface
 {
     public interface IUnitOfWork : IDisposable
     {

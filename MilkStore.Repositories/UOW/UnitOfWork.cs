@@ -1,7 +1,7 @@
-﻿using XuongMay.Contract.Repositories.Interface;
-using XuongMay.Repositories.Context;
+﻿using MilkStore.Contract.Repositories.Interface;
+using MilkStore.Repositories.Context;
 
-namespace XuongMay.Repositories.UOW
+namespace MilkStore.Repositories.UOW
 {
     public class UnitOfWork(DatabaseContext dbContext) : IUnitOfWork
     {

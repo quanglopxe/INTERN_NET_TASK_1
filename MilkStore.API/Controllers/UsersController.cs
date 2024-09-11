@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
-using XuongMay.Contract.Services.Interface;
+using MilkStore.Contract.Services.Interface;
 
-using XuongMay.Repositories.Entity;
+using MilkStore.Repositories.Entity;
 
-namespace XuongMayBE.API.Controllers
+namespace MilkStore.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
