@@ -10,11 +10,6 @@ namespace MilkStore.Services.Service
     public class UserService : IUserService
     {
         private readonly IUnitOfWork _unitOfWork;
-        //public UserService(IUnitOfWork unitOfWork)
-        //{
-        //    _unitOfWork = unitOfWork;
-        //}
-
         private readonly UserManager<ApplicationUser> userManager;
         private readonly DatabaseContext context;
         public UserService(DatabaseContext context, UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork)
