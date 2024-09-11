@@ -29,42 +29,42 @@ namespace MilkStore.Repositories.UOW
             return await _context.Orders.FindAsync(id);
         }
 
-        public async Task AddAsync(OrderModelView product)
+        public async Task AddAsync(OrderModelView ord)
         {
             var item = new Order
             {
-                UserId = product.UserId,
-                VoucherId = product.VoucherId,
-                TotalAmount = product.TotalAmount,
-                ShippingAddress = product.ShippingAddress,
-                Status = product.Status,
-                PaymentMethod = product.PaymentMethod,
-                OrderDate = product.OrderDate,
+                UserId = ord.UserId,
+                VoucherId = ord.VoucherId,
+                TotalAmount = ord.TotalAmount,
+                ShippingAddress = ord.ShippingAddress,
+                Status = ord.Status,
+                PaymentMethod = ord.PaymentMethod,
+                OrderDate = ord.OrderDate,
             };
             await _context.Orders.AddAsync(item);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Guid id, OrderModelView product)
+        public async Task UpdateAsync(Guid id, OrderModelView ord)
         {
             var orderss = await GetByIdAsync(id);
-            orderss.UserId = product.UserId;
-            orderss.VoucherId = product.VoucherId;
-            orderss.TotalAmount = product.TotalAmount;
-            orderss.ShippingAddress = product.ShippingAddress;
-            orderss.Status = product.Status;
-            orderss.PaymentMethod = product.PaymentMethod;
-            orderss.OrderDate = product.OrderDate;
+            orderss.UserId = ord.UserId;
+            orderss.VoucherId = ord.VoucherId;
+            orderss.TotalAmount = ord.TotalAmount;
+            orderss.ShippingAddress = ord.ShippingAddress;
+            orderss.Status = ord.Status;
+            orderss.PaymentMethod = ord.PaymentMethod;
+            orderss.OrderDate = ord.OrderDate;
             _context.Orders.Update(orderss);
             await _context.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(Guid id)
         {
-            var product = await _context.Orders.FindAsync(id);
-            if (product != null)
+            var ord = await _context.Orders.FindAsync(id);
+            if (ord != null)
             {
-                _context.Orders.Remove(product);
+                _context.Orders.Remove(ord);
                 await _context.SaveChangesAsync();
             }
         }

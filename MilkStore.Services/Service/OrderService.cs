@@ -29,14 +29,14 @@ namespace MilkStore.Services.Service
             return await _repository.GetByIdAsync(id);
         }
 
-        public async Task AddAsync(OrderModelView product)
+        public async Task AddAsync(OrderModelView item)
         {
-            await _repository.AddAsync(product);
+            await _repository.AddAsync(item);
         }
 
-        public async Task UpdateAsync(Guid id, OrderModelView product)
+        public async Task UpdateAsync(Guid id, OrderModelView item)
         {
-            await _repository.UpdateAsync(id, product);
+            await _repository.UpdateAsync(id, item);
         }
 
         public async Task DeleteAsync(Guid id)
