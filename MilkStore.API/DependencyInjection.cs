@@ -57,7 +57,7 @@ namespace MilkStore.API
         {
             services.AddDbContext<DatabaseContext>(options =>
             {
-                options.UseLazyLoadingProxies().UseSqlServer(configuration.GetConnectionString("MyCnn"));
+                options.UseLazyLoadingProxies().UseSqlServer(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING") ?? throw new Exception("DATABASE_CONNECTION_STRING is not set"));
             });
         }
 
@@ -71,10 +71,8 @@ namespace MilkStore.API
         }
         public static void AddServices(this IServiceCollection services)
         {
-            services
-                //.AddScoped<IUserService, UserService>()
-                .AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IUserService, UserService>();
         }
     }
 }

@@ -10,17 +10,13 @@ namespace MilkStore.Services.Service
     public class UserService : IUserService
     {
         private readonly IUnitOfWork _unitOfWork;
-        public UserService(IUnitOfWork unitOfWork)
-        {
-            _unitOfWork = unitOfWork;
-        }
-
         private readonly UserManager<ApplicationUser> userManager;
         private readonly DatabaseContext context;
-        public UserService(DatabaseContext context, UserManager<ApplicationUser> userManager)
+        public UserService(DatabaseContext context, UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork)
         {
             this.context = context;
             this.userManager = userManager;
+            _unitOfWork = unitOfWork;
         }
         public async Task<ApplicationUser> GetUserByEmail(string email)
         {
