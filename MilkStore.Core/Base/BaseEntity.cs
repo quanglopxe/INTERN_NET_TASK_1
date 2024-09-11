@@ -10,7 +10,6 @@ namespace MilkStore.Core.Base
             Id = Guid.NewGuid().ToString("N");
             CreatedTime = LastUpdatedTime = CoreHelper.SystemTimeNow;
         }
-
         [Key]
         public string Id { get; set; }
         public string? CreatedBy { get; set; }
