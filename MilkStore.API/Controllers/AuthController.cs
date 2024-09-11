@@ -23,7 +23,7 @@ namespace MilkStore.API.Controllers
             var result = await authService.CheckUser(model.Username);
             if (result == null)
             {
-                return Unauthorized(new BaseException.ErrorException(401, "Unauthorized", "Không tìm thấy người dùng"));
+                return NotFound(new BaseException.ErrorException(404, "NotFound", "Không tìm thấy người dùng"));
             }
             var resultPassword = await authService.CheckPassword(model);
             if (!resultPassword.Succeeded)
@@ -53,10 +53,15 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            var existingUser = await userService.GetUserByEmail(model.Email);
-            if (existingUser != null)
+            var existingEmail = await userService.GetUserByEmail(model.Email);
+            if (existingEmail != null)
             {
-                return Conflict(new BaseException.ErrorException(409, "Conflict", "User đã tồn tại!"));
+                return Conflict(new BaseException.ErrorException(409, "Conflict", "Email đã tồn tại!"));
+            }
+            var existingUserName = await authService.CheckUser(model.Username);
+            if (existingUserName != null)
+            {
+                return Conflict(new BaseException.ErrorException(409, "Conflict", "Tên đăng nhập đã tồn tại!"));
             }
             var result = await userService.CreateUser(model);
             if (result.Succeeded)
