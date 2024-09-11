@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using XuongMay.Contract.Repositories.Interface;
-using XuongMay.Core;
-using XuongMay.Repositories.Context;
+using MilkStore.Contract.Repositories.Interface;
+using MilkStore.Core;
+using MilkStore.Repositories.Context;
 
-namespace XuongMay.Repositories.UOW
+namespace MilkStore.Repositories.UOW
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {

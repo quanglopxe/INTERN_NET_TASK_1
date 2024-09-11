@@ -2,8 +2,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
-using XuongMay.ModelViews.AuthModelViews;
-using XuongMay.Repositories.Entity;
+using MilkStore.ModelViews.AuthModelViews;
+using MilkStore.Repositories.Entity;
 using Microsoft.AspNetCore.Identity;
 public class AuthService : IAuthService
 {

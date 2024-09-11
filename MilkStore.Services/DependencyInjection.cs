@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using XuongMay.Contract.Repositories.Interface;
-using XuongMay.Repositories.UOW;
+using MilkStore.Contract.Repositories.Interface;
+using MilkStore.Repositories.UOW;
 
-namespace XuongMay.Services
+namespace MilkStore.Services
 {
     public static class DependencyInjection
     {

@@ -1,4 +1,4 @@
-using XuongMayBE.API;
+using MilkStore.API;
 
 var builder = WebApplication.CreateBuilder(args);
 

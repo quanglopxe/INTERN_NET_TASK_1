@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using XuongMay.Contract.Repositories.Entity;
-using XuongMay.Core.Utils;
+using MilkStore.Contract.Repositories.Entity;
+using MilkStore.Core.Utils;
 
-namespace XuongMay.Repositories.Entity
+namespace MilkStore.Repositories.Entity
 {
     public class ApplicationUser : IdentityUser<Guid>
     {

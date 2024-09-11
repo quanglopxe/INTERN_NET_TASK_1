@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using XuongMay.Contract.Repositories.Interface;
-using XuongMay.Contract.Services.Interface;
-using XuongMay.ModelViews.UserModelViews;
-using XuongMay.Repositories.Context;
-using XuongMay.Repositories.Entity;
+using MilkStore.Contract.Repositories.Interface;
+using MilkStore.Contract.Services.Interface;
+using MilkStore.ModelViews.UserModelViews;
+using MilkStore.Repositories.Context;
+using MilkStore.Repositories.Entity;
 
-namespace XuongMay.Services.Service
+namespace MilkStore.Services.Service
 {
     public class UserService : IUserService
     {

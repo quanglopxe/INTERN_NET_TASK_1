@@ -2,9 +2,9 @@
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
-using XuongMay.Contract.Repositories.Entity;
+using MilkStore.Contract.Repositories.Entity;
 
-namespace XuongMayBE.API.Middleware
+namespace MilkStore.API.Middleware
 {
     public class LoggingMiddleware
     {

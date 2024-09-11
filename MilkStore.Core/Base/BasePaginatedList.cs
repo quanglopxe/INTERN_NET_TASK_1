@@ -1,4 +1,4 @@
-﻿namespace XuongMay.Core
+﻿namespace MilkStore.Core
 {
     public class BasePaginatedList<T>
     {
