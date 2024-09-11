@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using XuongMay.Contract.Repositories.Entity;
 using XuongMay.Contract.Services.Interface;
 using XuongMay.Core.Base;
 using XuongMay.ModelViews.UserModelViews;
+using XuongMay.Repositories.Entity;
 
 namespace XuongMayBE.API.Controllers
 {
@@ -10,9 +13,12 @@ namespace XuongMayBE.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
-        public UsersController(IUserService userService)
+        private readonly UserManager<ApplicationUser> _userManager;
+        public UsersController(IUserService userService, UserManager<ApplicationUser> userManager)
         {
             _userService = userService;
+            _userManager = userManager;
+
         }
         [HttpGet()]
         public async Task<IActionResult> Login(int index = 1, int pageSize = 10)

@@ -24,7 +24,7 @@ public class AuthService : IAuthService
     {
         return await signInManager.PasswordSignInAsync(loginModel.Username, loginModel.Password, false, false);
     }
-    public string GenerateJwtToken(ApplicationUser user)
+    public (string token, IList<string> roles) GenerateJwtToken(ApplicationUser user)
     {
         var key = Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new Exception("JWT_KEY is not set"));
         var claims = new List<Claim>{
@@ -48,7 +48,7 @@ public class AuthService : IAuthService
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
+        return (tokenHandler.WriteToken(token), roles);
 
     }
 }

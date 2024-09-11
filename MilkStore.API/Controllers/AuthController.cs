@@ -17,7 +17,7 @@ namespace XuongMayBE.API.Controllers
             this.userService = userService;
         }
 
-        [HttpGet("auth_account")]
+        [HttpPost("auth_account")]
         public async Task<IActionResult> Login(LoginModelView model)
         {
             var result = await authService.CheckUser(model.Username);
@@ -30,7 +30,7 @@ namespace XuongMayBE.API.Controllers
             {
                 return Unauthorized("Không đúng mật khẩu");
             }
-            var token = authService.GenerateJwtToken(result);
+            var (token, roles) = authService.GenerateJwtToken(result);
             return Ok(BaseResponse<object>.OkResponse(new
             {
                 access_token = token,
@@ -40,7 +40,8 @@ namespace XuongMayBE.API.Controllers
                 user = new
                 {
                     userName = result.UserName,
-                    email = result.Email
+                    email = result.Email,
+                    role = roles
                 }
             }));
         }
