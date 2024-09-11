@@ -10,8 +10,7 @@ namespace MilkStore.Contract.Services.Interface
 {
     public interface IOrderService
     {
-        Task<IEnumerable<Order>> GetAllAsync();
-        Task<Order> GetByIdAsync(string id);
+        Task<IEnumerable<Order>> GetAsync(string? id);
         Task AddAsync(OrderModelView item);
         Task UpdateAsync(string id, OrderModelView item);
         Task DeleteAsync(string id);

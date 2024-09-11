@@ -1,4 +1,4 @@
-﻿using MilkStore.Contract.Repositories.IUOW;
+﻿using MilkStore.Contract.Repositories;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.ModelViews.OrderModelViews;
 using MilkStore.Contract.Repositories.Entity;
@@ -7,41 +7,67 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
+using MilkStore.Contract.Repositories.Interface;
 
 namespace MilkStore.Services.Service
 {
     public class OrderService : IOrderService
     {
-        private readonly IOrderRepository _repository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public OrderService(IOrderRepository repository)
+        public OrderService(IUnitOfWork unitOfWork)
         {
-            _repository = repository;
+            _unitOfWork = unitOfWork;
         }
 
-        public async Task<IEnumerable<Order>> GetAllAsync()
+        public async Task<IEnumerable<Order>> GetAsync(string? id)
         {
-            return await _repository.GetAllAsync();
+            if(id == null)
+            {
+                return await _unitOfWork.GetRepository<Order>().GetAllAsync();
+            }
+            else
+            {
+                var ord =  await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
+                return ord != null ? new List<Order> { ord } : new List<Order>();
+            }
         }
 
-        public async Task<Order> GetByIdAsync(string id)
+        public async Task AddAsync(OrderModelView ord)
         {
-            return await _repository.GetByIdAsync(id);
+            var item = new Order
+            {
+                UserId = ord.UserId,
+                VoucherId = ord.VoucherId,
+                TotalAmount = ord.TotalAmount,
+                ShippingAddress = ord.ShippingAddress,
+                Status = ord.Status,
+                PaymentMethod = ord.PaymentMethod,
+                OrderDate = ord.OrderDate,
+            };
+            await _unitOfWork.GetRepository<Order>().InsertAsync(item);
+            await _unitOfWork.SaveAsync();
         }
 
-        public async Task AddAsync(OrderModelView item)
+        public async Task UpdateAsync(string id, OrderModelView ord)
         {
-            await _repository.AddAsync(item);
-        }
-
-        public async Task UpdateAsync(string id, OrderModelView item)
-        {
-            await _repository.UpdateAsync(id, item);
+            var orderss = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
+            orderss.UserId = ord.UserId;
+            orderss.VoucherId = ord.VoucherId;
+            orderss.TotalAmount = ord.TotalAmount;
+            orderss.ShippingAddress = ord.ShippingAddress;
+            orderss.Status = ord.Status;
+            orderss.PaymentMethod = ord.PaymentMethod;
+            orderss.OrderDate = ord.OrderDate;
+            await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
+            await _unitOfWork.SaveAsync();
         }
 
         public async Task DeleteAsync(string id)
         {
-            await _repository.DeleteAsync(id);
+            await _unitOfWork.GetRepository<Order>().DeleteAsync(id);
+            await _unitOfWork.SaveAsync();
         }
     }
 }

@@ -17,21 +17,10 @@ namespace MilkStore.API.Controllers
             _orderService = orderService;
         }
 
-        [HttpGet]
-        public async Task<IEnumerable<Order>> GetAll()
+        [HttpGet()]
+        public async Task<IEnumerable<Order>> GetAll(string? id)
         {
-            return await _orderService.GetAllAsync();
-        }
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Order>> GetById(string id)
-        {
-            var item = await _orderService.GetByIdAsync(id);
-            if (item == null)
-            {
-                return NotFound();
-            }
-            return item;
+            return await _orderService.GetAsync(id);
         }
 
         [HttpPost]
@@ -44,7 +33,7 @@ namespace MilkStore.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, OrderModelView item)
         {
-            var items = await _orderService.GetByIdAsync(id);
+            var items = await _orderService.GetAsync(id);
             if (items == null)
             {
                 return NotFound();

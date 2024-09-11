@@ -1,7 +1,7 @@
 using dotenv.net;
 using Microsoft.EntityFrameworkCore;
 using MilkStore.API;
-using MilkStore.Contract.Repositories.IUOW;
+using MilkStore.Contract.Repositories;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.UOW;
@@ -26,7 +26,7 @@ builder.Services.AddDbContext<DatabaseContext>(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+//builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddConfig(builder.Configuration);
