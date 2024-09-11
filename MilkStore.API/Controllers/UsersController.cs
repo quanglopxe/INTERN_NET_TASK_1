@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using XuongMay.Contract.Repositories.Entity;
+
 using XuongMay.Contract.Services.Interface;
-using XuongMay.Core.Base;
-using XuongMay.ModelViews.UserModelViews;
+
 using XuongMay.Repositories.Entity;
 
 namespace XuongMayBE.API.Controllers
