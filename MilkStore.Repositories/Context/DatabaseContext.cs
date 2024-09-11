@@ -8,7 +8,7 @@ namespace MilkStore.Repositories.Context
     public class DatabaseContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid, ApplicationUserClaims, ApplicationUserRoles, ApplicationUserLogins, ApplicationRoleClaims, ApplicationUserTokens>
     {
         public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options) { }
-
+        #region Entity
         // user
         public virtual DbSet<ApplicationUser> ApplicationUsers => Set<ApplicationUser>();
         public virtual DbSet<ApplicationRole> ApplicationRoles => Set<ApplicationRole>();
@@ -19,5 +19,21 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<ApplicationUserTokens> ApplicationUserTokens => Set<ApplicationUserTokens>();
 
         public virtual DbSet<UserInfo> UserInfos => Set<UserInfo>();
+
+
+        public virtual DbSet<Post> Posts => Set<Post>();
+        #endregion
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer(Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING") ?? throw new Exception("DATABASE_CONNECTION_STRING is not set"), b => b.MigrationsAssembly("MilkStore.Repositories"));
+        }
+        //protected override void OnModelCreating(ModelBuilder modelBuilder)
+        //{
+        //    modelBuilder.Entity<Post>()
+        //        .HasMany(p => p.Products)
+        //        .WithMany(p => p.Posts)
+        //        .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table
+        //}
+
     }
 }
