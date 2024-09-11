@@ -28,7 +28,7 @@ namespace MilkStore.Services.Service
             {
                 UserName = userModel.Username,
                 Email = userModel.Email,
-                PhoneNumber = userModel.PhoneNumber
+                PhoneNumber = userModel.PhoneNumber                
             };
 
             return await userManager.CreateAsync(newUser, userModel.Password);
