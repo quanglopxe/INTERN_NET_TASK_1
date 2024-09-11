@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
 

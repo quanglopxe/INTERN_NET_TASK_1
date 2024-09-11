@@ -17,20 +17,20 @@ namespace MilkStore.API.Controllers
             this.userService = userService;
         }
 
-        [HttpGet("auth_account")]
+        [HttpPost("auth_account")]
         public async Task<IActionResult> Login(LoginModelView model)
         {
             var result = await authService.CheckUser(model.Username);
             if (result == null)
             {
-                return Unauthorized("Không tìm thấy người dùng");
+                return Unauthorized(new BaseException.ErrorException(401, "Unauthorized", "Không tìm thấy người dùng"));
             }
             var resultPassword = await authService.CheckPassword(model);
             if (!resultPassword.Succeeded)
             {
-                return Unauthorized("Không đúng mật khẩu");
+                return Unauthorized(new BaseException.ErrorException(401, "Unauthorized", "Không đúng mật khẩu"));
             }
-            var token = authService.GenerateJwtToken(result);
+            var (token, roles) = authService.GenerateJwtToken(result);
             return Ok(BaseResponse<object>.OkResponse(new
             {
                 access_token = token,
@@ -40,7 +40,8 @@ namespace MilkStore.API.Controllers
                 user = new
                 {
                     userName = result.UserName,
-                    email = result.Email
+                    email = result.Email,
+                    role = roles
                 }
             }));
         }
