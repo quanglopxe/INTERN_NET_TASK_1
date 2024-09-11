@@ -3,6 +3,7 @@ using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.ModelViews.AuthModelViews;
+using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
 

@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using MilkStore.Contract.Repositories.Entity;
 
-namespace XuongMayBE.API.Middleware
+namespace MilkStore.API.Middleware
 {
     public class LoggingMiddleware
     {
