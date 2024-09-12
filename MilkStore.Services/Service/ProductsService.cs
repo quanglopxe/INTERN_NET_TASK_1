@@ -25,6 +25,8 @@ namespace MilkStore.Services.Service
                 Price = ProductsModel.Price,
                 QuantityInStock = ProductsModel.QuantityInStock,
                 ImageUrl = ProductsModel.ImageUrl,
+                CreatedTime = DateTime.UtcNow,
+                //CreatedBy = userName,
             };
             await _unitOfWork.GetRepository<Products>().InsertAsync(newProducts);
             await _unitOfWork.SaveAsync();
@@ -77,8 +79,8 @@ namespace MilkStore.Services.Service
             existingProduct.Price = ProductsModel.Price;
             existingProduct.QuantityInStock = ProductsModel.QuantityInStock;
             existingProduct.ImageUrl = ProductsModel.ImageUrl;
-            //existingProduct.LastUpdatedTime = DateTime.UtcNow;
-            
+            existingProduct.LastUpdatedTime = DateTime.UtcNow;
+
             await _unitOfWork.GetRepository<Products>().UpdateAsync(obj: existingProduct);
 
             await _unitOfWork.SaveAsync();
