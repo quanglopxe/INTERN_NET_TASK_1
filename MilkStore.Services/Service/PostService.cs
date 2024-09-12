@@ -1,14 +1,19 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core.Base;
+using MilkStore.Core.Constants;
+using MilkStore.Core.Utils;
 using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
 
 namespace MilkStore.Services.Service
 {
@@ -29,15 +34,25 @@ namespace MilkStore.Services.Service
                 Title = postModel.Title,
                 Content = postModel.Content,
                 Image = postModel.Image,
+                CreatedTime = CoreHelper.SystemTimeNow,
+                LastUpdatedTime = CoreHelper.SystemTimeNow,
+                DeletedTime = null
             };
             await _unitOfWork.GetRepository<Post>().InsertAsync(newPost);
             await _unitOfWork.SaveAsync();
             return newPost;
         }
 
-        public async Task<Post> DeletePost(string id)
+        public async Task DeletePost(string id)
         {
-            throw new NotImplementedException();
+            var post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
+            if (post == null)
+            {
+                throw new KeyNotFoundException($"Post with ID {id} was not found.");
+            }
+            post.DeletedTime = CoreHelper.SystemTimeNow;
+            await _unitOfWork.GetRepository<Post>().UpdateAsync(post);
+            await _unitOfWork.SaveAsync();
 
         }
 
@@ -45,19 +60,35 @@ namespace MilkStore.Services.Service
         {
             if (id == null)
             {
-                return await _unitOfWork.GetRepository<Post>().GetAllAsync();
+                return await _unitOfWork.GetRepository<Post>().Entities.Where(post => post.DeletedTime == null).ToListAsync();
             }
             else
             {
-                var post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
-                return post != null ? new List<Post> { post } : new List<Post>();
+                var post = await _unitOfWork.GetRepository<Post>().Entities.FirstOrDefaultAsync(post => post.Id == id && post.DeletedTime == null);
+                if (post == null)
+                {
+                    throw new KeyNotFoundException($"Post with ID {id} was not found.");
+                }
+                return new List<Post> { post };
             }
 
         }
 
-        public async Task<Post> UpdatePost(PostModelView postModel)
+        public async Task<Post> UpdatePost(string id, PostModelView postModel)
         {
-            throw new NotImplementedException();
+            var post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
+            if (post == null)
+            {
+                throw new KeyNotFoundException($"Post with ID {id} was not found.");
+            }
+            post.Title = postModel.Title;
+            post.Content = postModel.Content;
+            post.Image = postModel.Image;
+            post.DeletedTime = postModel.DeletedTime;
+            post.LastUpdatedTime = CoreHelper.SystemTimeNow;
+            await _unitOfWork.GetRepository<Post>().UpdateAsync(post);
+            await _unitOfWork.SaveAsync();
+            return post;
         }
     }
 }
