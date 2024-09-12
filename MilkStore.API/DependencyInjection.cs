@@ -73,7 +73,7 @@ namespace MilkStore.API
         public static void AddServices(this IServiceCollection services)
         {
             services.AddScoped<IAuthService, AuthService>();
-            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserService, UserService>();       
             services.AddScoped<IPostService, PostService>();            
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<IProductsService, ProductsService>();
