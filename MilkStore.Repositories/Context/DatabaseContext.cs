@@ -18,6 +18,7 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<ApplicationRoleClaims> ApplicationRoleClaims => Set<ApplicationRoleClaims>();
         public virtual DbSet<ApplicationUserTokens> ApplicationUserTokens => Set<ApplicationUserTokens>();
 
+        public virtual DbSet<Products> Products => Set<Products>();
         public virtual DbSet<UserInfo> UserInfos => Set<UserInfo>();
         public virtual DbSet<Post> Posts => Set<Post>();
         public virtual DbSet<Order> Orders => Set<Order>();
