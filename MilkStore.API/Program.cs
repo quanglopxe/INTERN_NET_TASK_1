@@ -1,5 +1,11 @@
 using dotenv.net;
+using Microsoft.EntityFrameworkCore;
 using MilkStore.API;
+using MilkStore.Contract.Repositories;
+using MilkStore.Contract.Services.Interface;
+using MilkStore.Repositories.Context;
+using MilkStore.Repositories.UOW;
+using MilkStore.Services.Service;
 
 DotEnv.Load();
 var builder = WebApplication.CreateBuilder(args);
@@ -22,7 +28,6 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.UseSwagger();
 app.UseSwaggerUI();
-
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
