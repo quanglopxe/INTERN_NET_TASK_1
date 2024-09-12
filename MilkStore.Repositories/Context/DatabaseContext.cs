@@ -19,8 +19,7 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<ApplicationUserTokens> ApplicationUserTokens => Set<ApplicationUserTokens>();
 
         public virtual DbSet<UserInfo> UserInfos => Set<UserInfo>();
-
-
+        public virtual DbSet<User> Users => Set<User>();
         public virtual DbSet<Post> Posts => Set<Post>();
         #endregion
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
