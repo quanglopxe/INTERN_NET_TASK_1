@@ -20,7 +20,7 @@ namespace MilkStore.API.Controllers
         }
         [HttpGet()]
         public async Task<IActionResult> GetPost(string? id, int index = 1, int pageSize = 10)
-        {            
+        {                        
             IList<Post> posts = (IList<Post>)await _postService.GetPosts(id);
             return Ok(BaseResponse<IList<Post>>.OkResponse(posts));
         }
@@ -33,6 +33,22 @@ namespace MilkStore.API.Controllers
             }
             Post post = await _postService.CreatePost(postModel);
             return Ok(BaseResponse<Post>.OkResponse(post));
-        }        
+        }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePost(string id, PostModelView postModel)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+            }
+            Post post = await _postService.UpdatePost(id, postModel);
+            return Ok(BaseResponse<Post>.OkResponse(post));
+        }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePost(string id)
+        {
+            await _postService.DeletePost(id);
+            return Ok();
+        }
     }
 }
