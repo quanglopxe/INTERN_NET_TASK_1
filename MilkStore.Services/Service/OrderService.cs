@@ -9,23 +9,31 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
 using MilkStore.Contract.Repositories.Interface;
+using MilkStore.Core.Utils;
+using MilkStore.Repositories.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace MilkStore.Services.Service
 {
     public class OrderService : IOrderService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly DatabaseContext _context;
+        protected readonly DbSet<Order> _dbSet;
 
-        public OrderService(IUnitOfWork unitOfWork)
+        public OrderService(IUnitOfWork unitOfWork, DatabaseContext context)
         {
             _unitOfWork = unitOfWork;
+            _context = context;
+            _dbSet = _context.Set<Order>();
         }
 
         public async Task<IEnumerable<Order>> GetAsync(string? id)
         {
             if(id == null)
             {
-                return await _unitOfWork.GetRepository<Order>().GetAllAsync();
+                //return await _unitOfWork.GetRepository<Order>().GetAllAsync();
+                return await _dbSet.Where(e => EF.Property<DateTimeOffset?>(e, "DeletedTime") == null).ToListAsync();
             }
             else
             {
@@ -60,13 +68,16 @@ namespace MilkStore.Services.Service
             orderss.Status = ord.Status;
             orderss.PaymentMethod = ord.PaymentMethod;
             orderss.OrderDate = ord.OrderDate;
+            orderss.LastUpdatedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
             await _unitOfWork.SaveAsync();
         }
 
         public async Task DeleteAsync(string id)
         {
-            await _unitOfWork.GetRepository<Order>().DeleteAsync(id);
+            var orderss = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
+            orderss.DeletedTime = CoreHelper.SystemTimeNow;
+            await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
             await _unitOfWork.SaveAsync();
         }
     }
