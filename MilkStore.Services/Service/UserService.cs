@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
@@ -65,7 +66,7 @@ namespace MilkStore.Services.Service
             user.PasswordHash = userModel.PasswordHash;
             user.Address = userModel.Address;
             user.PhoneNumber = userModel.PhoneNumber;
-            user.Points = userModel.Points;
+            user.Points = 0;
             user.LastUpdatedTime = CoreHelper.SystemTimeNow;
             user.LastUpdatedBy = updatedBy;
 
@@ -97,15 +98,15 @@ namespace MilkStore.Services.Service
         }
 
         // Lấy thông tin người dùng theo ID
-        public async Task<IEnumerable<User>> GetUser(Guid? id)
+        public async Task<IEnumerable<User>> GetUser(string? id)
         {
             if (id == null)
             {
-                return await _unitOfWork.GetRepository<User>().GetAllAsync();
+                return await _unitOfWork.GetRepository<User>().Entities.Where(u => u.DeletedTime == null).ToListAsync();
             }
             else
             {
-                var user = await _unitOfWork.GetRepository<User>().GetByIdAsync(id.Value);
+                var user = await _unitOfWork.GetRepository<User>().Entities.FirstOrDefaultAsync(u => u.Id == id && u.DeletedTime == null);
                 return user != null ? new List<User> { user } : new List<User>();
             }
         }

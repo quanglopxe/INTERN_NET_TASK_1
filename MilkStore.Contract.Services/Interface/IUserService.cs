@@ -12,7 +12,7 @@ namespace MilkStore.Contract.Services.Interface
         Task<IdentityResult> CreateUser(RegisterModelView userModel);
         Task<User> UpdateUser(string id, UserModelView userModel, string updatedBy);
         Task<User> DeleteUser(string userId, string deleteby);
-        Task<IEnumerable<User>> GetUser(Guid? id);
+        Task<IEnumerable<User>> GetUser(string? id);
         Task<User> AddUser(UserModelView userModel, string createdBy);
 
 

@@ -23,7 +23,7 @@ namespace MilkStore.Contract.Repositories.Entity
         [Phone]
         public string PhoneNumber { get; set; }
 
-        public int Points { get; set; }
+        public int Points { get; set; } = 0;
 
         public DateTime CreatedAt { get; set; }
     }

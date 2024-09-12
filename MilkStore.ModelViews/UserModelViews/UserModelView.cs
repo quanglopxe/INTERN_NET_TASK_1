@@ -29,7 +29,6 @@ namespace MilkStore.ModelViews.UserModelViews
         [Phone]
         public string PhoneNumber { get; set; }
 
-        public int Points { get; set; }
 
         public DateTime CreatedAt { get; set; }
     }

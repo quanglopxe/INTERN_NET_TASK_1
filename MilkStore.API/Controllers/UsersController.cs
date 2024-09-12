@@ -22,7 +22,7 @@ namespace MilkStore.API.Controllers
 
         }
         [HttpGet()]
-        public async Task<IEnumerable<User>> GetUsers(Guid? id, int index = 1, int pageSize = 10)
+        public async Task<IEnumerable<User>> GetUsers(string? id, int index = 1, int pageSize = 10)
         {
             var users = await _userService.GetUser(id);
             return users;
