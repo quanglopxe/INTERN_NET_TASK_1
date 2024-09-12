@@ -1,27 +1,51 @@
-﻿using XuongMay.Contract.Repositories.Interface;
-using XuongMay.Contract.Services.Interface;
-using XuongMay.ModelViews.UserModelViews;
+﻿using Microsoft.AspNetCore.Identity;
+using MilkStore.Contract.Repositories.Entity;
+using MilkStore.Contract.Repositories.Interface;
+using MilkStore.Contract.Services.Interface;
+using MilkStore.ModelViews.AuthModelViews;
+using MilkStore.ModelViews.UserModelViews;
+using MilkStore.Repositories.Context;
+using MilkStore.Repositories.Entity;
 
-namespace XuongMay.Services.Service
+namespace MilkStore.Services.Service
 {
     public class UserService : IUserService
     {
         private readonly IUnitOfWork _unitOfWork;
-        public UserService(IUnitOfWork unitOfWork)
+        private readonly UserManager<ApplicationUser> userManager;
+        private readonly RoleManager<ApplicationRole> roleManager;
+        private readonly DatabaseContext context;
+        public UserService(DatabaseContext context, UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IUnitOfWork unitOfWork)
         {
+            this.context = context;
+            this.userManager = userManager;
+            this.roleManager = roleManager;
             _unitOfWork = unitOfWork;
         }
-
-        public Task<IList<UserResponseModel>> GetAll()
+        public async Task<ApplicationUser> GetUserByEmail(string email)
         {
-            IList<UserResponseModel> users = new List<UserResponseModel>
+            return await userManager.FindByEmailAsync(email);
+        }
+        public async Task<IdentityResult> CreateUser(RegisterModelView userModel)
+        {
+            var newUser = new ApplicationUser
             {
-                new UserResponseModel { Id = "1" },
-                new UserResponseModel { Id = "2" },
-                new UserResponseModel { Id = "3" }
+                UserName = userModel.Username,
+                Email = userModel.Email,
+                PhoneNumber = userModel.PhoneNumber                
             };
 
-            return Task.FromResult(users);
+            var result = await userManager.CreateAsync(newUser, userModel.Password);
+            if (result.Succeeded)
+            {
+                var roleExist = await roleManager.RoleExistsAsync("Member");
+                if (!roleExist)
+                {
+                    await roleManager.CreateAsync(new ApplicationRole { Name = "Member" });
+                }
+                await userManager.AddToRoleAsync(newUser, "Member");
+            }
+            return result;
         }
     }
 }

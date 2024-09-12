@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using XuongMay.Contract.Repositories.Entity;
-using XuongMay.Repositories.Entity;
+using MilkStore.Contract.Repositories.Entity;
+using MilkStore.Repositories.Entity;
 
-namespace XuongMay.Repositories.Context
+namespace MilkStore.Repositories.Context
 {
     public class DatabaseContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid, ApplicationUserClaims, ApplicationUserRoles, ApplicationUserLogins, ApplicationRoleClaims, ApplicationUserTokens>
     {
         public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options) { }
-
+        #region Entity
         // user
         public virtual DbSet<ApplicationUser> ApplicationUsers => Set<ApplicationUser>();
         public virtual DbSet<ApplicationRole> ApplicationRoles => Set<ApplicationRole>();
@@ -18,6 +18,20 @@ namespace XuongMay.Repositories.Context
         public virtual DbSet<ApplicationRoleClaims> ApplicationRoleClaims => Set<ApplicationRoleClaims>();
         public virtual DbSet<ApplicationUserTokens> ApplicationUserTokens => Set<ApplicationUserTokens>();
 
+        public virtual DbSet<Products> Products => Set<Products>();
         public virtual DbSet<UserInfo> UserInfos => Set<UserInfo>();
+        public virtual DbSet<Post> Posts => Set<Post>();
+        public virtual DbSet<Order> Orders => Set<Order>();
+        #endregion
+
+        //protected override void OnModelCreating(ModelBuilder modelBuilder)
+        //{
+        //    modelBuilder.Entity<Post>()
+        //        .HasMany(p => p.Products)
+        //        .WithMany(p => p.Posts)
+        //        .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table
+        //}
+
+
     }
 }
