@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MilkStore.Core\MilkStore.Core.csproj" />
+    <ProjectReference Include="..\MilkStore.ModelViews\MilkStore.ModelViews.csproj" />
   </ItemGroup>
 
 </Project>
