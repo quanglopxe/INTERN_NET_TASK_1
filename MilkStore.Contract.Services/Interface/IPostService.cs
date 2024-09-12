@@ -8,8 +8,8 @@ namespace MilkStore.Contract.Services.Interface
     public interface IPostService
     {
         Task<IEnumerable<Post>> GetPosts(string? id);
-        Task<Post> CreatePost(PostModelView postModel);
-        Task<Post> UpdatePost(PostModelView postModel);
-        Task<Post> DeletePost(string id);
+        Task<Post> CreatePost(PostModelView postModel);        
+        Task<Post> UpdatePost(string id, PostModelView postModel);
+        Task DeletePost(string id);
     }
 }

@@ -20,6 +20,7 @@ namespace MilkStore.Repositories.Context
 
         public virtual DbSet<Products> Products => Set<Products>();
         public virtual DbSet<UserInfo> UserInfos => Set<UserInfo>();
+        public virtual DbSet<User> Users => Set<User>();
         public virtual DbSet<Post> Posts => Set<Post>();
         public virtual DbSet<Order> Orders => Set<Order>();
         #endregion
