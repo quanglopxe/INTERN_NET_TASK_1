@@ -7,7 +7,7 @@ namespace MilkStore.Contract.Services.Interface
     {
         Task<IEnumerable<Products>> GetProducts(string? id);
         Task<Products> CreateProducts(ProductsModel productsModel);
-        Task<Products> UpdateProducts(ProductsModel productsModel);
+        Task<Products> UpdateProducts(string id,ProductsModel productsModel);
         Task<Products> DeleteProducts(object id);
     }
 }
