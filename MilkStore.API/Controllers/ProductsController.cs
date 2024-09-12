@@ -30,14 +30,14 @@ namespace MilkStore.API.Controllers
                 // Kiểm tra xem có sản phẩm nào không
                 if (products == null || !products.Any())
                 {
-                    return NotFound("Không tìm thấy sản phẩm nào.");
+                    return NotFound("Sản phẩm không tồn tại!!!");
                 }
 
                 return Ok(products); // Trả về danh sách sản phẩm
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Lỗi máy chủ: {ex.Message}"); // Trả về mã lỗi 500
+                return StatusCode(500); // Trả về mã lỗi 500
             }
         }
         [HttpPost()]
@@ -50,24 +50,24 @@ namespace MilkStore.API.Controllers
             Products Products = await _ProductsService.CreateProducts(ProductsModel);
             return Ok(BaseResponse<Products>.OkResponse(Products));
         }
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> UpdateProduct(string id, [FromBody] ProductsModel productsModel)
-        //{
-        //    if (id.Equals(productsModel.ProductId) == true)
-        //    {
-        //        return BadRequest("ID không khớp.");
-        //    }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateProduct(string id, [FromBody] ProductsModel productsModel)
+        {
+            if (!ModelState.IsValid)
+            {
+                return NotFound("Sản phẩm không tồn tại!!!");
+            }
 
-        //    try
-        //    {
-        //        var updatedProduct = await _ProductsService.UpdateProducts(productsModel);
-        //        return Ok(updatedProduct); // Trả về sản phẩm đã cập nhật
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return NotFound(ex.Message); // Trả về 404 nếu sản phẩm không tồn tại
-        //    }
-        //}
+            try
+            {
+                var updatedProduct = await _ProductsService.UpdateProducts(id, productsModel);
+                return Ok(updatedProduct);
+            }
+            catch (Exception ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(string id)
         {
@@ -78,7 +78,7 @@ namespace MilkStore.API.Controllers
             }
             catch (Exception ex)
             {
-                return NotFound(ex.Message); // Trả về 404 nếu sản phẩm không tồn tại
+                return NotFound("Sản phẩm không tồn tại!!!"); // Trả về 404 nếu sản phẩm không tồn tại
             }
         }
     }

@@ -25,6 +25,8 @@ namespace MilkStore.Services.Service
                 Price = ProductsModel.Price,
                 QuantityInStock = ProductsModel.QuantityInStock,
                 ImageUrl = ProductsModel.ImageUrl,
+                CreatedTime = DateTime.UtcNow,
+                //CreatedBy = userName,
             };
             await _unitOfWork.GetRepository<Products>().InsertAsync(newProducts);
             await _unitOfWork.SaveAsync();
@@ -35,16 +37,13 @@ namespace MilkStore.Services.Service
         {
             var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id);
 
-            // Kiểm tra xem sản phẩm có tồn tại hay không
             if (product == null)
             {
                 throw new Exception("Sản phẩm không tồn tại.");
             }
 
-            // Xóa sản phẩm
-            _unitOfWork.GetRepository<Products>().Delete(product);
+            await _unitOfWork.GetRepository<Products>().DeleteAsync(id);
 
-            // Lưu thay đổi vào cơ sở dữ liệu
             await _unitOfWork.SaveAsync();
 
             return product;
@@ -65,32 +64,28 @@ namespace MilkStore.Services.Service
 
         }
 
-        public async Task<Products> UpdateProducts(ProductsModel ProductsModel)
+        public async Task<Products> UpdateProducts(string id,ProductsModel ProductsModel)
         {
-            throw new NotImplementedException();
 
-            //var existingProduct = await _unitOfWork.GetRepository<Products>().GetByIdAsync(ProductsModel.ProductId);
+            var existingProduct = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id);
 
-            //// Kiểm tra xem sản phẩm có tồn tại hay không
-            //if (existingProduct == null)
-            //{
-            //    throw new Exception("Sản phẩm không tồn tại.");
-            //}
+            if (existingProduct == null)
+            {
+                throw new Exception("Sản phẩm không tồn tại.");
+            }
 
-            //// Cập nhật thông tin của sản phẩm
-            //existingProduct.ProductName = ProductsModel.ProductName;
-            //existingProduct.Description = ProductsModel.Description;
-            //existingProduct.Price = ProductsModel.Price;
-            //existingProduct.QuantityInStock = ProductsModel.QuantityInStock;
-            //existingProduct.ImageUrl = ProductsModel.ImageUrl;
+            existingProduct.ProductName = ProductsModel.ProductName;
+            existingProduct.Description = ProductsModel.Description;
+            existingProduct.Price = ProductsModel.Price;
+            existingProduct.QuantityInStock = ProductsModel.QuantityInStock;
+            existingProduct.ImageUrl = ProductsModel.ImageUrl;
+            existingProduct.LastUpdatedTime = DateTime.UtcNow;
 
-            //// Cập nhật sản phẩm trong cơ sở dữ liệu
-            //_unitOfWork.GetRepository<Products>().Update(existingProduct);
+            await _unitOfWork.GetRepository<Products>().UpdateAsync(obj: existingProduct);
 
-            //// Lưu thay đổi vào cơ sở dữ liệu
-            //await _unitOfWork.SaveAsync();
+            await _unitOfWork.SaveAsync();
 
-            //return existingProduct;
+            return existingProduct;
         }
     }
 }
