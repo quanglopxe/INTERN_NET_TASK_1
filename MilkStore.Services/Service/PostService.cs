@@ -1,20 +1,10 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
-using MilkStore.Core.Base;
-using MilkStore.Core.Constants;
 using MilkStore.Core.Utils;
-using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.ModelViews.PostModelViews;
-using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Context;
-using MilkStore.Repositories.Entity;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
-
 namespace MilkStore.Services.Service
 {
     public class PostService : IPostService
