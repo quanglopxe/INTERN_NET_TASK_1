@@ -75,6 +75,7 @@ namespace MilkStore.API
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();            
+            services.AddScoped<IOrderService, OrderService>();
         }
         public static void AddSwaggerUIAuthentication(this IServiceCollection services)
         {
