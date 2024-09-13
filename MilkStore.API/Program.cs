@@ -19,7 +19,7 @@ builder.Configuration
 builder.Services.AddDbContext<DatabaseContext>(options => {
     options.UseSqlServer(builder.Configuration.GetConnectionString("MilkStore"));
 });
-builder.Services.AddScoped<IReviewsService, ReviewsService>();
+//builder.Services.AddScoped<IReviewsService, ReviewsService>();
 
 
 builder.Services.AddControllers();
