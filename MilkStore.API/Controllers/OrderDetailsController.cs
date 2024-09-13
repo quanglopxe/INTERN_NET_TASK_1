@@ -43,13 +43,18 @@ namespace MilkStore.API.Controllers
         }
 
         // PUT
-        [HttpPut]
-        public async Task<IActionResult> UpdateOrderDetails(OrderDetailsModelView model)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateOrderDetails(string id, OrderDetailsModelView model)
         { 
             try
             {
-                await _orderDetailsService.UpdateOrderDetails(model);
-                return NoContent();
+                var items = await _orderDetailsService.ReadOrderDetails(id);
+                if (items == null)
+                {
+                    return NotFound();
+                }
+                await _orderDetailsService.UpdateOrderDetails(id, model); 
+                return Ok();
             }
             catch (Exception ex)
             {
@@ -58,13 +63,13 @@ namespace MilkStore.API.Controllers
         }
 
         // DELETE
-        [HttpDelete("{orderId}/{productId}")]
-        public async Task<IActionResult> DeleteOrderDetails(string orderId, string productId)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteOrderDetails(string id)
         {
             try
             {
-                await _orderDetailsService.DeleteOrderDetails(orderId, productId);
-                return NoContent();
+                await _orderDetailsService.DeleteOrderDetails(id);
+                return Ok();
             }
             catch (Exception ex)
             {

@@ -12,7 +12,7 @@ namespace MilkStore.Contract.Services.Interface
     {
         Task CreateOrderDetails(OrderDetailsModelView model);
         Task<IEnumerable<OrderDetails>> ReadOrderDetails(string? orderId, int page = 1, int pageSize = 10);
-        Task UpdateOrderDetails(OrderDetailsModelView model);
-        Task DeleteOrderDetails(string orderId, string productId);
+        Task UpdateOrderDetails(string id, OrderDetailsModelView model);
+        Task DeleteOrderDetails(string id);
     }
 }

@@ -12,7 +12,7 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20240913092132_test")]
+    [Migration("20240913094921_test")]
     partial class test
     {
         /// <inheritdoc />

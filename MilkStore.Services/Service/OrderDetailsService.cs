@@ -50,29 +50,13 @@ namespace MilkStore.Services.Service
 
             if (!string.IsNullOrEmpty(orderId))
             {
-                if (Guid.TryParse(orderId, out Guid parsedOrderId))
-                {
-                    query = query.Where(od => od.OrderID == parsedOrderId.ToString());
-                }
-                else
-                {
-                    throw new ArgumentException("Order ID is not a valid GUID.");
-                }
+                query = query.Where(od => od.OrderID == orderId);
             }
 
+            // Tính toán phân trang
             var totalItems = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
-
-            if (page > totalPages && totalPages > 0)
-            {
-                page = totalPages;
-            }
-
-            if (totalPages == 0)
-            {
-                page = 1;
-                totalPages = 1;
-            }
+            var totalPages = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
+            page = Math.Max(1, Math.Min(page, totalPages));
 
             var orderDetailsPaged = await query
                 .Skip((page - 1) * pageSize)
@@ -83,13 +67,15 @@ namespace MilkStore.Services.Service
         }
 
         // Update OrderDetails
-        public async Task UpdateOrderDetails(OrderDetailsModelView model)
+        public async Task UpdateOrderDetails(string id, OrderDetailsModelView model)
         {
-            var orderDetails = await _dbSet.FirstOrDefaultAsync(od => od.OrderID == model.OrderID && od.ProductID == model.ProductID);
+            var orderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id);
             if (orderDetails != null)
             {
+                //orderDetails.OrderID = model.OrderID;
+                orderDetails.ProductID = model.ProductID;
                 orderDetails.Quantity = model.Quantity;
-                //orderDetails.UnitPrice = model.UnitPrice; //muốn thay đổi giá sản phẩm thì đổi bên Product
+                orderDetails.UnitPrice = model.UnitPrice;
                 //orderDetails.TotalAmount = model.Quantity * model.UnitPrice; // tính tự động
 
                 _dbSet.Update(orderDetails);
@@ -98,24 +84,12 @@ namespace MilkStore.Services.Service
         }
 
         // Delete OrderDetails by OrderID and ProductID
-        public async Task DeleteOrderDetails(string orderId, string productId)
+        public async Task DeleteOrderDetails(string id)
         {
-            if (Guid.TryParse(orderId, out Guid parsedOrderId) && Guid.TryParse(productId, out Guid parsedProductId))
-            {
-                var orderDetails = await _dbSet.FirstOrDefaultAsync(od => od.OrderID == parsedOrderId.ToString() && od.ProductID == parsedProductId.ToString());
-                if (orderDetails != null)
-                {
-                    orderDetails.DeletedTime = CoreHelper.SystemTimeNow; // Gán thời gian xóa
-                    // orderDetails.DeletedBy = deletedBy; // Gán người thực hiện nếu cần
-                    orderDetails.LastUpdatedTime = CoreHelper.SystemTimeNow; // Cập nhật thời gian thay đổi cuối cùng
-                    _dbSet.Update(orderDetails); // Cập nhật lại bản ghi
-                    await _unitOfWork.SaveAsync();
-                }
-            }
-            else
-            {
-                throw new ArgumentException("Order ID or Product ID is not a valid GUID.");
-            }
+            var od = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id);
+            od.DeletedTime = CoreHelper.SystemTimeNow;
+            await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(od);
+            await _unitOfWork.SaveAsync();
         }
     }
 }
