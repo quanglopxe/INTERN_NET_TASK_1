@@ -10,10 +10,10 @@ namespace MilkStore.Contract.Services.Interface
     {
         Task<ApplicationUser> GetUserByEmail(string email);
         Task<IdentityResult> CreateUser(RegisterModelView userModel);
-        Task<User> UpdateUser(string id, UserModelView userModel, string updatedBy);
-        Task<User> DeleteUser(string userId, string deleteby);
-        Task<IEnumerable<User>> GetUser(string? id);
-        Task<User> AddUser(UserModelView userModel, string createdBy);
+        Task<ApplicationUser> UpdateUser(Guid id, UserModelView userModel, string updatedBy);
+        Task<ApplicationUser> DeleteUser(Guid userId, string deleteby);
+        Task<IEnumerable<ApplicationUser>> GetUser(string? id);
+        Task<ApplicationUser> AddUser(UserModelView userModel, string createdBy);
 
 
     }
