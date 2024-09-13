@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
@@ -20,6 +21,7 @@ namespace MilkStore.API.Controllers
             _ProductsService = ProductsService;
         }
         [HttpGet]
+        [Authorize(Roles = "Admin,Member")]
         public async Task<IActionResult> GetProducts(string? id)
         {
             try
@@ -41,6 +43,7 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpPost()]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateProducts(ProductsModel ProductsModel)
         {
             if (!ModelState.IsValid)
@@ -51,6 +54,7 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<Products>.OkResponse(Products));
         }
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateProduct(string id, [FromBody] ProductsModel productsModel)
         {
             if (!ModelState.IsValid)
@@ -69,6 +73,7 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(string id)
         {
             try

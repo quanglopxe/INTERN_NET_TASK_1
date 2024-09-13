@@ -12,8 +12,8 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20240912091300_AddReviewTable")]
-    partial class AddReviewTable
+    [Migration("20240912105951_InitDB")]
+    partial class InitDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,9 +21,6 @@ namespace MilkStore.Repositories.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.8")
-                .HasAnnotation("Proxies:ChangeTracking", false)
-                .HasAnnotation("Proxies:CheckEquality", false)
-                .HasAnnotation("Proxies:LazyLoading", true)
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
