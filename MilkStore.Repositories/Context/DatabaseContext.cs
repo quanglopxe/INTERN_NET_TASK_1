@@ -19,5 +19,22 @@ namespace XuongMay.Repositories.Context
         public virtual DbSet<ApplicationUserTokens> ApplicationUserTokens => Set<ApplicationUserTokens>();
 
         public virtual DbSet<UserInfo> UserInfos => Set<UserInfo>();
+<<<<<<< Updated upstream
+=======
+        public virtual DbSet<User> Users => Set<User>();
+        public virtual DbSet<Post> Posts => Set<Post>();
+        public virtual DbSet<Order> Orders => Set<Order>();
+        public virtual DbSet<Review> Reviews => Set<Review>();
+        public virtual DbSet<Voucher> Vouchers => Set<Voucher>();
+        #endregion
+
+        //protected override void OnModelCreating(ModelBuilder modelBuilder)
+        //{
+        //    modelBuilder.Entity<Post>()
+        //        .HasMany(p => p.Products)
+        //        .WithMany(p => p.Posts)
+        //        .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table
+        //}
+>>>>>>> Stashed changes
     }
 }
