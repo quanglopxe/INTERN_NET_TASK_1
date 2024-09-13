@@ -10,10 +10,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MilkStore.Core.Utils;
+using MilkStore.Contract.Services.Interface;
 
 namespace MilkStore.Services.Service
 {
-    public class OrderDetailsService
+    public class OrderDetailsService : IOrderDetailsService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly DatabaseContext _context;
@@ -43,26 +44,22 @@ namespace MilkStore.Services.Service
         }
 
         //Read OrderDetails
-        public async Task<IEnumerable<OrderDetails>> ReadOrderDetails(Guid? orderId = null, Guid? productId = null, int page = 1, int pageSize = 10)
+        public async Task<IEnumerable<OrderDetails>> ReadOrderDetails(string? orderId, int page = 1, int pageSize = 10)
         {
-            IQueryable<OrderDetails> query = _dbSet.Where(od => od.DeletedTime == null); // Lọc các bản ghi chưa bị xóa mềm
+            IQueryable<OrderDetails> query = _dbSet.Where(e => EF.Property<DateTimeOffset?>(e, "DeletedTime") == null); // Lọc các bản ghi chưa bị xóa mềm
 
-            //Có OrderID - ProductID
-            if (orderId.HasValue)
+            if (!string.IsNullOrEmpty(orderId))
             {
-                query = query.Where(od => od.OrderID == orderId.Value);
-
-                if (productId.HasValue)
+                if (Guid.TryParse(orderId, out Guid parsedOrderId))
                 {
-                    query = query.Where(od => od.ProductID == productId.Value);
+                    query = query.Where(od => od.OrderID == parsedOrderId.ToString());
+                }
+                else
+                {
+                    throw new ArgumentException("Order ID is not a valid GUID.");
                 }
             }
-            else if (productId.HasValue)
-            {
-                // không có OrderID nhưng có ProductID, lọc theo ProductID
-                query = query.Where(od => od.ProductID == productId.Value);
-            }
-           
+
             var totalItems = await query.CountAsync();
             var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
@@ -82,8 +79,7 @@ namespace MilkStore.Services.Service
                 .Take(pageSize)
                 .ToListAsync();
 
-            // Trả về danh sách chi tiết đơn hàng và thông tin phân trang
-            return orderDetailsPaged;            
+            return orderDetailsPaged;
         }
 
         // Update OrderDetails
@@ -102,19 +98,24 @@ namespace MilkStore.Services.Service
         }
 
         // Delete OrderDetails by OrderID and ProductID
-        public async Task DeleteOrderDetails(Guid orderId, Guid productId, string deletedBy)
+        public async Task DeleteOrderDetails(string orderId, string productId)
         {
-            var orderDetails = await _dbSet.FirstOrDefaultAsync(od => od.OrderID == orderId && od.ProductID == productId);
-            if (orderDetails != null)
+            if (Guid.TryParse(orderId, out Guid parsedOrderId) && Guid.TryParse(productId, out Guid parsedProductId))
             {
-                orderDetails.DeletedTime = CoreHelper.SystemTimeNow; // Gán thời gian xóa
-                orderDetails.DeletedBy = deletedBy; // Gán người thực hiện
-                orderDetails.LastUpdatedTime = CoreHelper.SystemTimeNow; // Cập nhật thời gian thay đổi cuối cùng
-                _dbSet.Update(orderDetails); // Cập nhật lại bản ghi
-                await _unitOfWork.SaveAsync();
+                var orderDetails = await _dbSet.FirstOrDefaultAsync(od => od.OrderID == parsedOrderId.ToString() && od.ProductID == parsedProductId.ToString());
+                if (orderDetails != null)
+                {
+                    orderDetails.DeletedTime = CoreHelper.SystemTimeNow; // Gán thời gian xóa
+                    // orderDetails.DeletedBy = deletedBy; // Gán người thực hiện nếu cần
+                    orderDetails.LastUpdatedTime = CoreHelper.SystemTimeNow; // Cập nhật thời gian thay đổi cuối cùng
+                    _dbSet.Update(orderDetails); // Cập nhật lại bản ghi
+                    await _unitOfWork.SaveAsync();
+                }
+            }
+            else
+            {
+                throw new ArgumentException("Order ID or Product ID is not a valid GUID.");
             }
         }
-
-        
     }
 }

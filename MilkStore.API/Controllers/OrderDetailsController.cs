@@ -6,6 +6,7 @@ using MilkStore.Services.Service;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using MilkStore.Contract.Services.Interface;
 
 namespace MilkStore.API.Controllers
 {
@@ -13,54 +14,17 @@ namespace MilkStore.API.Controllers
     [ApiController]
     public class OrderDetailsController : ControllerBase
     {
-        private readonly OrderDetailsService _orderDetailsService;
-        public OrderDetailsController(OrderDetailsService orderDetailsService)
+        private readonly IOrderDetailsService _orderDetailsService;
+        public OrderDetailsController(IOrderDetailsService orderDetailsService)
         {
             _orderDetailsService = orderDetailsService;
         }
 
         // GET
         [HttpGet]
-        public async Task<IActionResult> GetOrderDetails(Guid? orderId = null, Guid? productId = null, int page = 1, int pageSize = 10)
+        public async Task<IEnumerable<OrderDetails>> GetOrderDetails(string? orderId = null, int page = 1, int pageSize = 10)
         {
-            try
-            {
-                IEnumerable<OrderDetails> orderDetails;
-
-                if (orderId.HasValue)
-                {
-                    if (productId.HasValue)
-                    {
-                        // Có cả orderId và productId
-                        orderDetails = await _orderDetailsService.ReadOrderDetails(orderId.Value, productId.Value);
-                        if (orderDetails == null || !orderDetails.Any())
-                        {
-                            return NotFound();
-                        }
-                    }
-                    else
-                    {
-                        // Có orderId nhưng không có productId
-                        orderDetails = await _orderDetailsService.ReadOrderDetails(orderId.Value, null, page, pageSize);
-                    }
-                }
-                else if (productId.HasValue)
-                {
-                    // Không có orderId nhưng có productId
-                    orderDetails = await _orderDetailsService.ReadOrderDetails(null, productId.Value, page, pageSize);
-                }
-                else
-                {
-                    // Không có orderId và không có productId
-                    orderDetails = await _orderDetailsService.ReadOrderDetails(null, null, page, pageSize);
-                }
-
-                return Ok(orderDetails);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return await _orderDetailsService.ReadOrderDetails(orderId, page, pageSize);
         }
 
         // POST
@@ -95,11 +59,11 @@ namespace MilkStore.API.Controllers
 
         // DELETE
         [HttpDelete("{orderId}/{productId}")]
-        public async Task<IActionResult> DeleteOrderDetails(Guid orderId, Guid productId, string deletedBy)
+        public async Task<IActionResult> DeleteOrderDetails(string orderId, string productId)
         {
             try
             {
-                await _orderDetailsService.DeleteOrderDetails(orderId, productId, deletedBy);
+                await _orderDetailsService.DeleteOrderDetails(orderId, productId);
                 return NoContent();
             }
             catch (Exception ex)
