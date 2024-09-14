@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace XuongMay.Core.Utils
+namespace MilkStore.Core.Utils
 {
     public static class EnumHelper
     {

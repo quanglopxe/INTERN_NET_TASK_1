@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace XuongMayBE.API.Middleware
+namespace MilkStore.API.Middleware
 {
     public class ExceptionMiddleware
     {

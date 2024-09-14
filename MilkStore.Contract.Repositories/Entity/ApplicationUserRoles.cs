@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using XuongMay.Core.Utils;
+using MilkStore.Core.Utils;
 
-namespace XuongMay.Contract.Repositories.Entity
+namespace MilkStore.Contract.Repositories.Entity
 {
     public class ApplicationUserRoles : IdentityUserRole<Guid>
     {
