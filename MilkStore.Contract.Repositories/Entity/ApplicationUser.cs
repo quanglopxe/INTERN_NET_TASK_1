@@ -1,13 +1,14 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Core.Utils;
+using System.ComponentModel.DataAnnotations;
 
 namespace MilkStore.Repositories.Entity
 {
     public class ApplicationUser : IdentityUser<Guid>
     {
-        public string Password { get; set; } = string.Empty;
-        public virtual UserInfo? UserInfo { get; set; }
+        public int Points { get; set; } = 0;
+        public string Password { get; set; } =string.Empty;
         public string? CreatedBy { get; set; }
         public string? LastUpdatedBy { get; set; }
         public string? DeletedBy { get; set; }
