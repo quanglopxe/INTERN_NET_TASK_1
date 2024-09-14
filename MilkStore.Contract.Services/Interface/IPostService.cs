@@ -8,9 +8,9 @@ namespace MilkStore.Contract.Services.Interface
 {
     public interface IPostService
     {
-        Task<IEnumerable<Post>> GetPosts(string? id);
+        Task<IEnumerable<PostResponseDTO>> GetPosts(string? id);
         Task<PostResponseDTO> CreatePost(PostModelView postModel);        
-        Task<Post> UpdatePost(string id, PostModelView postModel);
+        Task<PostResponseDTO> UpdatePost(string id, PostModelView postModel);
         Task DeletePost(string id);
     }
 }

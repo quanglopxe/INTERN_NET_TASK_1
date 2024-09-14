@@ -98,11 +98,16 @@ namespace MilkStore.Services.Service
 
         }
 
-        public async Task<IEnumerable<Post>> GetPosts(string? id)
+        public async Task<IEnumerable<PostResponseDTO>> GetPosts(string? id)
         {
             if(id == null)
-            {
-                return await _unitOfWork.GetRepository<Post>().Entities.Where(post => post.DeletedTime == null).ToListAsync();
+            {                
+                var listPosts = await _unitOfWork.GetRepository<Post>().Entities
+                    .Where(post => post.DeletedTime == null)
+                    .ToListAsync();
+
+                // Ánh xạ listPosts sang kiểu trả về khác
+                return listPosts.Select(MapToPostResponseDto).ToList();
             }
             else
             {
@@ -111,12 +116,12 @@ namespace MilkStore.Services.Service
                 {
                     throw new KeyNotFoundException($"Post with ID {id} was not found.");
                 }                
-                return new List<Post> { post };
+                return new List<PostResponseDTO> { MapToPostResponseDto(post) };
             }            
 
         }
 
-        public async Task<Post> UpdatePost(string id, PostModelView postModel)
+        public async Task<PostResponseDTO> UpdatePost(string id, PostModelView postModel)
         {
             var post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
             if(post == null)
@@ -130,7 +135,7 @@ namespace MilkStore.Services.Service
             post.LastUpdatedTime = CoreHelper.SystemTimeNow;         
             await _unitOfWork.GetRepository<Post>().UpdateAsync(post);
             await _unitOfWork.SaveAsync();
-            return post;
+            return MapToPostResponseDto(post);
         }
     }
 }
