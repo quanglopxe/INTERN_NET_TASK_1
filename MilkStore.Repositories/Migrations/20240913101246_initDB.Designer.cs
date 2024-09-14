@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MilkStore.Repositories.Context;
 
@@ -11,9 +12,11 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20240913101246_initDB")]
+    partial class initDB
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -355,46 +358,6 @@ namespace MilkStore.Repositories.Migrations
                     b.ToTable("Posts");
                 });
 
-            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.PostProduct", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset>("CreatedTime")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset?>("DeletedTime")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("LastUpdatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset>("LastUpdatedTime")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("PostId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ProductId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PostId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("PostProduct");
-                });
-
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Products", b =>
                 {
                     b.Property<string>("Id")
@@ -671,6 +634,21 @@ namespace MilkStore.Repositories.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("PostProducts", b =>
+                {
+                    b.Property<string>("PostsId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProductsId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("PostsId", "ProductsId");
+
+                    b.HasIndex("ProductsId");
+
+                    b.ToTable("PostProducts");
+                });
+
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationRoleClaims", b =>
                 {
                     b.HasOne("MilkStore.Contract.Repositories.Entity.ApplicationRole", null)
@@ -722,25 +700,6 @@ namespace MilkStore.Repositories.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.PostProduct", b =>
-                {
-                    b.HasOne("MilkStore.Contract.Repositories.Entity.Post", "Post")
-                        .WithMany("PostProducts")
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MilkStore.Contract.Repositories.Entity.Products", "Product")
-                        .WithMany("PostProducts")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Post");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("MilkStore.Repositories.Entity.ApplicationUser", b =>
                 {
                     b.HasOne("MilkStore.Contract.Repositories.Entity.UserInfo", "UserInfo")
@@ -750,14 +709,19 @@ namespace MilkStore.Repositories.Migrations
                     b.Navigation("UserInfo");
                 });
 
-            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Post", b =>
+            modelBuilder.Entity("PostProducts", b =>
                 {
-                    b.Navigation("PostProducts");
-                });
+                    b.HasOne("MilkStore.Contract.Repositories.Entity.Post", null)
+                        .WithMany()
+                        .HasForeignKey("PostsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Products", b =>
-                {
-                    b.Navigation("PostProducts");
+                    b.HasOne("MilkStore.Contract.Repositories.Entity.Products", null)
+                        .WithMany()
+                        .HasForeignKey("ProductsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
