@@ -32,7 +32,5 @@ namespace MilkStore.Repositories.Context
         //        .WithMany(p => p.Posts)
         //        .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table
         //}
-
-        #endregion
     }
 }

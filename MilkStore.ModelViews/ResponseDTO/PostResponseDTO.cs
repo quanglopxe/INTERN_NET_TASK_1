@@ -13,6 +13,8 @@ namespace MilkStore.ModelViews.ResponseDTO
         public string Content { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public string CreatedBy { get; set; }
+        public DateTimeOffset LastUpdatedAt { get; set; }
+        public DateTimeOffset? DeletedTime { get; set; } = null;
         public List<ProductResponseDTO> Products { get; set; } = new List<ProductResponseDTO>();
     }
 }
