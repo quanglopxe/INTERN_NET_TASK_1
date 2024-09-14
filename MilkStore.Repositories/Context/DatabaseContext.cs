@@ -25,6 +25,7 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<Order> Orders => Set<Order>();
         public virtual DbSet<Review> Reviews => Set<Review>();
         public virtual DbSet<OrderDetails> OrderDetails => Set<OrderDetails>();
+        public virtual DbSet<Voucher> Vouchers => Set<Voucher>();
         #endregion
 
         //protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -34,5 +35,7 @@ namespace MilkStore.Repositories.Context
         //        .WithMany(p => p.Posts)
         //        .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table
         //}
+
+        #endregion
     }
 }
