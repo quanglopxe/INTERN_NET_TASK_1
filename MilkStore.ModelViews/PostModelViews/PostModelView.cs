@@ -9,7 +9,7 @@ namespace MilkStore.ModelViews.PostModelViews
         [Required(ErrorMessage = "Nội dung không được để trống")]
         public required string Content { get; set; }
         public string? Image { get; set; }      
-        public DateTime? DeletedTime { get; set; }
-        //public List<int>? ProductIDs { get; set; }
+        public DateTime? DeletedTime { get; set; } = null;
+        public ICollection<string>? ProductIDs { get; set; }
     }
 }

@@ -7,7 +7,7 @@ namespace MilkStore.ModelViews.ProductsModelViews
         [Required(ErrorMessage = "Tên sp không được để trống")]
         public required string ProductName { get; set; }
         [Required(ErrorMessage = "Giá sp không được để trống")]
-        public required decimal Price { get; set; }
+        public required double Price { get; set; }
         [Required(ErrorMessage = "Mô tả sp không được để trống")]
         public required string Description { get; set; }
         [Required(ErrorMessage = "sl sp không được để trống")]

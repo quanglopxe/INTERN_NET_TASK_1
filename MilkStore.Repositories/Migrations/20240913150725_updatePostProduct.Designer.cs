@@ -12,8 +12,8 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20240912091300_AddReviewTable")]
-    partial class AddReviewTable
+    [Migration("20240913150725_updatePostProduct")]
+    partial class updatePostProduct
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -358,6 +358,46 @@ namespace MilkStore.Repositories.Migrations
                     b.ToTable("Posts");
                 });
 
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.PostProduct", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastUpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("LastUpdatedTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PostId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProductId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("PostProduct");
+                });
+
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Products", b =>
                 {
                     b.Property<string>("Id")
@@ -389,8 +429,8 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<DateTimeOffset>("LastUpdatedTime")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<double>("Price")
+                        .HasColumnType("float");
 
                     b.Property<string>("ProductName")
                         .IsRequired()
@@ -685,6 +725,25 @@ namespace MilkStore.Repositories.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.PostProduct", b =>
+                {
+                    b.HasOne("MilkStore.Contract.Repositories.Entity.Post", "Post")
+                        .WithMany("PostProducts")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MilkStore.Contract.Repositories.Entity.Products", "Product")
+                        .WithMany("PostProducts")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("MilkStore.Repositories.Entity.ApplicationUser", b =>
                 {
                     b.HasOne("MilkStore.Contract.Repositories.Entity.UserInfo", "UserInfo")
@@ -692,6 +751,16 @@ namespace MilkStore.Repositories.Migrations
                         .HasForeignKey("UserInfoId");
 
                     b.Navigation("UserInfo");
+                });
+
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Post", b =>
+                {
+                    b.Navigation("PostProducts");
+                });
+
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Products", b =>
+                {
+                    b.Navigation("PostProducts");
                 });
 #pragma warning restore 612, 618
         }

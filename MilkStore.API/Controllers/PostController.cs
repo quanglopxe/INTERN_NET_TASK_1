@@ -4,6 +4,7 @@ using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.PostModelViews;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
 
@@ -31,8 +32,8 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            Post post = await _postService.CreatePost(postModel);
-            return Ok(BaseResponse<Post>.OkResponse(post));
+            PostResponseDTO post = await _postService.CreatePost(postModel);
+            return Ok(BaseResponse<PostResponseDTO>.OkResponse(post));
         }
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePost(string id, PostModelView postModel)

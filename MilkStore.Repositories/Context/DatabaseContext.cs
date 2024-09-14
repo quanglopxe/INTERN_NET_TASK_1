@@ -26,12 +26,7 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<Review> Reviews => Set<Review>();
         #endregion
 
-        //protected override void OnModelCreating(ModelBuilder modelBuilder)
-        //{
-        //    modelBuilder.Entity<Post>()
-        //        .HasMany(p => p.Products)
-        //        .WithMany(p => p.Posts)
-        //        .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table
-        //}
+        
+
     }
 }
