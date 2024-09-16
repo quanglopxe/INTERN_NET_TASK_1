@@ -74,10 +74,11 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
         }
 
+        //Cập nhật TotalAmount
         public async Task UpdateToTalAmount (string id, double amount)
         {
             var ord = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
-            
+            //Tính thành tiền áp dụng ưu đãi
             var vch = await _unitOfWork.GetRepository<Voucher>().Entities.FirstOrDefaultAsync(vc => vc.Id == ord.VoucherId && vc.DeletedTime == null);
             if (vch != null)
             {

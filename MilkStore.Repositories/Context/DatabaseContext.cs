@@ -32,13 +32,15 @@ namespace MilkStore.Repositories.Context
             //    .HasMany(p => p.Products)
             //    .WithMany(p => p.Posts)
             //    .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table
-
+            
+            //Add FK_Order_Voucher
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.Voucher)
                 .WithMany(v => v.Orders)
                 .HasForeignKey(o => o.VoucherId)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            //Add FK_Order_OrderDetails
             modelBuilder.Entity<Order>()
                 .HasMany(o => o.OrderDetailss)
                 .WithOne(od => od.Order)
