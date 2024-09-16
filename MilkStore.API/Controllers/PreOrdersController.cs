@@ -4,36 +4,33 @@ using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
-using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.PreOrdersModelView;
-using MilkStore.ModelViews.ReviewsModelView;
-using MilkStore.Services.Service;
 
 namespace MilkStore.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ReviewsController : ControllerBase
+    public class PreOrdersController : ControllerBase
     {
-        private readonly IReviewsService _reviewsService;
-        public ReviewsController(IReviewsService reviewsService)
+        private readonly IPreOrdersService _preOrdersService;
+        public PreOrdersController(IPreOrdersService preOrdersService)
         {
-            _reviewsService = reviewsService;
+            _preOrdersService = preOrdersService;
         }
         [HttpGet]
         [Authorize(Roles = "Admin, Member")]
-        public async Task<IActionResult> GetReviews(string? id)
+        public async Task<IActionResult> GetPreOrders(string? id)
         {
             try
             {
-                var reviews = await _reviewsService.GetReviews(id);
+                var preords = await _preOrdersService.GetPreOrders(id);
 
-                if (reviews == null || !reviews.Any())
+                if (preords == null || !preords.Any())
                 {
-                    return NotFound("Reviewkhông tồn tại!!!");
+                    return NotFound("Pre-order không tồn tại!!!");
                 }
 
-                return Ok(reviews);
+                return Ok(preords);
             }
             catch (Exception ex)
             {
@@ -42,28 +39,28 @@ namespace MilkStore.API.Controllers
         }
         [HttpPost()]
         [Authorize(Roles = "Admin, Member")]
-        public async Task<IActionResult> CreateReviews(ReviewsModel reviewsModel)
+        public async Task<IActionResult> CreatePreOrders(PreOrdersModelView preOrdersModel)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            Review Reviews = await _reviewsService.CreateReviews(reviewsModel);
-            return Ok(BaseResponse<Review>.OkResponse(Reviews));
+            PreOrders PreOrder = await _preOrdersService.CreatePreOrders(preOrdersModel);
+            return Ok(BaseResponse<PreOrders>.OkResponse(PreOrder));
         }
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin, Member")]
-        public async Task<IActionResult> UpdateReview(string id, [FromBody] ReviewsModel reviewsModel)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdatePreOrder(string id, [FromBody] PreOrdersModelView preOrdersModel)
         {
             if (!ModelState.IsValid)
             {
-                return NotFound("Review không tồn tại!!!");
+                return NotFound("Pre-order không tồn tại!!!");
             }
 
             try
             {
-                var updatedReview = await _reviewsService.UpdateReviews(id, reviewsModel);
-                return Ok(updatedReview);
+                var updatedPreOrder = await _preOrdersService.UpdatePreOrders(id, preOrdersModel);
+                return Ok(updatedPreOrder);
             }
             catch (Exception ex)
             {
@@ -72,23 +69,23 @@ namespace MilkStore.API.Controllers
         }
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin, Member")]
-        public async Task<IActionResult> DeleteReview(string id)
+        public async Task<IActionResult> DeletePreOrder(string id)
         {
             try
             {
-                var deletedReview = await _reviewsService.DeletReviews(id);
-                return Ok(deletedReview);
+                var deletedPreOrder = await _preOrdersService.DeletePreOrders(id);
+                return Ok(deletedPreOrder);
             }
             catch (Exception ex)
             {
-                return NotFound("Review không tồn tại!!!");
+                return NotFound("Pre-order không tồn tại!!!");
             }
         }
         [HttpGet("Pagination")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Pagination([FromQuery] int pageSize, [FromQuery] int pageNumber)
         {
-            var result = await _reviewsService.Pagination(pageSize, pageNumber);
+            var result = await _preOrdersService.Pagination(pageSize, pageNumber);
             return Ok(result);
         }
     }

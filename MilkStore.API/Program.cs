@@ -8,6 +8,7 @@ using MilkStore.Repositories.UOW;
 using MilkStore.Services.Service;
 
 DotEnv.Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
 // config appsettings by env
@@ -16,11 +17,6 @@ builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
-
-//builder.Services.AddDbContext<DatabaseContext>(options => {
-//    options.UseSqlServer(builder.Configuration.GetConnectionString("MilkStore"));
-//});
-//builder.Services.AddScoped<IReviewsService, ReviewsService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -32,7 +28,6 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddConfig(builder.Configuration);
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
