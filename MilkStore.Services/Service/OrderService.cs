@@ -14,6 +14,8 @@ using MilkStore.Repositories.Context;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using MilkStore.ModelViews.ResponseDTO;
+using System.ComponentModel;
 
 namespace MilkStore.Services.Service
 {
@@ -30,27 +32,58 @@ namespace MilkStore.Services.Service
             _dbSet = _context.Set<Order>();
         }
 
-        public async Task<IEnumerable<Order>> GetAsync(string? id)
+        private OrderResponseDTO MapToOrderResponseDto(Order order)
+        {
+            return new OrderResponseDTO
+            {
+                Id = order.Id,
+                UserId = order.UserId,
+                VoucherId = order.VoucherId,
+                OrderDate = order.OrderDate,
+                Status = order.Status,
+                TotalAmount = order.TotalAmount,
+                DiscountedAmount = order.DiscountedAmount,
+                ShippingAddress = order.ShippingAddress,
+                PaymentMethod = order.PaymentMethod,
+                OrderDetailss = order.OrderDetailss.Select(pp => new OrderDetailResponseDTO
+                {
+                    ProductID = pp.ProductID,
+                    Quantity = pp.Quantity,
+                    UnitPrice = pp.UnitPrice
+                }).ToList()
+            };
+        }
+
+        
+
+
+        public async Task<IEnumerable<OrderResponseDTO>> GetAsync(string? id)
         {
             if(id == null)
             {
                 //return await _unitOfWork.GetRepository<Order>().GetAllAsync();
-                return await _dbSet.Where(e => EF.Property<DateTimeOffset?>(e, "DeletedTime") == null).ToListAsync();
+                var listOrder = await _dbSet.Where(e => EF.Property<DateTimeOffset?>(e, "DeletedTime") == null).ToListAsync();
+                return listOrder.Select(MapToOrderResponseDto).ToList();
             }
             else
             {
                 var ord = await _unitOfWork.GetRepository<Order>().Entities.FirstOrDefaultAsync(or => or.Id == id && or.DeletedTime == null);
-                return ord != null ? new List<Order> { ord } : new List<Order>();
+                if (ord == null)
+                {
+                    throw new KeyNotFoundException($"Post with ID {id} was not found.");
+                }
+                return new List<OrderResponseDTO> { MapToOrderResponseDto(ord) };
             }
         }
 
-        public async Task AddAsync(OrderModelView ord)
+        public async Task<Order> AddAsync(OrderModelView ord)
         {
             var item = new Order
             {
                 UserId = ord.UserId,
                 VoucherId = ord.VoucherId,
                 TotalAmount = 0,
+                DiscountedAmount = 0,
                 ShippingAddress = ord.ShippingAddress,
                 Status = ord.Status,
                 PaymentMethod = ord.PaymentMethod,
@@ -58,9 +91,10 @@ namespace MilkStore.Services.Service
             };
             await _unitOfWork.GetRepository<Order>().InsertAsync(item);
             await _unitOfWork.SaveAsync();
+            return item;
         }
 
-        public async Task UpdateAsync(string id, OrderModelView ord)
+        public async Task<Order> UpdateAsync(string id, OrderModelView ord)
         {
             var orderss = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
             orderss.UserId = ord.UserId;
@@ -70,27 +104,31 @@ namespace MilkStore.Services.Service
             orderss.PaymentMethod = ord.PaymentMethod;
             orderss.OrderDate = ord.OrderDate;
             orderss.LastUpdatedTime = CoreHelper.SystemTimeNow;
+
             await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
             await _unitOfWork.SaveAsync();
+            return orderss;
         }
 
         //Cập nhật TotalAmount
         public async Task UpdateToTalAmount (string id, double amount)
         {
             var ord = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
+            ord.TotalAmount += amount;
+            ord.DiscountedAmount = ord.TotalAmount ;
             //Tính thành tiền áp dụng ưu đãi
             var vch = await _unitOfWork.GetRepository<Voucher>().Entities.FirstOrDefaultAsync(vc => vc.Id == ord.VoucherId && vc.DeletedTime == null);
             if (vch != null)
             {
-                if (vch.ExpiryDate > ord.OrderDate && vch.LimitSalePrice <= amount && vch.UsedCount < vch.UsingLimit)
+                if (vch.ExpiryDate > ord.OrderDate && Convert.ToDouble(vch.LimitSalePrice) <= amount && vch.UsedCount < vch.UsingLimit)
                 {
-                    amount = amount - ((amount * vch.SalePercent) / (100 * 1.0));
-                    vch.UsedCount = vch.UsedCount + 1;
+                    var discountAmount = (ord.TotalAmount * vch.SalePercent) / 100.0;
+                    vch.UsedCount++;
+
                     await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
+                    ord.DiscountedAmount = ord.TotalAmount - discountAmount;
                 }
             }
-
-            ord.TotalAmount += amount;
             await _unitOfWork.GetRepository<Order>().UpdateAsync(ord);
             await _unitOfWork.SaveAsync();
         }

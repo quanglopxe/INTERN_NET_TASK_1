@@ -47,6 +47,11 @@ namespace MilkStore.Repositories.Context
                 .HasForeignKey(od => od.OrderID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Order>()
+            .HasOne(o => o.User)
+            .WithMany(u => u.Orders)
+            .HasForeignKey(o => o.UserId);
+
             modelBuilder.Entity<ApplicationUserLogins>()
                 .HasKey(l => new { l.UserId, l.LoginProvider, l.ProviderKey });
             modelBuilder.Entity<ApplicationUserRoles>()

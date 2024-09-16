@@ -4,6 +4,9 @@ using MilkStore.ModelViews.OrderModelViews;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Contract.Repositories.Entity;
 using Microsoft.AspNetCore.Authorization;
+using MilkStore.ModelViews.ResponseDTO;
+using MilkStore.Services.Service;
+using MilkStore.Core.Base;
 
 namespace MilkStore.API.Controllers
 {
@@ -19,9 +22,10 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpGet()]
-        public async Task<IEnumerable<Order>> GetAll(string? id)
+        public async Task<IActionResult> GetAll(string? id, int page = 1, int pageSize = 10)
         {
-            return await _orderService.GetAsync(id);
+            IList<OrderResponseDTO> ord = (IList<OrderResponseDTO>)await _orderService.GetAsync(id);
+            return Ok(BaseResponse<IList<OrderResponseDTO>>.OkResponse(ord));
         }
 
 
@@ -29,21 +33,29 @@ namespace MilkStore.API.Controllers
         //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Add(OrderModelView item)
         {
-            await _orderService.AddAsync(item);
-            return Ok();
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+            }
+            Order ord = await _orderService.AddAsync(item);
+            return Ok(BaseResponse<Order>.OkResponse(ord));
         }
 
         [HttpPut("{id}")]
         //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Update(string id, OrderModelView item)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+            }
             var items = await _orderService.GetAsync(id);
             if (items == null)
             {
                 return NotFound();
             }
-            await _orderService.UpdateAsync(id, item);
-            return NoContent();
+            Order ord = await _orderService.UpdateAsync(id, item);
+            return Ok(BaseResponse<Order>.OkResponse(ord));
         }
 
         [HttpDelete("{id}")]
