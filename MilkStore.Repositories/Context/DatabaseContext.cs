@@ -23,6 +23,7 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<Review> Reviews => Set<Review>();
         public virtual DbSet<OrderDetails> OrderDetails => Set<OrderDetails>();
         public virtual DbSet<Voucher> Vouchers => Set<Voucher>();
+        public virtual DbSet<PreOrders> PreOrders => Set<PreOrders>();
 
 
         #endregion
