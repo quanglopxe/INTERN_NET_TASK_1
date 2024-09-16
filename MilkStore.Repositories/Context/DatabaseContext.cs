@@ -32,7 +32,7 @@ namespace MilkStore.Repositories.Context
             //    .HasMany(p => p.Products)
             //    .WithMany(p => p.Posts)
             //    .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table
-            
+
             //Add FK_Order_Voucher
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.Voucher)

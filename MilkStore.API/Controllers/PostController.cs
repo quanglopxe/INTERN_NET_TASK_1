@@ -8,6 +8,7 @@ using MilkStore.Core.Base;
 using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
+using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
 
 namespace MilkStore.API.Controllers
@@ -16,8 +17,9 @@ namespace MilkStore.API.Controllers
     [ApiController]
     public class PostController : ControllerBase
     {
-        private readonly IPostService _postService;        
-        public PostController(IPostService postService)
+        private readonly IPostService _postService;
+        private readonly DatabaseContext _context;
+        public PostController(IPostService postService, DatabaseContext context)
         {
             _postService = postService;            
         }        

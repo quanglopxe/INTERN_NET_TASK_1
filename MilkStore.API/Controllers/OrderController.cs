@@ -19,6 +19,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpGet()]
+        [Authorize(Roles = "Admin")]
         public async Task<IEnumerable<Order>> GetAll(string? id)
         {
             return await _orderService.GetAsync(id);
