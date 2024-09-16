@@ -43,12 +43,12 @@ namespace MilkStore.Services.Service
             var result = await userManager.CreateAsync(newUser, userModel.Password);
             if (result.Succeeded)
             {
-                var roleExist = await roleManager.RoleExistsAsync("Member");
+                var roleExist = await roleManager.RoleExistsAsync("Staff");
                 if (!roleExist)
                 {
-                    await roleManager.CreateAsync(new ApplicationRole { Name = "Member" });
+                    await roleManager.CreateAsync(new ApplicationRole { Name = "Staff" });
                 }
-                await userManager.AddToRoleAsync(newUser, "Member");
+                await userManager.AddToRoleAsync(newUser, "Staff");
             }
             return result;
         }
