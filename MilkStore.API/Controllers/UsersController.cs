@@ -21,10 +21,24 @@ namespace MilkStore.API.Controllers
 
         }
         [HttpGet()]
-        public async Task<IEnumerable<User>> GetUsers(Guid? id, int index = 1, int pageSize = 10)
+        public async Task<IEnumerable<ApplicationUser>> GetUsers(string? id, int index = 1, int pageSize = 10)
         {
             var users = await _userService.GetUser(id);
             return users;
+        }
+        [HttpPost("add")]
+        public async Task<IActionResult> AddUser(UserModelView userModel)
+        {
+            var createdBy = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "System";
+
+            var newUser = await _userService.AddUser(userModel, createdBy);
+
+            if (newUser == null)
+            {
+                return BadRequest(new { message = "Failed to create user" });
+            }
+
+            return Ok(newUser);
         }
         //[HttpGet()]
         //public async Task<IActionResult> Login(int index = 1, int pageSize = 10)
@@ -34,7 +48,7 @@ namespace MilkStore.API.Controllers
         //    return Ok("ok");
         //}
         [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateUser(string id, [FromBody] UserModelView userModel)
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserModelView userModel)
         {
             if (!ModelState.IsValid)
             {
@@ -53,7 +67,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpDelete("delete/{userId}")]
-        public async Task<IActionResult> Delete1User(string userId)
+        public async Task<IActionResult> Delete1User(Guid userId)
         {
             var createdBy = User.Identity?.Name ?? "System";
 
@@ -65,19 +79,6 @@ namespace MilkStore.API.Controllers
             return Ok(deletedUser);
         }
 
-        [HttpPost("add")]
-        public async Task<IActionResult> AddUser(UserModelView userModel)
-        {
-            var createdBy = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "System";
 
-            var newUser = await _userService.AddUser(userModel, createdBy);
-
-            if (newUser == null)
-            {
-                return BadRequest(new { message = "Failed to create user" });
-            }
-
-            return Ok(newUser);
-        }
     }
 }

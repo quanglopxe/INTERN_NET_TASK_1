@@ -12,6 +12,8 @@ using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Core.Utils;
 using MilkStore.Repositories.Context;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace MilkStore.Services.Service
 {
@@ -37,7 +39,7 @@ namespace MilkStore.Services.Service
             }
             else
             {
-                var ord =  await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
+                var ord = await _unitOfWork.GetRepository<Order>().Entities.FirstOrDefaultAsync(or => or.Id == id && or.DeletedTime == null);
                 return ord != null ? new List<Order> { ord } : new List<Order>();
             }
         }
@@ -48,7 +50,7 @@ namespace MilkStore.Services.Service
             {
                 UserId = ord.UserId,
                 VoucherId = ord.VoucherId,
-                TotalAmount = ord.TotalAmount,
+                TotalAmount = 0,
                 ShippingAddress = ord.ShippingAddress,
                 Status = ord.Status,
                 PaymentMethod = ord.PaymentMethod,
@@ -63,13 +65,33 @@ namespace MilkStore.Services.Service
             var orderss = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
             orderss.UserId = ord.UserId;
             orderss.VoucherId = ord.VoucherId;
-            orderss.TotalAmount = ord.TotalAmount;
             orderss.ShippingAddress = ord.ShippingAddress;
             orderss.Status = ord.Status;
             orderss.PaymentMethod = ord.PaymentMethod;
             orderss.OrderDate = ord.OrderDate;
             orderss.LastUpdatedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
+            await _unitOfWork.SaveAsync();
+        }
+
+        //Cập nhật TotalAmount
+        public async Task UpdateToTalAmount (string id, double amount)
+        {
+            var ord = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
+            //Tính thành tiền áp dụng ưu đãi
+            var vch = await _unitOfWork.GetRepository<Voucher>().Entities.FirstOrDefaultAsync(vc => vc.Id == ord.VoucherId && vc.DeletedTime == null);
+            if (vch != null)
+            {
+                if (vch.ExpiryDate > ord.OrderDate && vch.LimitSalePrice <= amount && vch.UsedCount < vch.UsingLimit)
+                {
+                    amount = amount - ((amount * vch.SalePercent) / (100 * 1.0));
+                    vch.UsedCount = vch.UsedCount + 1;
+                    await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
+                }
+            }
+
+            ord.TotalAmount += amount;
+            await _unitOfWork.GetRepository<Order>().UpdateAsync(ord);
             await _unitOfWork.SaveAsync();
         }
 
