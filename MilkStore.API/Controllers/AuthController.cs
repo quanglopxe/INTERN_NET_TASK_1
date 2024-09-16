@@ -56,7 +56,7 @@ namespace MilkStore.API.Controllers
             var existingUser = await userService.GetUserByEmail(model.Email);
             if (existingUser != null)
             {
-                return Conflict(new BaseException.ErrorException(409, "Conflict", "User đã tồn tại!"));
+                return BadRequest(new BaseException.ErrorException(400, "BadRequest", "User đã tồn tại!"));
             }
             var result = await userService.CreateUser(model);
             if (result.Succeeded)
