@@ -1,16 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using MilkStore.Contract.Repositories.Entity;
-using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.ResponseDTO;
-using MilkStore.ModelViews.UserModelViews;
-using MilkStore.Repositories.Context;
-using MilkStore.Repositories.Entity;
+
 
 namespace MilkStore.API.Controllers
 {

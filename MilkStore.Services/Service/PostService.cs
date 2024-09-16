@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.ResponseDTO;
@@ -134,6 +135,11 @@ namespace MilkStore.Services.Service
             await _unitOfWork.GetRepository<Post>().UpdateAsync(post);
             await _unitOfWork.SaveAsync();
             return MapToPostResponseDto(post);
+        }
+
+        Task<BasePaginatedList<PostResponseDTO>> IPostService.GetPosts(string? id, int index, int pageSize)
+        {
+            throw new NotImplementedException();
         }
     }
 }
