@@ -76,6 +76,7 @@ namespace MilkStore.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete1User(Guid userId)
         {
+
             var deleteby = User.Identity?.Name ?? "System";
 
             var deletedUser = await _userService.DeleteUser(userId, deleteby);

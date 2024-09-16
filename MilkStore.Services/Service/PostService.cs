@@ -1,12 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
-using MilkStore.Core.Base;
-using MilkStore.Core.Constants;
 using MilkStore.Core.Utils;
-using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
@@ -24,17 +20,17 @@ namespace MilkStore.Services.Service
         private readonly DatabaseContext context;
         public PostService(DatabaseContext context, IUnitOfWork unitOfWork)
         {
-            this.context = context;                        
+            this.context = context;
             _unitOfWork = unitOfWork;
         }
 
         public async Task<PostResponseDTO> CreatePost(PostModelView postModel)
-        {            
+        {
             var newPost = new Post
             {
                 Title = postModel.Title,
-                Content = postModel.Content,   
-                Image = postModel.Image,         
+                Content = postModel.Content,
+                Image = postModel.Image,
                 CreatedTime = CoreHelper.SystemTimeNow,
                 LastUpdatedTime = CoreHelper.SystemTimeNow,
                 DeletedTime = null
@@ -45,7 +41,7 @@ namespace MilkStore.Services.Service
                 newPost.PostProducts = new List<PostProduct>();
 
                 foreach (var productId in postModel.ProductIDs)
-                {                    
+                {
                     var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(productId);
                     if (product != null)
                     {
@@ -88,20 +84,20 @@ namespace MilkStore.Services.Service
         public async Task DeletePost(string id)
         {
             var post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
-            if(post == null)
+            if (post == null)
             {
                 throw new KeyNotFoundException($"Post with ID {id} was not found.");
             }
             post.DeletedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<Post>().UpdateAsync(post);
-            await _unitOfWork.SaveAsync();            
+            await _unitOfWork.SaveAsync();
 
         }
 
         public async Task<IEnumerable<PostResponseDTO>> GetPosts(string? id)
         {
-            if(id == null)
-            {                
+            if (id == null)
+            {
                 var listPosts = await _unitOfWork.GetRepository<Post>().Entities
                     .Where(post => post.DeletedTime == null)
                     .ToListAsync();
@@ -112,19 +108,19 @@ namespace MilkStore.Services.Service
             else
             {
                 var post = await _unitOfWork.GetRepository<Post>().Entities.FirstOrDefaultAsync(post => post.Id == id && post.DeletedTime == null);
-                if(post == null)
+                if (post == null)
                 {
                     throw new KeyNotFoundException($"Post with ID {id} was not found.");
-                }                
+                }
                 return new List<PostResponseDTO> { MapToPostResponseDto(post) };
-            }            
+            }
 
         }
 
         public async Task<PostResponseDTO> UpdatePost(string id, PostModelView postModel)
         {
             var post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
-            if(post == null)
+            if (post == null)
             {
                 throw new KeyNotFoundException($"Post with ID {id} was not found.");
             }
@@ -132,7 +128,7 @@ namespace MilkStore.Services.Service
             post.Content = postModel.Content;
             post.Image = postModel.Image;
             post.DeletedTime = postModel.DeletedTime;
-            post.LastUpdatedTime = CoreHelper.SystemTimeNow;         
+            post.LastUpdatedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<Post>().UpdateAsync(post);
             await _unitOfWork.SaveAsync();
             return MapToPostResponseDto(post);
