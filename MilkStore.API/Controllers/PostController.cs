@@ -18,11 +18,9 @@ namespace MilkStore.API.Controllers
     public class PostController : ControllerBase
     {
         private readonly IPostService _postService;
-        private readonly IUnitOfWork _unitOfWork;
-        public PostController(IPostService postService, IUnitOfWork unitOfWork)
+        public PostController(IPostService postService)
         {
             _postService = postService;    
-            _unitOfWork = unitOfWork;
         }        
         [HttpGet()]
         public async Task<IActionResult> GetPost(string? id, int index = 1, int pageSize = 10)
