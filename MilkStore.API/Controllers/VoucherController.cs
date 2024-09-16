@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
@@ -24,6 +25,7 @@ namespace MilkStore.API.Controllers
             IList<Voucher> vouchers = (IList<Voucher>)await _voucherService.GetVouchers(id);
             return Ok(BaseResponse<IList<Voucher>>.OkResponse(vouchers));
         }
+        [Authorize(Roles = "Staff")]
         [HttpPost()]
         public async Task<IActionResult> CreateVoucher(VoucherModelView voucherModel)
         {
@@ -34,6 +36,7 @@ namespace MilkStore.API.Controllers
             Voucher voucher = await _voucherService.CreateVoucher(voucherModel);
             return Ok(BaseResponse<Voucher>.OkResponse(voucher));
         }
+        [Authorize(Roles = "Staff")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateVoucher(string id, VoucherModelView voucherModel)
         {
@@ -44,6 +47,7 @@ namespace MilkStore.API.Controllers
             Voucher voucher = await _voucherService.UpdateVoucher(id, voucherModel);
             return Ok(BaseResponse<Voucher>.OkResponse(voucher));
         }
+        [Authorize(Roles = "Staff")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteVoucher(string id)
         {

@@ -12,7 +12,7 @@ namespace MilkStore.Contract.Repositories.Entity
         public int UsingLimit { get; set; }
         public int UsedCount { get; set; }
         public int Status { get; set; }
-        public int Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         //public ICollection<Order> Orders { get; set; }
     }
