@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MilkStore.Repositories.Migrations
 {
     /// <inheritdoc />
-    public partial class updateDB : Migration
+    public partial class test : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -289,7 +289,7 @@ namespace MilkStore.Repositories.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     VoucherId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -307,12 +307,6 @@ namespace MilkStore.Repositories.Migrations
                 {
                     table.PrimaryKey("PK_Orders", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Orders_ApplicationUser_UserId",
-                        column: x => x.UserId,
-                        principalTable: "ApplicationUser",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
                         name: "FK_Orders_Vouchers_VoucherId",
                         column: x => x.VoucherId,
                         principalTable: "Vouchers",
@@ -325,7 +319,7 @@ namespace MilkStore.Repositories.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     OrderID = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProductID = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProductID = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     UnitPrice = table.Column<double>(type: "float", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -344,6 +338,12 @@ namespace MilkStore.Repositories.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderDetails_Products_ProductID",
+                        column: x => x.ProductID,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -352,9 +352,9 @@ namespace MilkStore.Repositories.Migrations
                 column: "OrderID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Orders_UserId",
-                table: "Orders",
-                column: "UserId");
+                name: "IX_OrderDetails_ProductID",
+                table: "OrderDetails",
+                column: "ProductID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_VoucherId",
@@ -380,6 +380,9 @@ namespace MilkStore.Repositories.Migrations
 
             migrationBuilder.DropTable(
                 name: "ApplicationRoleClaims");
+
+            migrationBuilder.DropTable(
+                name: "ApplicationUser");
 
             migrationBuilder.DropTable(
                 name: "ApplicationUserClaims");
@@ -410,9 +413,6 @@ namespace MilkStore.Repositories.Migrations
 
             migrationBuilder.DropTable(
                 name: "Products");
-
-            migrationBuilder.DropTable(
-                name: "ApplicationUser");
 
             migrationBuilder.DropTable(
                 name: "Vouchers");

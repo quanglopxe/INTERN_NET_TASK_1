@@ -1,4 +1,5 @@
 ﻿using MilkStore.Contract.Repositories.Entity;
+using MilkStore.ModelViews.PreOrdersModelView;
 using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.ModelViews.ReviewsModelView;
 using System;
@@ -14,6 +15,7 @@ namespace MilkStore.Contract.Services.Interface
         Task<IEnumerable<Review>> GetReviews(string? id);
         Task<Review> CreateReviews(ReviewsModel reviewsModel);
         Task<Review> UpdateReviews(string id, ReviewsModel reviewsModel);
-        Task DeleteReviews(string id);
+        Task<Review> DeletReviews(string id);
+        Task<IList<ReviewsModel>> Pagination(int pageSize, int pageNumber);
     }
 }

@@ -12,6 +12,7 @@ namespace MilkStore.Contract.Repositories.Entity
         public string ImageUrl { get; set; }
 
         public virtual ICollection<PostProduct> PostProducts { get; set; } = new List<PostProduct>();
+        public virtual ICollection<OrderDetails> OrderDetail { get; set; }
 
     }
 }

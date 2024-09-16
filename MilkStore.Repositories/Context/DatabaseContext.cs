@@ -23,6 +23,7 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<Review> Reviews => Set<Review>();
         public virtual DbSet<OrderDetails> OrderDetails => Set<OrderDetails>();
         public virtual DbSet<Voucher> Vouchers => Set<Voucher>();
+        public virtual DbSet<PreOrders> PreOrders => Set<PreOrders>();
 
 
         #endregion
@@ -32,7 +33,7 @@ namespace MilkStore.Repositories.Context
             //    .HasMany(p => p.Products)
             //    .WithMany(p => p.Posts)
             //    .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table
-            
+
             //Add FK_Order_Voucher
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.Voucher)
@@ -47,10 +48,19 @@ namespace MilkStore.Repositories.Context
                 .HasForeignKey(od => od.OrderID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+<<<<<<< HEAD
             modelBuilder.Entity<Order>()
             .HasOne(o => o.User)
             .WithMany(u => u.Orders)
             .HasForeignKey(o => o.UserId);
+=======
+            //Add FK_Product_OrderDetails
+            modelBuilder.Entity<Products>()
+               .HasMany(o => o.OrderDetail)
+               .WithOne(p => p.Products)
+               .HasForeignKey(p => p.ProductID)
+               .OnDelete(DeleteBehavior.Cascade);
+>>>>>>> 76ca63e67dee16c7e8d9c133d60ca35227a7184b
 
             modelBuilder.Entity<ApplicationUserLogins>()
                 .HasKey(l => new { l.UserId, l.LoginProvider, l.ProviderKey });

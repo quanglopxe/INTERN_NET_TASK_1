@@ -12,13 +12,8 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-<<<<<<<< HEAD:MilkStore.Repositories/Migrations/20240916090127_AddDb.Designer.cs
-    [Migration("20240916090127_AddDb")]
-    partial class AddDb
-========
-    [Migration("20240916091847_updateDB")]
-    partial class updateDB
->>>>>>>> 76ca63e67dee16c7e8d9c133d60ca35227a7184b:MilkStore.Repositories/Migrations/20240916091847_updateDB.Designer.cs
+    [Migration("20240916084144_initTable")]
+    partial class initTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -297,15 +292,14 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<double>("TotalAmount")
                         .HasColumnType("float");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("VoucherId")
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.HasIndex("VoucherId");
 
@@ -658,18 +652,10 @@ namespace MilkStore.Repositories.Migrations
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Order", b =>
                 {
-                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "User")
-                        .WithMany("Orders")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("MilkStore.Contract.Repositories.Entity.Voucher", "Voucher")
                         .WithMany("Orders")
                         .HasForeignKey("VoucherId")
                         .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("User");
 
                     b.Navigation("Voucher");
                 });
@@ -720,11 +706,6 @@ namespace MilkStore.Repositories.Migrations
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Voucher", b =>
-                {
-                    b.Navigation("Orders");
-                });
-
-            modelBuilder.Entity("MilkStore.Repositories.Entity.ApplicationUser", b =>
                 {
                     b.Navigation("Orders");
                 });

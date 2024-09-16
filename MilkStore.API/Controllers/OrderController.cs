@@ -22,7 +22,12 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpGet()]
+<<<<<<< HEAD
         public async Task<IActionResult> GetAll(string? id, int page = 1, int pageSize = 10)
+=======
+        [Authorize(Roles = "Admin")]
+        public async Task<IEnumerable<Order>> GetAll(string? id)
+>>>>>>> 76ca63e67dee16c7e8d9c133d60ca35227a7184b
         {
             IList<OrderResponseDTO> ord = (IList<OrderResponseDTO>)await _orderService.GetAsync(id);
             return Ok(BaseResponse<IList<OrderResponseDTO>>.OkResponse(ord));
