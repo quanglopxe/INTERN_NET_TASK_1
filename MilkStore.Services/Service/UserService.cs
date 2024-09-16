@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
@@ -36,7 +37,7 @@ namespace MilkStore.Services.Service
             {
                 UserName = userModel.Username,
                 Email = userModel.Email,
-                PhoneNumber = userModel.PhoneNumber                
+                PhoneNumber = userModel.PhoneNumber
             };
 
             var result = await userManager.CreateAsync(newUser, userModel.Password);
@@ -52,24 +53,23 @@ namespace MilkStore.Services.Service
             return result;
         }
         // Cập nhật thông tin người dùng
-        public async Task<User> UpdateUser(string id, UserModelView userModel, string updatedBy)
+        public async Task<ApplicationUser> UpdateUser(Guid id, UserModelView userModel, string updatedBy)
         {
-            var user = await _unitOfWork.GetRepository<User>().GetByIdAsync(id);
+            var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(id);
             if (user == null)
             {
                 throw new KeyNotFoundException($"User with ID {id} was not found.");
             }
 
-            user.FullName = userModel.FullName;
+            user.UserName = userModel.UserName;
             user.Email = userModel.Email;
-            user.PasswordHash = userModel.PasswordHash;
-            user.Address = userModel.Address;
+          //  user.PasswordHash = userModel.PasswordHash;
             user.PhoneNumber = userModel.PhoneNumber;
-            user.Points = userModel.Points;
+            user.Points = 0;
             user.LastUpdatedTime = CoreHelper.SystemTimeNow;
             user.LastUpdatedBy = updatedBy;
 
-            await _unitOfWork.GetRepository<User>().UpdateAsync(user);
+            await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
             await _unitOfWork.SaveAsync();
 
             return user;
@@ -79,52 +79,50 @@ namespace MilkStore.Services.Service
 
 
         // Xóa người dùng
-        public async Task<User> DeleteUser(string userId, string createdBy)
+        public async Task<ApplicationUser> DeleteUser(Guid userId, string deleteby)
         {
-            var user = await _unitOfWork.GetRepository<User>().GetByIdAsync(userId);
+            var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId);
             if (user == null)
             {
                 return null; 
             }
 
             user.DeletedTime = DateTimeOffset.UtcNow;
-            user.DeletedBy = createdBy;
+            user.DeletedBy = deleteby;
 
-            await _unitOfWork.GetRepository<User>().UpdateAsync(user);
+            await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
             await _unitOfWork.SaveAsync();
 
             return user;
         }
 
         // Lấy thông tin người dùng theo ID
-        public async Task<IEnumerable<User>> GetUser(Guid? id)
+        public async Task<IEnumerable<ApplicationUser>> GetUser(string? id)
         {
             if (id == null)
             {
-                return await _unitOfWork.GetRepository<User>().GetAllAsync();
+                return await _unitOfWork.GetRepository<ApplicationUser>().Entities.Where(u => u.DeletedTime == null).ToListAsync();
             }
             else
             {
-                var user = await _unitOfWork.GetRepository<User>().GetByIdAsync(id.Value);
-                return user != null ? new List<User> { user } : new List<User>();
+                var user = await _unitOfWork.GetRepository<ApplicationUser>().Entities.FirstOrDefaultAsync(u => u.Id.ToString() == id && u.DeletedTime == null);
+                return user != null ? new List<ApplicationUser> { user } : new List<ApplicationUser>();
             }
         }
-        public async Task<User> AddUser(UserModelView userModel, string createdBy)
+        public async Task<ApplicationUser> AddUser(UserModelView userModel, string createdBy)
         {
-            var newUser = new User
+            var newUser = new ApplicationUser
             {
-                FullName = userModel.FullName,
+                UserName = userModel.UserName,
                 Email = userModel.Email,
                 PasswordHash = userModel.PasswordHash,
-                Address = userModel.Address,
-                PhoneNumber = userModel.PhoneNumber,
+                PhoneNumber = userModel.PhoneNumber,    
                 Points = 0,
-                CreatedAt = DateTime.UtcNow,
                 CreatedBy = createdBy, 
                 CreatedTime = DateTimeOffset.UtcNow
             };
 
-            await _unitOfWork.GetRepository<User>().InsertAsync(newUser);
+            await _unitOfWork.GetRepository<ApplicationUser>().InsertAsync(newUser);
             await _unitOfWork.SaveAsync();
 
             return newUser;

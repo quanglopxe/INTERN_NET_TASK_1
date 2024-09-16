@@ -1,4 +1,5 @@
 ﻿using MilkStore.Core.Base;
+using System.Text.Json.Serialization;
 
 namespace MilkStore.Contract.Repositories.Entity
 {
@@ -9,6 +10,8 @@ namespace MilkStore.Contract.Repositories.Entity
         public string Description { get; set; }
         public int QuantityInStock { get; set; }
         public string ImageUrl { get; set; }
+
+        public virtual ICollection<PostProduct> PostProducts { get; set; } = new List<PostProduct>();
 
     }
 }

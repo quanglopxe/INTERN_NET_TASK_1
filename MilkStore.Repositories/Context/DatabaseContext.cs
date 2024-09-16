@@ -17,13 +17,12 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<ApplicationUserLogins> ApplicationUserLogins => Set<ApplicationUserLogins>();
         public virtual DbSet<ApplicationRoleClaims> ApplicationRoleClaims => Set<ApplicationRoleClaims>();
         public virtual DbSet<ApplicationUserTokens> ApplicationUserTokens => Set<ApplicationUserTokens>();
-
         public virtual DbSet<Products> Products => Set<Products>();
-        public virtual DbSet<UserInfo> UserInfos => Set<UserInfo>();
-        public virtual DbSet<User> Users => Set<User>();
         public virtual DbSet<Post> Posts => Set<Post>();
         public virtual DbSet<Order> Orders => Set<Order>();
         public virtual DbSet<Review> Reviews => Set<Review>();
+        public virtual DbSet<OrderDetails> OrderDetails => Set<OrderDetails>();
+        public virtual DbSet<Voucher> Vouchers => Set<Voucher>();
         #endregion
 
         //protected override void OnModelCreating(ModelBuilder modelBuilder)

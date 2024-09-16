@@ -9,12 +9,10 @@ namespace MilkStore.ModelViews.UserModelViews
 {
     public class UserModelView
     {
-        [Key]
-        public Guid ID { get; set; }
-
+  
         [Required]
         [StringLength(100, MinimumLength = 3)]
-        public string FullName { get; set; }
+        public string UserName { get; set; }
 
         [Required]
         [EmailAddress]
@@ -22,15 +20,9 @@ namespace MilkStore.ModelViews.UserModelViews
 
         [Required]
         [StringLength(255, MinimumLength = 6)]
-        public string PasswordHash { get; set; }
-
-        public string Address { get; set; }
+        public string? PasswordHash { get; set; }
 
         [Phone]
-        public string PhoneNumber { get; set; }
-
-        public int Points { get; set; }
-
-        public DateTime CreatedAt { get; set; }
+        public string? PhoneNumber { get; set; }
     }
 }
