@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
 using MilkStore.Services.Service;
 using System.Security.Claims;
@@ -44,23 +46,23 @@ namespace MilkStore.API.Controllers
 
             if (updatedUser == null)
             {
-                return NotFound(new { message = "User not found" }); 
+                return NotFound(new { message = "User not found" });
             }
 
-            return Ok(updatedUser); 
+            return Ok(updatedUser);
         }
 
         [HttpDelete("delete/{userId}")]
         public async Task<IActionResult> Delete1User(string userId)
         {
-            var createdBy = User.Identity?.Name ?? "System"; 
+            var createdBy = User.Identity?.Name ?? "System";
 
             var deletedUser = await _userService.DeleteUser(userId, createdBy);
             if (deletedUser == null)
             {
-                return NotFound(new { message = "User not found" }); 
+                return NotFound(new { message = "User not found" });
             }
-            return Ok(deletedUser); 
+            return Ok(deletedUser);
         }
 
         [HttpPost("add")]
