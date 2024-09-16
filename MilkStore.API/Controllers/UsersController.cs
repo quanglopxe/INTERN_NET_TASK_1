@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 using MilkStore.Contract.Repositories.Entity;
@@ -30,6 +31,7 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<IList<UserResponeseDTO>>.OkResponse(users));
         }
         [HttpPost("add")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddUser(UserModelView userModel)
         {
             var createdBy = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "System";
@@ -51,6 +53,7 @@ namespace MilkStore.API.Controllers
         //    return Ok("ok");
         //}
         [HttpPut("update/{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserModelView userModel)
         {
             if (!ModelState.IsValid)
@@ -70,6 +73,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpDelete("delete/{userId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete1User(Guid userId)
         {
             var deleteby = User.Identity?.Name ?? "System";
