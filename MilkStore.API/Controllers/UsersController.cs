@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
 using MilkStore.Services.Service;
@@ -22,10 +24,10 @@ namespace MilkStore.API.Controllers
 
         }
         [HttpGet()]
-        public async Task<IEnumerable<ApplicationUser>> GetUsers(string? id, int index = 1, int pageSize = 10)
+        public async Task<IActionResult> GetUsers(string? id, int index = 1, int pageSize = 10)
         {
-            var users = await _userService.GetUser(id);
-            return users;
+            IList<UserResponeseDTO> users = (IList<UserResponeseDTO>)await _userService.GetUser(id);  
+            return Ok(BaseResponse<IList<UserResponeseDTO>>.OkResponse(users));
         }
         [HttpPost("add")]
         public async Task<IActionResult> AddUser(UserModelView userModel)
@@ -61,23 +63,23 @@ namespace MilkStore.API.Controllers
 
             if (updatedUser == null)
             {
-                return NotFound(new { message = "User not found" }); 
+                return NotFound(new { message = "User not found" });
             }
 
-            return Ok(updatedUser); 
+            return Ok(updatedUser);
         }
 
         [HttpDelete("delete/{userId}")]
         public async Task<IActionResult> Delete1User(Guid userId)
         {
-            var createdBy = User.Identity?.Name ?? "System"; 
+            var deleteby = User.Identity?.Name ?? "System";
 
-            var deletedUser = await _userService.DeleteUser(userId, createdBy);
+            var deletedUser = await _userService.DeleteUser(userId, deleteby);
             if (deletedUser == null)
             {
-                return NotFound(new { message = "User not found" }); 
+                return NotFound(new { message = "User not found" });
             }
-            return Ok(deletedUser); 
+            return Ok(deletedUser);
         }
 
 

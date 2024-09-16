@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MilkStore.Repositories.Migrations
 {
     /// <inheritdoc />
-    public partial class AddDb : Migration
+    public partial class initTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

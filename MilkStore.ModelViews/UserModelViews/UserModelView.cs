@@ -17,7 +17,9 @@ namespace MilkStore.ModelViews.UserModelViews
         [Required]
         [EmailAddress]
         public string Email { get; set; }
-
+        [Required]
+        [StringLength(255, MinimumLength = 6)]
+        public string? Password { get; set; }
         [Required]
         [StringLength(255, MinimumLength = 6)]
         public string? PasswordHash { get; set; }
