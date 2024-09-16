@@ -11,20 +11,23 @@ using System.Text;
 using System.Threading.Tasks;
 using MilkStore.Core.Utils;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.ModelViews.OrderModelViews;
 
 namespace MilkStore.Services.Service
 {
     public class OrderDetailsService : IOrderDetailsService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IOrderService _orderService;
         private readonly DatabaseContext _context;
         protected readonly DbSet<OrderDetails> _dbSet;
 
-        public OrderDetailsService(IUnitOfWork unitOfWork, DatabaseContext context)
+        public OrderDetailsService(IUnitOfWork unitOfWork, DatabaseContext context, IOrderService orderService)
         {
             _unitOfWork = unitOfWork;
             _context = context;
             _dbSet = _context.Set<OrderDetails>();
+            _orderService = orderService;
         }
 
         // Create OrderDetails
@@ -38,7 +41,7 @@ namespace MilkStore.Services.Service
                 UnitPrice = model.UnitPrice,
                 //TotalAmount = model.Quantity * model.UnitPrice
             };
-
+            await _orderService.UpdateToTalAmount(orderDetails.OrderID, orderDetails.TotalAmount);
             await _dbSet.AddAsync(orderDetails);
             await _unitOfWork.SaveAsync();
         }
@@ -77,7 +80,7 @@ namespace MilkStore.Services.Service
                 orderDetails.Quantity = model.Quantity;
                 orderDetails.UnitPrice = model.UnitPrice;
                 //orderDetails.TotalAmount = model.Quantity * model.UnitPrice; // tính tự động
-
+                //await _orderService.UpdateToTalAmount(orderDetails.OrderID, orderDetails.TotalAmount);
                 _dbSet.Update(orderDetails);
                 await _unitOfWork.SaveAsync();
             }
