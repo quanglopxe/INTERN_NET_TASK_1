@@ -6,6 +6,7 @@ using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.AuthModelViews;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
@@ -63,7 +64,7 @@ namespace MilkStore.Services.Service
 
             user.UserName = userModel.UserName;
             user.Email = userModel.Email;
-          //  user.PasswordHash = userModel.PasswordHash;
+            //  user.PasswordHash = userModel.PasswordHash;
             user.PhoneNumber = userModel.PhoneNumber;
             user.Points = 0;
             user.LastUpdatedTime = CoreHelper.SystemTimeNow;
@@ -79,12 +80,12 @@ namespace MilkStore.Services.Service
 
 
         // Xóa người dùng
-        public async Task<ApplicationUser> DeleteUser(Guid userId, string deleteby)
+        public async Task<UserResponeseDTO> DeleteUser(Guid userId, string deleteby)
         {
             var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId);
             if (user == null)
             {
-                return null; 
+                return null;
             }
 
             user.DeletedTime = DateTimeOffset.UtcNow;
@@ -93,42 +94,67 @@ namespace MilkStore.Services.Service
             await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
             await _unitOfWork.SaveAsync();
 
-            return user;
+            return MapToUserResponseDto(user);
         }
 
         // Lấy thông tin người dùng theo ID
-        public async Task<IEnumerable<ApplicationUser>> GetUser(string? id)
+        public async Task<IEnumerable<UserResponeseDTO>> GetUser(string? id)
         {
             if (id == null)
             {
-                return await _unitOfWork.GetRepository<ApplicationUser>().Entities.Where(u => u.DeletedTime == null).ToListAsync();
+                var user = await _unitOfWork.GetRepository<ApplicationUser>().Entities
+                    .Where(u => u.DeletedTime == null)
+                    .ToListAsync();
+
+                // Ánh xạ listPosts sang kiểu trả về khác
+                return user.Select(MapToUserResponseDto).ToList();
             }
             else
             {
                 var user = await _unitOfWork.GetRepository<ApplicationUser>().Entities.FirstOrDefaultAsync(u => u.Id.ToString() == id && u.DeletedTime == null);
-                return user != null ? new List<ApplicationUser> { user } : new List<ApplicationUser>();
+                if (user == null)
+                {
+                    throw new KeyNotFoundException($"Post with ID {id} was not found.");
+                }
+                return new List<UserResponeseDTO> { MapToUserResponseDto(user) };
             }
         }
-        public async Task<ApplicationUser> AddUser(UserModelView userModel, string createdBy)
+
+        private UserResponeseDTO MapToUserResponseDto(ApplicationUser user)
+        {
+            return new UserResponeseDTO
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Email = user.Email,
+                Points = user.Points,
+                CreatedBy = user.CreatedBy,
+                DeletedBy = user.DeletedBy,
+                LastUpdatedTime = user.LastUpdatedTime,
+                CreatedTime = user.CreatedTime,
+       
+            };
+        }
+        public async Task<UserResponeseDTO> AddUser(UserModelView userModel, string createdBy)
         {
             var newUser = new ApplicationUser
             {
                 UserName = userModel.UserName,
                 Email = userModel.Email,
+                Password= userModel.Password,
                 PasswordHash = userModel.PasswordHash,
-                PhoneNumber = userModel.PhoneNumber,    
+                PhoneNumber = userModel.PhoneNumber,
                 Points = 0,
-                CreatedBy = createdBy, 
+                CreatedBy = createdBy,
                 CreatedTime = DateTimeOffset.UtcNow
             };
 
             await _unitOfWork.GetRepository<ApplicationUser>().InsertAsync(newUser);
             await _unitOfWork.SaveAsync();
 
-            return newUser;
+            return MapToUserResponseDto(newUser);
         }
     }
 
 
- }
-
+}

@@ -16,5 +16,6 @@ namespace MilkStore.Contract.Repositories.Entity
         public double TotalAmount => Quantity * UnitPrice;
 
         public virtual Order Order { get; set; }
+        public virtual Products Products { get; set; }
     }
 }
