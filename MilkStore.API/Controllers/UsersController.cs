@@ -1,7 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core.Base;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
 using MilkStore.Services.Service;
@@ -21,12 +25,13 @@ namespace MilkStore.API.Controllers
 
         }
         [HttpGet()]
-        public async Task<IEnumerable<ApplicationUser>> GetUsers(string? id, int index = 1, int pageSize = 10)
+        public async Task<IActionResult> GetUsers(string? id, int index = 1, int pageSize = 10)
         {
-            var users = await _userService.GetUser(id);
-            return users;
+            IList<UserResponeseDTO> users = (IList<UserResponeseDTO>)await _userService.GetUser(id);  
+            return Ok(BaseResponse<IList<UserResponeseDTO>>.OkResponse(users));
         }
         [HttpPost("add")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddUser(UserModelView userModel)
         {
             var createdBy = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "System";
@@ -48,6 +53,7 @@ namespace MilkStore.API.Controllers
         //    return Ok("ok");
         //}
         [HttpPut("update/{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserModelView userModel)
         {
             if (!ModelState.IsValid)
@@ -67,11 +73,13 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpDelete("delete/{userId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete1User(Guid userId)
         {
-            var createdBy = User.Identity?.Name ?? "System";
 
-            var deletedUser = await _userService.DeleteUser(userId, createdBy);
+            var deleteby = User.Identity?.Name ?? "System";
+
+            var deletedUser = await _userService.DeleteUser(userId, deleteby);
             if (deletedUser == null)
             {
                 return NotFound(new { message = "User not found" });
