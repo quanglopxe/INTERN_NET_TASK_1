@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.ResponseDTO;
@@ -19,15 +21,21 @@ namespace MilkStore.API.Controllers
         private readonly DatabaseContext _context;
         public PostController(IPostService postService, DatabaseContext context)
         {
-            _postService = postService;
-            _context = context;
-        }
+            _postService = postService;            
+        }        
         [HttpGet()]
-        public async Task<IActionResult> GetPost(string? id, int index = 1, int pageSize = 10)
-        {
+        public async Task<IActionResult> GetPost(string? id, int index = 1, int pageSize = 5)
+        {                        
             IList<PostResponseDTO> posts = (IList<PostResponseDTO>)await _postService.GetPosts(id);
-            return Ok(BaseResponse<IList<PostResponseDTO>>.OkResponse(posts));
+            int totalItems = posts.Count;
+            var pagedPosts = posts.Skip((index - 1) * pageSize).Take(pageSize).ToList();
+
+            // Tạo danh sách phân trang
+            var paginatedList = new BasePaginatedList<PostResponseDTO>(pagedPosts, totalItems, index, pageSize);
+
+            return Ok(BaseResponse<BasePaginatedList<PostResponseDTO>>.OkResponse(paginatedList));
         }
+        [Authorize(Roles = "Staff")]
         [HttpPost()]
         public async Task<IActionResult> CreatePost(PostModelView postModel)
         {
@@ -38,6 +46,7 @@ namespace MilkStore.API.Controllers
             PostResponseDTO post = await _postService.CreatePost(postModel);
             return Ok(BaseResponse<PostResponseDTO>.OkResponse(post));
         }
+        [Authorize(Roles = "Staff")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePost(string id, PostModelView postModel)
         {
@@ -48,6 +57,7 @@ namespace MilkStore.API.Controllers
             PostResponseDTO post = await _postService.UpdatePost(id, postModel);
             return Ok(BaseResponse<PostResponseDTO>.OkResponse(post));
         }
+        [Authorize(Roles = "Staff")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePost(string id)
         {
