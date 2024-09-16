@@ -23,14 +23,36 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<Review> Reviews => Set<Review>();
         public virtual DbSet<OrderDetails> OrderDetails => Set<OrderDetails>();
         public virtual DbSet<Voucher> Vouchers => Set<Voucher>();
-        #endregion
 
-        //protected override void OnModelCreating(ModelBuilder modelBuilder)
-        //{
-        //    modelBuilder.Entity<Post>()
-        //        .HasMany(p => p.Products)
-        //        .WithMany(p => p.Posts)
-        //        .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table
-        //}
+
+        #endregion
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            //modelBuilder.Entity<Post>()
+            //    .HasMany(p => p.Products)
+            //    .WithMany(p => p.Posts)
+            //    .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table
+            
+            //Add FK_Order_Voucher
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.Voucher)
+                .WithMany(v => v.Orders)
+                .HasForeignKey(o => o.VoucherId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            //Add FK_Order_OrderDetails
+            modelBuilder.Entity<Order>()
+                .HasMany(o => o.OrderDetailss)
+                .WithOne(od => od.Order)
+                .HasForeignKey(od => od.OrderID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ApplicationUserLogins>()
+                .HasKey(l => new { l.UserId, l.LoginProvider, l.ProviderKey });
+            modelBuilder.Entity<ApplicationUserRoles>()
+                .HasKey(ur => new { ur.UserId, ur.RoleId });
+            modelBuilder.Entity<ApplicationUserTokens>()
+            .HasKey(t => new { t.UserId, t.LoginProvider, t.Name });
+        }
     }
 }

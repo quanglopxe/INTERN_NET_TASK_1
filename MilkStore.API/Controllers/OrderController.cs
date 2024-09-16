@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MilkStore.ModelViews.OrderModelViews;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Contract.Repositories.Entity;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MilkStore.API.Controllers
 {
@@ -23,7 +24,9 @@ namespace MilkStore.API.Controllers
             return await _orderService.GetAsync(id);
         }
 
+
         [HttpPost]
+        //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Add(OrderModelView item)
         {
             await _orderService.AddAsync(item);
@@ -31,6 +34,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpPut("{id}")]
+        //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Update(string id, OrderModelView item)
         {
             var items = await _orderService.GetAsync(id);
@@ -43,6 +47,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Delete(string id)
         {
             await _orderService.DeleteAsync(id);

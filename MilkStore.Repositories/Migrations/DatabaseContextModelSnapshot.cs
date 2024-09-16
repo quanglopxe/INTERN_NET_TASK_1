@@ -32,7 +32,6 @@ namespace MilkStore.Repositories.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CreatedBy")
@@ -54,21 +53,14 @@ namespace MilkStore.Repositories.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NormalizedName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("RoleNameIndex")
-                        .HasFilter("[NormalizedName] IS NOT NULL");
-
-                    b.ToTable("AspNetRoles", (string)null);
+                    b.ToTable("ApplicationRole");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationRoleClaims", b =>
@@ -108,9 +100,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("AspNetRoleClaims", (string)null);
+                    b.ToTable("ApplicationRoleClaims");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserClaims", b =>
@@ -150,13 +140,14 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("AspNetUserClaims", (string)null);
+                    b.ToTable("ApplicationUserClaims");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserLogins", b =>
                 {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("LoginProvider")
                         .HasColumnType("nvarchar(450)");
 
@@ -184,14 +175,9 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<string>("ProviderDisplayName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.HasKey("UserId", "LoginProvider", "ProviderKey");
 
-                    b.HasKey("LoginProvider", "ProviderKey");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("AspNetUserLogins", (string)null);
+                    b.ToTable("ApplicationUserLogins");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserRoles", b =>
@@ -222,9 +208,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("UserId", "RoleId");
 
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("AspNetUserRoles", (string)null);
+                    b.ToTable("ApplicationUserRoles");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserTokens", b =>
@@ -261,7 +245,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
-                    b.ToTable("AspNetUserTokens", (string)null);
+                    b.ToTable("ApplicationUserTokens");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Order", b =>
@@ -305,13 +289,16 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<double>("TotalAmount")
                         .HasColumnType("float");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("VoucherId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("VoucherId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("VoucherId");
 
                     b.ToTable("Orders");
                 });
@@ -341,7 +328,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.Property<string>("OrderID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ProductID")
                         .IsRequired()
@@ -354,6 +341,8 @@ namespace MilkStore.Repositories.Migrations
                         .HasColumnType("float");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrderID");
 
                     b.ToTable("OrderDetails");
                 });
@@ -590,7 +579,6 @@ namespace MilkStore.Repositories.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CreatedBy")
@@ -606,8 +594,7 @@ namespace MilkStore.Repositories.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
@@ -625,12 +612,10 @@ namespace MilkStore.Repositories.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NormalizedUserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Password")
                         .IsRequired()
@@ -655,71 +640,32 @@ namespace MilkStore.Repositories.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("UserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
-
-                    b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasDatabaseName("UserNameIndex")
-                        .HasFilter("[NormalizedUserName] IS NOT NULL");
-
-                    b.ToTable("AspNetUsers", (string)null);
+                    b.ToTable("ApplicationUser");
                 });
 
-            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationRoleClaims", b =>
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Order", b =>
                 {
-                    b.HasOne("MilkStore.Contract.Repositories.Entity.ApplicationRole", null)
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("MilkStore.Contract.Repositories.Entity.Voucher", "Voucher")
+                        .WithMany("Orders")
+                        .HasForeignKey("VoucherId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Voucher");
                 });
 
-            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserClaims", b =>
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.OrderDetails", b =>
                 {
-                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserLogins", b =>
-                {
-                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserRoles", b =>
-                {
-                    b.HasOne("MilkStore.Contract.Repositories.Entity.ApplicationRole", null)
-                        .WithMany()
-                        .HasForeignKey("RoleId")
+                    b.HasOne("MilkStore.Contract.Repositories.Entity.Order", "Order")
+                        .WithMany("OrderDetailss")
+                        .HasForeignKey("OrderID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserTokens", b =>
-                {
-                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.PostProduct", b =>
@@ -741,6 +687,11 @@ namespace MilkStore.Repositories.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Order", b =>
+                {
+                    b.Navigation("OrderDetailss");
+                });
+
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Post", b =>
                 {
                     b.Navigation("PostProducts");
@@ -749,6 +700,11 @@ namespace MilkStore.Repositories.Migrations
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Products", b =>
                 {
                     b.Navigation("PostProducts");
+                });
+
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Voucher", b =>
+                {
+                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }
