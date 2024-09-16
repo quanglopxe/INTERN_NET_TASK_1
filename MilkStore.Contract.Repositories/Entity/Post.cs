@@ -1,5 +1,4 @@
 ﻿using MilkStore.Core.Base;
-using System.Text.Json.Serialization;
 
 namespace MilkStore.Contract.Repositories.Entity
 {

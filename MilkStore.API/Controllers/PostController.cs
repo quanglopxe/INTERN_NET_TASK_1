@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Repositories.Entity;
+using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core;
 using MilkStore.Core.Base;
@@ -16,22 +17,18 @@ namespace MilkStore.API.Controllers
     [ApiController]
     public class PostController : ControllerBase
     {
-        private readonly IPostService _postService;        
-        public PostController(IPostService postService)
+        private readonly IPostService _postService;
+        private readonly IUnitOfWork _unitOfWork;
+        public PostController(IPostService postService, IUnitOfWork unitOfWork)
         {
-            _postService = postService;            
+            _postService = postService;    
+            _unitOfWork = unitOfWork;
         }        
         [HttpGet()]
-        public async Task<IActionResult> GetPost(string? id, int index = 1, int pageSize = 5)
-        {                        
-            IList<PostResponseDTO> posts = (IList<PostResponseDTO>)await _postService.GetPosts(id);
-            int totalItems = posts.Count;
-            var pagedPosts = posts.Skip((index - 1) * pageSize).Take(pageSize).ToList();
-
-            // Tạo danh sách phân trang
-            var paginatedList = new BasePaginatedList<PostResponseDTO>(pagedPosts, totalItems, index, pageSize);
-
-            return Ok(BaseResponse<BasePaginatedList<PostResponseDTO>>.OkResponse(paginatedList));
+        public async Task<IActionResult> GetPost(string? id, int index = 1, int pageSize = 10)
+        {
+            var paginatedPosts = await _postService.GetPosts(id, index, pageSize);
+            return Ok(BaseResponse<BasePaginatedList<PostResponseDTO>>.OkResponse(paginatedPosts));
         }
         [Authorize(Roles = "Staff")]
         [HttpPost()]
