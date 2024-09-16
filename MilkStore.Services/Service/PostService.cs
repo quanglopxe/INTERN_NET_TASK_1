@@ -28,8 +28,7 @@ namespace MilkStore.Services.Service
                 Content = postModel.Content,
                 Image = postModel.Image,
                 CreatedTime = CoreHelper.SystemTimeNow,
-                LastUpdatedTime = CoreHelper.SystemTimeNow,
-                DeletedTime = null
+                LastUpdatedTime = CoreHelper.SystemTimeNow                
             };
             // Thêm sản phẩm vào bài đăng bằng PostProduct
             if (postModel.ProductIDs != null && postModel.ProductIDs.Any())
@@ -38,6 +37,8 @@ namespace MilkStore.Services.Service
 
                 foreach (var productId in postModel.ProductIDs)
                 {
+                    //check deletetime
+
                     var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(productId);
                     if (product != null)
                     {
@@ -79,7 +80,10 @@ namespace MilkStore.Services.Service
         }
         public async Task DeletePost(string id)
         {
-            var post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
+            //fix lỗi xóa 2 lần
+            // ko dùng var
+            Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
+            //rule code
             if (post == null)
             {
                 throw new KeyNotFoundException($"Post with ID {id} was not found.");
@@ -89,9 +93,10 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
 
         }
-
+        //tên
         public async Task<BasePaginatedList<PostResponseDTO>> GetPosts(string? id, int pageIndex, int pageSize)
         {
+            //rule code
             if(id == null)
             {
                 var query = _unitOfWork.GetRepository<Post>().Entities.Where(post => post.DeletedTime == null);
@@ -119,7 +124,7 @@ namespace MilkStore.Services.Service
             }            
 
         }
-
+        //kiểm tra trùng với db trước khi update
         public async Task<PostResponseDTO> UpdatePost(string id, PostModelView postModel)
         {
             var post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
