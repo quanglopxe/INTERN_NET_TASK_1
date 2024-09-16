@@ -14,7 +14,7 @@ namespace MilkStore.Contract.Services.Interface
         Task<IEnumerable<OrderResponseDTO>> GetAsync(string? id);
         Task<Order> AddAsync(OrderModelView item);
         Task<Order> UpdateAsync(string id, OrderModelView item);
-        Task UpdateToTalAmount(string id, double amount);
+        Task UpdateToTalAmount(string id);
         Task DeleteAsync(string id);
     }
 }

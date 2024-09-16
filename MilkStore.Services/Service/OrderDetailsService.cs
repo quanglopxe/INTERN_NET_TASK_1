@@ -42,8 +42,9 @@ namespace MilkStore.Services.Service
                 //TotalAmount = model.Quantity * model.UnitPrice
             };
             //Update lên bảng Order
-            await _orderService.UpdateToTalAmount(orderDetails.OrderID, orderDetails.TotalAmount);
+            
             await _dbSet.AddAsync(orderDetails);
+            await _orderService.UpdateToTalAmount(orderDetails.OrderID);
             await _unitOfWork.SaveAsync();
         }
 

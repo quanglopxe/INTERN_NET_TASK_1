@@ -111,17 +111,19 @@ namespace MilkStore.Services.Service
         }
 
         //Cập nhật TotalAmount
-        public async Task UpdateToTalAmount (string id, double amount)
+        public async Task UpdateToTalAmount (string id)
         {
             var ord = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
-            ord.TotalAmount += amount;
+            var lstOrd = await _unitOfWork.GetRepository<OrderDetails>().Entities.Where(or => or.OrderID == id).ToListAsync();
+            ord.TotalAmount = lstOrd.Sum(o => o.TotalAmount);
+
             double discountAmount = 0;
             //Tính thành tiền áp dụng ưu đãi
             var vch = await _unitOfWork.GetRepository<Voucher>().Entities.FirstOrDefaultAsync(vc => vc.Id == ord.VoucherId && vc.DeletedTime == null);
             if (vch != null)
             {
                 
-                if (vch.ExpiryDate > ord.OrderDate && Convert.ToDouble(vch.LimitSalePrice) <= amount && vch.UsedCount < vch.UsingLimit)
+                if (vch.ExpiryDate > ord.OrderDate && Convert.ToDouble(vch.LimitSalePrice) <= ord.TotalAmount && vch.UsedCount < vch.UsingLimit)
                 {
                     discountAmount = (ord.TotalAmount * vch.SalePercent) / 100.0;
                     vch.UsedCount++;
