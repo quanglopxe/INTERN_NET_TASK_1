@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using dotenv.net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
