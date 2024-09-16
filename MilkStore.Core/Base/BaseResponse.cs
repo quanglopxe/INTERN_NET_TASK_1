@@ -39,5 +39,9 @@ namespace MilkStore.Core.Base
         {
             return new BaseResponse<T>(StatusCodeHelper.OK, StatusCodeHelper.OK.Name(), mess);
         }
+        public static BaseResponse<T> NotFoundResponse(string? message)
+        {
+            return new BaseResponse<T>(StatusCodeHelper.NotFound, StatusCodeHelper.NotFound.Name(), message);
+        }
     }
 }

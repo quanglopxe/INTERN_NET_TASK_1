@@ -5,12 +5,7 @@ using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.ResponseDTO;
-using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Context;
-using MilkStore.Repositories.Entity;
-using System.Linq;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
 
 namespace MilkStore.Services.Service
 {
@@ -94,16 +89,21 @@ namespace MilkStore.Services.Service
 
         }
 
-        public async Task<IEnumerable<PostResponseDTO>> GetPosts(string? id)
+        public async Task<BasePaginatedList<PostResponseDTO>> GetPosts(string? id, int pageIndex, int pageSize)
         {
-            if (id == null)
+            if(id == null)
             {
-                var listPosts = await _unitOfWork.GetRepository<Post>().Entities
-                    .Where(post => post.DeletedTime == null)
-                    .ToListAsync();
+                var query = _unitOfWork.GetRepository<Post>().Entities.Where(post => post.DeletedTime == null);
+                var paginatedPosts = await _unitOfWork.GetRepository<Post>().GetPagging(query, pageIndex, pageSize);
 
-                // Ánh xạ listPosts sang kiểu trả về khác
-                return listPosts.Select(MapToPostResponseDto).ToList();
+                // Ánh xạ paginatedPosts sang kiểu trả về khác
+                var paginatedPostDtos = new BasePaginatedList<PostResponseDTO>(
+                    paginatedPosts.Items.Select(MapToPostResponseDto).ToList(),
+                    paginatedPosts.TotalPages,
+                    paginatedPosts.CurrentPage,
+                    paginatedPosts.PageSize
+                    );
+                return paginatedPostDtos;
             }
             else
             {
@@ -112,8 +112,10 @@ namespace MilkStore.Services.Service
                 {
                     throw new KeyNotFoundException($"Post with ID {id} was not found.");
                 }
-                return new List<PostResponseDTO> { MapToPostResponseDto(post) };
-            }
+
+                var postDto = new List<PostResponseDTO> { MapToPostResponseDto(post) };
+                return new BasePaginatedList<PostResponseDTO>(postDto, 1, 1, 1);
+            }            
 
         }
 
