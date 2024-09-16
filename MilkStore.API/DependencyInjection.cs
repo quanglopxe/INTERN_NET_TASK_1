@@ -80,6 +80,7 @@ namespace MilkStore.API
             services.AddScoped<IProductsService, ProductsService>();
             services.AddScoped<IVoucherService, VoucherService>();
             services.AddScoped<IReviewsService, ReviewsService>();
+            services.AddScoped<IPreOrdersService, PreOrdersService>();
             services.AddHttpContextAccessor();
         }
         public static void AddSwaggerUIAuthentication(this IServiceCollection services)
