@@ -596,8 +596,9 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<int>("LimitSalePrice")
                         .HasColumnType("int");
 
-                    b.Property<int>("Name")
-                        .HasColumnType("int");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("SalePercent")
                         .HasColumnType("int");

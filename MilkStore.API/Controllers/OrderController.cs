@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authorization;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.Services.Service;
 using MilkStore.Core.Base;
+using Microsoft.Extensions.Hosting;
+using MilkStore.Core;
 
 namespace MilkStore.API.Controllers
 {
@@ -22,15 +24,22 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpGet()]
-<<<<<<< HEAD
-        public async Task<IActionResult> GetAll(string? id, int page = 1, int pageSize = 10)
-=======
-        [Authorize(Roles = "Admin")]
-        public async Task<IEnumerable<Order>> GetAll(string? id)
->>>>>>> 76ca63e67dee16c7e8d9c133d60ca35227a7184b
+        
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAll(string? id, int index = 1, int pageSize = 10)
         {
             IList<OrderResponseDTO> ord = (IList<OrderResponseDTO>)await _orderService.GetAsync(id);
-            return Ok(BaseResponse<IList<OrderResponseDTO>>.OkResponse(ord));
+            if(ord is null)
+            {
+                return NotFound(new { message = "Không tìm thấy Order" });
+            }
+            int totalItems = ord.Count;
+            List<OrderResponseDTO> pagedOrder = ord.Skip((index - 1) * pageSize).Take(pageSize).ToList();
+
+            // Tạo danh sách phân trang
+            BasePaginatedList<OrderResponseDTO> paginatedList = new BasePaginatedList<OrderResponseDTO>(
+                pagedOrder, totalItems, index, pageSize);
+            return Ok(BaseResponse<BasePaginatedList<OrderResponseDTO>>.OkResponse(paginatedList));
         }
 
 
@@ -43,7 +52,7 @@ namespace MilkStore.API.Controllers
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
             Order ord = await _orderService.AddAsync(item);
-            return Ok(BaseResponse<Order>.OkResponse(ord));
+            return Ok(new { message = "Add Order thành công" });
         }
 
         [HttpPut("{id}")]
@@ -54,21 +63,26 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            var items = await _orderService.GetAsync(id);
-            if (items == null)
+            OrderResponseDTO existingOrder = (OrderResponseDTO) await _orderService.GetAsync(id);
+            if (existingOrder is null)
             {
-                return NotFound();
+                return NotFound(new { message = "Không tìm thấy Order" });
             }
             Order ord = await _orderService.UpdateAsync(id, item);
-            return Ok(BaseResponse<Order>.OkResponse(ord));
+            return Ok(new { message = "Update Order thành công" });
         }
 
         [HttpDelete("{id}")]
         //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Delete(string id)
         {
+            OrderResponseDTO existingOrder = (OrderResponseDTO)await _orderService.GetAsync(id);
+            if (existingOrder is null)
+            {
+                return NotFound(new { message = "Không tìm thấy Order" });
+            }
             await _orderService.DeleteAsync(id);
-            return NoContent();
+            return Ok(new { message = "Xóa thành công" });
         }
     }
 }

@@ -44,8 +44,8 @@ namespace MilkStore.Services.Service
             //Update lên bảng Order
             
             await _dbSet.AddAsync(orderDetails);
-            await _orderService.UpdateToTalAmount(orderDetails.OrderID);
             await _unitOfWork.SaveAsync();
+            await _orderService.UpdateToTalAmount(orderDetails.OrderID);
         }
 
         //Read OrderDetails
@@ -85,6 +85,7 @@ namespace MilkStore.Services.Service
                 //await _orderService.UpdateToTalAmount(orderDetails.OrderID, orderDetails.TotalAmount);
                 _dbSet.Update(orderDetails);
                 await _unitOfWork.SaveAsync();
+                await _orderService.UpdateToTalAmount(orderDetails.OrderID);
             }
         }
 
@@ -95,6 +96,7 @@ namespace MilkStore.Services.Service
             od.DeletedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(od);
             await _unitOfWork.SaveAsync();
+            await _orderService.UpdateToTalAmount(od.OrderID);
         }
     }
 }
