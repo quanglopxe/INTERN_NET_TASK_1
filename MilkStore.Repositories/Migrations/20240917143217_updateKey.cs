@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MilkStore.Repositories.Migrations
 {
     /// <inheritdoc />
-    public partial class test : Migration
+    public partial class updateKey : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -185,6 +185,28 @@ namespace MilkStore.Repositories.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PreOrders",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProductID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PreoderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastUpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedTime = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastUpdatedTime = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    DeletedTime = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PreOrders", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Products",
                 columns: table => new
                 {
@@ -240,7 +262,7 @@ namespace MilkStore.Repositories.Migrations
                     UsingLimit = table.Column<int>(type: "int", nullable: false),
                     UsedCount = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -296,6 +318,7 @@ namespace MilkStore.Repositories.Migrations
                     TotalAmount = table.Column<double>(type: "float", nullable: false),
                     ShippingAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ApplicationUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -306,6 +329,11 @@ namespace MilkStore.Repositories.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Orders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Orders_ApplicationUser_ApplicationUserId",
+                        column: x => x.ApplicationUserId,
+                        principalTable: "ApplicationUser",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Orders_Vouchers_VoucherId",
                         column: x => x.VoucherId,
@@ -357,6 +385,11 @@ namespace MilkStore.Repositories.Migrations
                 column: "ProductID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Orders_ApplicationUserId",
+                table: "Orders",
+                column: "ApplicationUserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Orders_VoucherId",
                 table: "Orders",
                 column: "VoucherId");
@@ -382,9 +415,6 @@ namespace MilkStore.Repositories.Migrations
                 name: "ApplicationRoleClaims");
 
             migrationBuilder.DropTable(
-                name: "ApplicationUser");
-
-            migrationBuilder.DropTable(
                 name: "ApplicationUserClaims");
 
             migrationBuilder.DropTable(
@@ -403,6 +433,9 @@ namespace MilkStore.Repositories.Migrations
                 name: "PostProduct");
 
             migrationBuilder.DropTable(
+                name: "PreOrders");
+
+            migrationBuilder.DropTable(
                 name: "Reviews");
 
             migrationBuilder.DropTable(
@@ -413,6 +446,9 @@ namespace MilkStore.Repositories.Migrations
 
             migrationBuilder.DropTable(
                 name: "Products");
+
+            migrationBuilder.DropTable(
+                name: "ApplicationUser");
 
             migrationBuilder.DropTable(
                 name: "Vouchers");

@@ -1,4 +1,5 @@
 ﻿using MilkStore.Core.Base;
+using MilkStore.Repositories.Entity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace MilkStore.Contract.Repositories.Entity
 {
     public class Order : BaseEntity
     {
-        public required string UserId { get; set; }
+        public required Guid UserId { get; set; }
         public string? VoucherId { get; set; }
         public DateTime OrderDate { get; set; }
         public required string Status { get; set; }
@@ -18,7 +19,7 @@ namespace MilkStore.Contract.Repositories.Entity
         public required string PaymentMethod { get; set; }
 
         public virtual Voucher? Voucher { get; set; }
-
+        public virtual ApplicationUser? ApplicationUser { get; set; }
         public virtual ICollection<OrderDetails> OrderDetailss { get; set; }
     }
 }

@@ -4,12 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core.Base;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
+using System.ComponentModel.DataAnnotations;
 
 namespace MilkStore.Services.Service
 {
@@ -56,15 +58,19 @@ namespace MilkStore.Services.Service
         // Cập nhật thông tin người dùng
         public async Task<ApplicationUser> UpdateUser(Guid id, UserModelView userModel, string updatedBy)
         {
-            var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(id);
-            if (user == null)
+            if (string.IsNullOrWhiteSpace(id.ToString()))
             {
-                throw new KeyNotFoundException($"User with ID {id} was not found.");
+                throw new KeyNotFoundException("User ID cannot be null, empty, or contain only whitespace.");
             }
+
+            var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(id)
+              ?? throw new KeyNotFoundException($"User with ID {id} was not found.");
+
+
 
             user.UserName = userModel.UserName;
             user.Email = userModel.Email;
-            //  user.PasswordHash = userModel.PasswordHash;
+            // user.PasswordHash = userModel.PasswordHash;
             user.PhoneNumber = userModel.PhoneNumber;
             user.Points = 0;
             user.LastUpdatedTime = CoreHelper.SystemTimeNow;
@@ -80,13 +86,20 @@ namespace MilkStore.Services.Service
 
 
         // Xóa người dùng
-        public async Task<UserResponeseDTO> DeleteUser(Guid userId, string deleteby)
+        public async Task<ApplicationUser> DeleteUser(Guid userId, string deleteby)
         {
-            var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId);
-            if (user == null)
+            if (string.IsNullOrWhiteSpace(userId.ToString()))
             {
-                return null;
+                throw new KeyNotFoundException("User ID cannot be null, empty, or contain only whitespace.");
             }
+            var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId)
+                ?? throw new KeyNotFoundException("User does not exist or has already been deleted.");
+
+            if (user.DeletedTime.HasValue)
+            {
+                throw new KeyNotFoundException("User does not exist or has already been deleted.");
+            }
+
 
             user.DeletedTime = DateTimeOffset.UtcNow;
             user.DeletedBy = deleteby;
@@ -94,31 +107,35 @@ namespace MilkStore.Services.Service
             await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
             await _unitOfWork.SaveAsync();
 
-            return MapToUserResponseDto(user);
+            return user;
         }
 
         // Lấy thông tin người dùng theo ID
-        public async Task<IEnumerable<UserResponeseDTO>> GetUser(string? id)
+        public async Task<IEnumerable<UserResponeseDTO>> GetUser(string? id, int index = 1, int pageSize = 10)
         {
-            if (id == null)
+            if (string.IsNullOrWhiteSpace(id))
             {
-                var user = await _unitOfWork.GetRepository<ApplicationUser>().Entities
-                    .Where(u => u.DeletedTime == null)
-                    .ToListAsync();
+                IQueryable<ApplicationUser> usersQuery = _unitOfWork.GetRepository<ApplicationUser>().Entities
+                    .Where(u => u.DeletedTime == null);
 
-                // Ánh xạ listPosts sang kiểu trả về khác
-                return user.Select(MapToUserResponseDto).ToList();
+                var paginatedUsers = await _unitOfWork.GetRepository<ApplicationUser>().GetPagging(usersQuery, index, pageSize);
+
+                List<UserResponeseDTO> userResponseDtos = paginatedUsers.Items
+                    .Select(MapToUserResponseDto)
+                    .ToList();
+
+                return userResponseDtos;
             }
             else
             {
-                var user = await _unitOfWork.GetRepository<ApplicationUser>().Entities.FirstOrDefaultAsync(u => u.Id.ToString() == id && u.DeletedTime == null);
-                if (user == null)
-                {
-                    throw new KeyNotFoundException($"Post with ID {id} was not found.");
-                }
+                ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().Entities
+                    .FirstOrDefaultAsync(u => u.Id.ToString() == id && u.DeletedTime == null)
+                    ?? throw new KeyNotFoundException($"User with ID {id} was not found.");
+
                 return new List<UserResponeseDTO> { MapToUserResponseDto(user) };
             }
         }
+
 
         private UserResponeseDTO MapToUserResponseDto(ApplicationUser user)
         {
@@ -135,9 +152,24 @@ namespace MilkStore.Services.Service
        
             };
         }
-        public async Task<UserResponeseDTO> AddUser(UserModelView userModel, string createdBy)
+        public async Task<ApplicationUser> AddUser(UserModelView userModel, string createdBy)
         {
-            var newUser = new ApplicationUser
+            bool emailExists = await _unitOfWork.GetRepository<ApplicationUser>().Entities
+                .AnyAsync(u => u.Email == userModel.Email);
+
+            if (emailExists)
+            {
+                throw new ArgumentException("Email already exists");
+            }
+
+            bool userNameExists = await _unitOfWork.GetRepository<ApplicationUser>().Entities
+                .AnyAsync(u => u.UserName == userModel.UserName);
+
+            if (userNameExists)
+            {
+                throw new ArgumentException("UserName already exists");
+            }
+            ApplicationUser newUser = new ApplicationUser
             {
                 UserName = userModel.UserName,
                 Email = userModel.Email,
@@ -152,7 +184,7 @@ namespace MilkStore.Services.Service
             await _unitOfWork.GetRepository<ApplicationUser>().InsertAsync(newUser);
             await _unitOfWork.SaveAsync();
 
-            return MapToUserResponseDto(newUser);
+            return newUser;
         }
     }
 

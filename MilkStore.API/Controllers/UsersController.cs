@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Azure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
-using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
@@ -27,24 +27,44 @@ namespace MilkStore.API.Controllers
         [HttpGet()]
         public async Task<IActionResult> GetUsers(string? id, int index = 1, int pageSize = 10)
         {
-            IList<UserResponeseDTO> users = (IList<UserResponeseDTO>)await _userService.GetUser(id);  
-            return Ok(BaseResponse<IList<UserResponeseDTO>>.OkResponse(users));
+            try
+            {
+                IEnumerable<UserResponeseDTO> users = await _userService.GetUser(id, index, pageSize);
+                return Ok(BaseResponse<IEnumerable<UserResponeseDTO>>.OkResponse(users));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while Get the user", details = ex.Message });
+            }
         }
         [HttpPost("add")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddUser(UserModelView userModel)
         {
-            var createdBy = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "System";
-
-            var newUser = await _userService.AddUser(userModel, createdBy);
-
-            if (newUser == null)
+            string createdBy = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "System";
+            try
             {
-                return BadRequest(new { message = "Failed to create user" });
+                ApplicationUser newUser = await _userService.AddUser(userModel, createdBy);
+                if (newUser is null)
+                {
+                    return BadRequest(new { message = "Failed to create user" });
+                }
+                return Ok(new { message = "Successfully created user" });
             }
-
-            return Ok(newUser);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while creating the user.", error = ex.Message });
+            }
         }
+
         //[HttpGet()]
         //public async Task<IActionResult> Login(int index = 1, int pageSize = 10)
         //{
@@ -60,16 +80,21 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(ModelState);
             }
-
-            var updatedBy = User.Identity?.Name ?? "System";
-            var updatedUser = await _userService.UpdateUser(id, userModel, updatedBy);
-
-            if (updatedUser == null)
+            try
             {
-                return NotFound(new { message = "User not found" });
+                string updatedBy = User.Identity?.Name ?? "System";
+                ApplicationUser updatedUser = await _userService.UpdateUser(id, userModel, updatedBy);
+                return Ok(new { message = "Successfully update user" });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while Update the user", details = ex.Message });
             }
 
-            return Ok(updatedUser);
         }
 
         [HttpDelete("delete/{userId}")]
@@ -77,14 +102,20 @@ namespace MilkStore.API.Controllers
         public async Task<IActionResult> Delete1User(Guid userId)
         {
 
-            var deleteby = User.Identity?.Name ?? "System";
-
-            var deletedUser = await _userService.DeleteUser(userId, deleteby);
-            if (deletedUser == null)
+            try
             {
-                return NotFound(new { message = "User not found" });
+                string deleteby = User.Identity?.Name ?? "System";
+                ApplicationUser deletedUser = await _userService.DeleteUser(userId, deleteby);
+                return Ok(new { message = "Successfully deleted user" });
             }
-            return Ok(deletedUser);
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while deleting the user", details = ex.Message });
+            }
         }
 
 
