@@ -6,7 +6,7 @@ namespace MilkStore.Contract.Services.Interface
 {
     public interface IProductsService
     {
-        Task<IEnumerable<Products>> GetProducts(string? id);
+        Task<IEnumerable<ProductsModel>> GetProducts(string? id);
         Task<Products> CreateProducts(ProductsModel productsModel);
         Task<Products> UpdateProducts(string id,ProductsModel productsModel);
         Task<Products> DeleteProducts(object id);
