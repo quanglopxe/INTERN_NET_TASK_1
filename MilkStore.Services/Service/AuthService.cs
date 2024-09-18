@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.Repositories.Entity;
 using Microsoft.AspNetCore.Identity;
+using MilkStore.Core.Base;
 public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> userManager;
@@ -19,11 +20,21 @@ public class AuthService : IAuthService
     public async Task<ApplicationUser> CheckUser(string userName)
     {
         ApplicationUser? user = await userManager.FindByNameAsync(userName);
-        if (string.IsNullOrWhiteSpace(user?.DeletedTime.ToString()))
+        if (user != null)
         {
-            return null;
+            if (user.DeletedTime.HasValue)
+            {
+                throw new BaseException.ErrorException(400, "BadRequest", "Tài khoản đã bị xóa");
+            }
+            else
+            {
+                return user;
+            }
         }
-        return user;
+        else
+        {
+            throw new BaseException.ErrorException(404, "NotFound", "Không tìm thấy người dùng");
+        }
     }
     public async Task<SignInResult> CheckPassword(LoginModelView loginModel)
     {
