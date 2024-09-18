@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MilkStore.Repositories.Migrations
 {
     /// <inheritdoc />
-    public partial class updateKey : Migration
+    public partial class initTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -311,14 +311,13 @@ namespace MilkStore.Repositories.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     VoucherId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TotalAmount = table.Column<double>(type: "float", nullable: false),
                     ShippingAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ApplicationUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -329,11 +328,6 @@ namespace MilkStore.Repositories.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Orders", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Orders_ApplicationUser_ApplicationUserId",
-                        column: x => x.ApplicationUserId,
-                        principalTable: "ApplicationUser",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Orders_Vouchers_VoucherId",
                         column: x => x.VoucherId,
@@ -385,11 +379,6 @@ namespace MilkStore.Repositories.Migrations
                 column: "ProductID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Orders_ApplicationUserId",
-                table: "Orders",
-                column: "ApplicationUserId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Orders_VoucherId",
                 table: "Orders",
                 column: "VoucherId");
@@ -413,6 +402,9 @@ namespace MilkStore.Repositories.Migrations
 
             migrationBuilder.DropTable(
                 name: "ApplicationRoleClaims");
+
+            migrationBuilder.DropTable(
+                name: "ApplicationUser");
 
             migrationBuilder.DropTable(
                 name: "ApplicationUserClaims");
@@ -446,9 +438,6 @@ namespace MilkStore.Repositories.Migrations
 
             migrationBuilder.DropTable(
                 name: "Products");
-
-            migrationBuilder.DropTable(
-                name: "ApplicationUser");
 
             migrationBuilder.DropTable(
                 name: "Vouchers");

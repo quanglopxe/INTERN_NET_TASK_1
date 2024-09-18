@@ -12,8 +12,8 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20240917143217_updateKey")]
-    partial class updateKey
+    [Migration("20240918080839_initTable")]
+    partial class initTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -256,9 +256,6 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<Guid?>("ApplicationUserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
 
@@ -295,16 +292,13 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<double>("TotalAmount")
                         .HasColumnType("float");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("VoucherId")
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("VoucherId");
 
@@ -704,16 +698,10 @@ namespace MilkStore.Repositories.Migrations
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Order", b =>
                 {
-                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "ApplicationUser")
-                        .WithMany("Orders")
-                        .HasForeignKey("ApplicationUserId");
-
                     b.HasOne("MilkStore.Contract.Repositories.Entity.Voucher", "Voucher")
                         .WithMany("Orders")
                         .HasForeignKey("VoucherId")
                         .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("ApplicationUser");
 
                     b.Navigation("Voucher");
                 });
@@ -774,11 +762,6 @@ namespace MilkStore.Repositories.Migrations
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Voucher", b =>
-                {
-                    b.Navigation("Orders");
-                });
-
-            modelBuilder.Entity("MilkStore.Repositories.Entity.ApplicationUser", b =>
                 {
                     b.Navigation("Orders");
                 });

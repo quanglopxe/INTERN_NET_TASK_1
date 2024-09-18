@@ -20,7 +20,5 @@ namespace MilkStore.Repositories.Entity
             CreatedTime = CoreHelper.SystemTimeNow;
             LastUpdatedTime = CreatedTime;
         }
-        public virtual ICollection<Order> Orders { get; set; }
-
     }
 }

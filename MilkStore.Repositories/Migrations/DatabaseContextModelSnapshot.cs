@@ -297,8 +297,6 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
                     b.HasIndex("VoucherId");
 
                     b.ToTable("Orders");
@@ -697,18 +695,10 @@ namespace MilkStore.Repositories.Migrations
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Order", b =>
                 {
-                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "ApplicationUser")
-                        .WithMany("Orders")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("MilkStore.Contract.Repositories.Entity.Voucher", "Voucher")
                         .WithMany("Orders")
                         .HasForeignKey("VoucherId")
                         .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("ApplicationUser");
 
                     b.Navigation("Voucher");
                 });
@@ -769,11 +759,6 @@ namespace MilkStore.Repositories.Migrations
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Voucher", b =>
-                {
-                    b.Navigation("Orders");
-                });
-
-            modelBuilder.Entity("MilkStore.Repositories.Entity.ApplicationUser", b =>
                 {
                     b.Navigation("Orders");
                 });

@@ -19,7 +19,6 @@ namespace MilkStore.Contract.Repositories.Entity
         public required string PaymentMethod { get; set; }
 
         public virtual Voucher? Voucher { get; set; }
-        public virtual ApplicationUser? ApplicationUser { get; set; }
         public virtual ICollection<OrderDetails> OrderDetailss { get; set; }
     }
 }
