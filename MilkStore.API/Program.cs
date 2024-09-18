@@ -5,6 +5,7 @@ using MilkStore.Contract.Repositories;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.UOW;
+using MilkStore.Services.Configs;
 using MilkStore.Services.Service;
 
 DotEnv.Load();
@@ -39,4 +40,10 @@ app.UseAuthorization();
 app.UseCors("AllowAllOrigins");
 app.MapControllers();
 
+// seed data account admin
+using (IServiceScope scope = app.Services.CreateScope())
+{
+    IServiceProvider? services = scope.ServiceProvider;
+    SeedDataAccount.SeedAsync(services).Wait();
+}
 app.Run();
