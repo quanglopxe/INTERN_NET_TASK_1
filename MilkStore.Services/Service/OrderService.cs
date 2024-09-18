@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using MilkStore.ModelViews.ResponseDTO;
 using AutoMapper;
 using MilkStore.Repositories.Entity;
+using System.Security.Cryptography;
 
 namespace MilkStore.Services.Service
 {
@@ -33,26 +34,38 @@ namespace MilkStore.Services.Service
 
         public async Task<IEnumerable<OrderResponseDTO>> GetAsync(string? id)
         {
-            if(string.IsNullOrWhiteSpace(id))
+            try
             {
-                List<Order> listOrder = await _dbSet.Where
-                    (e => !EF.Property<DateTimeOffset?>(e, "DeletedTime").HasValue)
-                    .ToListAsync();
-                return listOrder.Select(MapToOrderResponseDto).ToList();
-            }
-            else
-            {
-                Order ord = await _unitOfWork.GetRepository<Order>().Entities
-                    .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue);
-                if(ord is null)
+                if (string.IsNullOrWhiteSpace(id))
                 {
-                    return null;
+                    List<Order> listOrder = await _dbSet.Where
+                        (e => !EF.Property<DateTimeOffset?>(e, "DeletedTime").HasValue)
+                        .ToListAsync();
+                    return listOrder.Select(MapToOrderResponseDto).ToList();
                 }
-                return new List<OrderResponseDTO> { MapToOrderResponseDto(ord) };
+                else
+                {
+                    Order ord = await _unitOfWork.GetRepository<Order>().Entities
+                        .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
+                        ?? throw new KeyNotFoundException($"Order với ID {id} không tìm thấy hoặc đã bị xóa.");
+                    return new List<OrderResponseDTO> { MapToOrderResponseDto(ord) };
+                }
+            }
+            catch (KeyNotFoundException ex)
+            {
+                // Log lỗi chi tiết và trả về BadRequest
+                // Bạn có thể log lỗi tại đây nếu cần
+                throw new ArgumentException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi không mong muốn và trả về lỗi
+                // Tránh để lộ lỗi chi tiết cho phía client
+                throw new ApplicationException("Đã xảy ra lỗi khi xử lý yêu cầu của bạn.", ex);
             }
         }
 
-        public async Task<Order> AddAsync(OrderModelView ord)
+        public async Task AddAsync(OrderModelView ord)
         {
             try
             {
@@ -70,19 +83,8 @@ namespace MilkStore.Services.Service
                     throw new KeyNotFoundException($"User với ID {ord.UserId} không tồn tại.");
                 }
 
-                // Kiểm tra sự tồn tại của Voucher
-                if (!string.IsNullOrWhiteSpace(ord.VoucherId))
-                {
-                    Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
-                        .FirstOrDefaultAsync(v => v.Id == ord.VoucherId && !v.DeletedTime.HasValue)
-                        ?? throw new KeyNotFoundException($"Voucher với ID {ord.VoucherId} không tồn tại.");
-                    vch.UsedCount++;
-                    await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
-                }
-
                 await _unitOfWork.GetRepository<Order>().InsertAsync(item);
                 await _unitOfWork.SaveAsync();
-                return item;
             }
             catch (KeyNotFoundException ex) 
             {
@@ -98,7 +100,7 @@ namespace MilkStore.Services.Service
             }
         }
 
-        public async Task<Order> UpdateAsync(string id, OrderModelView ord)
+        public async Task UpdateAsync(string id, OrderModelView ord)
         {
             try
             {
@@ -116,21 +118,12 @@ namespace MilkStore.Services.Service
                     throw new KeyNotFoundException($"User với ID {ord.UserId} không tồn tại.");
                 }
 
-                // Kiểm tra sự tồn tại của Voucher
-                if (!string.IsNullOrWhiteSpace(ord.VoucherId) && await _unitOfWork.GetRepository<Voucher>().Entities
-                        .AnyAsync(v => v.Id == ord.VoucherId) == false)
-                {
-                    throw new KeyNotFoundException($"Voucher với ID {ord.VoucherId} không tồn tại.");
-                }
-
                 // Cập nhật thời gian cập nhật
                 orderss.LastUpdatedTime = CoreHelper.SystemTimeNow;
 
                 // Lưu thay đổi vào cơ sở dữ liệu
                 await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
                 await _unitOfWork.SaveAsync();
-
-                return orderss;
             }
             catch (KeyNotFoundException ex)
             {
@@ -182,6 +175,40 @@ namespace MilkStore.Services.Service
                 ord.DiscountedAmount = ord.TotalAmount - discountAmount;
                 await _unitOfWork.GetRepository<Order>().UpdateAsync(ord);
                 await _unitOfWork.SaveAsync();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                // Log lỗi chi tiết và trả về BadRequest
+                // Bạn có thể log lỗi tại đây nếu cần
+                throw new ArgumentException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi không mong muốn và trả về lỗi
+                // Tránh để lộ lỗi chi tiết cho phía client
+                throw new ApplicationException("Đã xảy ra lỗi khi xử lý yêu cầu của bạn.", ex);
+            }
+        }
+
+        public async Task AddVoucher(string id, string voucherId)
+        {
+            try
+            {
+                Order orderss = await _unitOfWork.GetRepository<Order>().Entities
+                    .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
+                    ?? throw new KeyNotFoundException($"Order với ID {id} không tìm thấy hoặc đã bị xóa");
+
+                // Kiểm tra sự tồn tại của Voucher
+                Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
+                        .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
+                        ?? throw new KeyNotFoundException($"Voucher với ID {voucherId} không tồn tại.");
+                vch.UsedCount++;
+                await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
+
+                orderss.VoucherId = vch.Id;
+                await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
+                await _unitOfWork.SaveAsync();
+                await UpdateToTalAmount(orderss.Id);
             }
             catch (KeyNotFoundException ex)
             {
