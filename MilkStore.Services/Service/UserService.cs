@@ -21,12 +21,14 @@ namespace MilkStore.Services.Service
         private readonly UserManager<ApplicationUser> userManager;
         private readonly RoleManager<ApplicationRole> roleManager;
         private readonly SignInManager<ApplicationUser> signInManager;
-        public UserService(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IUnitOfWork unitOfWork, SignInManager<ApplicationUser> signInManager)
+        private readonly IMapper _mapper;
+        public UserService(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IUnitOfWork unitOfWork, SignInManager<ApplicationUser> signInManager, IMapper mapper)
         {
             this.userManager = userManager;
             this.roleManager = roleManager;
             this.signInManager = signInManager;
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
         public async Task GetUserByEmailToRegister(string email)
         {
@@ -101,15 +103,12 @@ namespace MilkStore.Services.Service
             var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(id)
               ?? throw new KeyNotFoundException($"User with ID {id} was not found.");
 
+            _mapper.Map(userModel, user);
 
-
-            user.UserName = userModel.UserName;
-            user.Email = userModel.Email;
-            // user.PasswordHash = userModel.PasswordHash;
-            user.PhoneNumber = userModel.PhoneNumber;
-            user.Points = 0;
+            // Gán các trường không được ánh xạ bởi AutoMapper
             user.LastUpdatedTime = CoreHelper.SystemTimeNow;
             user.LastUpdatedBy = updatedBy;
+
 
             await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
             await _unitOfWork.SaveAsync();
@@ -204,17 +203,8 @@ namespace MilkStore.Services.Service
             {
                 throw new ArgumentException("UserName already exists");
             }
-            ApplicationUser newUser = new ApplicationUser
-            {
-                UserName = userModel.UserName,
-                Email = userModel.Email,
-                Password = userModel.Password,
-                PasswordHash = userModel.PasswordHash,
-                PhoneNumber = userModel.PhoneNumber,
-                Points = 0,
-                CreatedBy = createdBy,
-                CreatedTime = DateTimeOffset.UtcNow
-            };
+            ApplicationUser newUser = _mapper.Map<ApplicationUser>(userModel);
+            newUser.CreatedBy = createdBy;
 
             await _unitOfWork.GetRepository<ApplicationUser>().InsertAsync(newUser);
             await _unitOfWork.SaveAsync();

@@ -18,6 +18,7 @@ namespace MilkStore.API.Controllers
     {
         private readonly IUserService _userService;
         private readonly UserManager<ApplicationUser> _userManager;
+
         public UsersController(IUserService userService, UserManager<ApplicationUser> userManager)
         {
             _userService = userService;

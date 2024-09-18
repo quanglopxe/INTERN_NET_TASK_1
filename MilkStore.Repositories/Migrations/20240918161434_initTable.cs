@@ -6,11 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MilkStore.Repositories.Migrations
 {
     /// <inheritdoc />
-<<<<<<< HEAD:MilkStore.Repositories/Migrations/20240917144033_test.cs
-    public partial class InitialMigration : Migration
-=======
-    public partial class InitDB : Migration
->>>>>>> 977be068efd79eeff96c8daa16da576aa2872250:MilkStore.Repositories/Migrations/20240918095230_InitDB.cs
+    public partial class initTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -315,21 +311,14 @@ namespace MilkStore.Repositories.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-<<<<<<< HEAD
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-=======
-                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
->>>>>>> 52fd018609a28659b6699cb92f33183308af2277
                     VoucherId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TotalAmount = table.Column<double>(type: "float", nullable: false),
                     ShippingAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: false),
-<<<<<<< HEAD
                     PointsAdded = table.Column<int>(type: "int", nullable: false),
-=======
->>>>>>> 52fd018609a28659b6699cb92f33183308af2277
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
