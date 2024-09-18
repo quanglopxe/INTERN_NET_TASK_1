@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
 using MilkStore.Services.Service;
@@ -22,51 +25,13 @@ namespace MilkStore.API.Controllers
 
         }
         [HttpGet()]
-        public async Task<IEnumerable<User>> GetUsers(Guid? id, int index = 1, int pageSize = 10)
+        public async Task<IActionResult> GetUsers(string? id, int index = 1, int pageSize = 10)
         {
-            var users = await _userService.GetUser(id);
-            return users;
+            IList<UserResponeseDTO> users = (IList<UserResponeseDTO>)await _userService.GetUser(id);
+            return Ok(BaseResponse<IList<UserResponeseDTO>>.OkResponse(users));
         }
-        //[HttpGet()]
-        //public async Task<IActionResult> Login(int index = 1, int pageSize = 10)
-        //{
-        //    // IList<UserResponseModel> a = await _userService.GetAll();
-        //    // return Ok(BaseResponse<IList<UserResponseModel>>.OkResponse(a));
-        //    return Ok("ok");
-        //}
-        [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateUser(string id, [FromBody] UserModelView userModel)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var updatedBy = User.Identity?.Name ?? "System";
-            var updatedUser = await _userService.UpdateUser(id, userModel, updatedBy);
-
-            if (updatedUser == null)
-            {
-                return NotFound(new { message = "User not found" }); 
-            }
-
-            return Ok(updatedUser); 
-        }
-
-        [HttpDelete("delete/{userId}")]
-        public async Task<IActionResult> Delete1User(string userId)
-        {
-            var createdBy = User.Identity?.Name ?? "System"; 
-
-            var deletedUser = await _userService.DeleteUser(userId, createdBy);
-            if (deletedUser == null)
-            {
-                return NotFound(new { message = "User not found" }); 
-            }
-            return Ok(deletedUser); 
-        }
-
         [HttpPost("add")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddUser(UserModelView userModel)
         {
             var createdBy = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "System";
@@ -79,6 +44,47 @@ namespace MilkStore.API.Controllers
             }
 
             return Ok(newUser);
+        }
+        //[HttpGet()]
+        //public async Task<IActionResult> Login(int index = 1, int pageSize = 10)
+        //{
+        //    // IList<UserResponseModel> a = await _userService.GetAll();
+        //    // return Ok(BaseResponse<IList<UserResponseModel>>.OkResponse(a));
+        //    return Ok("ok");
+        //}
+        [HttpPut("update/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserModelView userModel)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var updatedBy = User.Identity?.Name ?? "System";
+            var updatedUser = await _userService.UpdateUser(id, userModel, updatedBy);
+
+            if (updatedUser == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            return Ok(updatedUser);
+        }
+
+        [HttpDelete("delete/{userId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete1User(Guid userId)
+        {
+
+            var deleteby = User.Identity?.Name ?? "System";
+
+            var deletedUser = await _userService.DeleteUser(userId, deleteby);
+            if (deletedUser == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+            return Ok(deletedUser);
         }
     }
 }

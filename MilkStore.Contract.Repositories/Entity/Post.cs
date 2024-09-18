@@ -6,7 +6,9 @@ namespace MilkStore.Contract.Repositories.Entity
     {
         public required string Title { get; set; } = string.Empty;
         public required string Content { get; set; } = string.Empty;
-        public string? Image { get; set; }                
-        //public ICollection<Product> Products { get; set; }
+        public string? Image { get; set; }
+
+        public virtual ICollection<PostProduct> PostProducts { get; set; } = new List<PostProduct>();
+
     }
 }

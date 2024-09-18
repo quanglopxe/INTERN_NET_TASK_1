@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.PostModelViews;
-using MilkStore.ModelViews.UserModelViews;
-using MilkStore.Repositories.Entity;
+using MilkStore.ModelViews.ResponseDTO;
+
 
 namespace MilkStore.API.Controllers
 {
@@ -13,17 +13,19 @@ namespace MilkStore.API.Controllers
     [ApiController]
     public class PostController : ControllerBase
     {
-        private readonly IPostService _postService;        
+        private readonly IPostService _postService;
+
         public PostController(IPostService postService)
         {
-            _postService = postService;            
-        }
+            _postService = postService;    
+        }        
         [HttpGet()]
         public async Task<IActionResult> GetPost(string? id, int index = 1, int pageSize = 10)
-        {                        
-            IList<Post> posts = (IList<Post>)await _postService.GetPosts(id);
-            return Ok(BaseResponse<IList<Post>>.OkResponse(posts));
+        {
+            var paginatedPosts = await _postService.GetPosts(id, index, pageSize);
+            return Ok(BaseResponse<BasePaginatedList<PostResponseDTO>>.OkResponse(paginatedPosts));
         }
+        [Authorize(Roles = "Staff")]
         [HttpPost()]
         public async Task<IActionResult> CreatePost(PostModelView postModel)
         {
@@ -31,9 +33,10 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            Post post = await _postService.CreatePost(postModel);
-            return Ok(BaseResponse<Post>.OkResponse(post));
+            PostResponseDTO post = await _postService.CreatePost(postModel);
+            return Ok(BaseResponse<PostResponseDTO>.OkResponse(post));
         }
+        [Authorize(Roles = "Staff")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePost(string id, PostModelView postModel)
         {
@@ -41,9 +44,10 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            Post post = await _postService.UpdatePost(id, postModel);
-            return Ok(BaseResponse<Post>.OkResponse(post));
+            PostResponseDTO post = await _postService.UpdatePost(id, postModel);
+            return Ok(BaseResponse<PostResponseDTO>.OkResponse(post));
         }
+        [Authorize(Roles = "Staff")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePost(string id)
         {

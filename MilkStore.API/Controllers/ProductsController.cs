@@ -42,6 +42,13 @@ namespace MilkStore.API.Controllers
                 return StatusCode(500); // Trả về mã lỗi 500
             }
         }
+        [HttpGet("GetPagging")]
+        [Authorize(Roles = "Admin,Member")]
+        public async Task<IActionResult> Paging(int index, int size)
+        {
+            var paging = await _ProductsService.PagingProducts(index, size);
+            return Ok(paging);
+        }
         [HttpPost()]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateProducts(ProductsModel ProductsModel)

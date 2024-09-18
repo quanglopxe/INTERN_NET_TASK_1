@@ -8,6 +8,7 @@ using MilkStore.Repositories.UOW;
 using MilkStore.Services.Service;
 
 DotEnv.Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
 // config appsettings by env
@@ -16,18 +17,18 @@ builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
-builder.Services.AddDbContext<DatabaseContext>(options => {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("MilkStore"));
-});
-builder.Services.AddScoped<IReviewsService, ReviewsService>();
 
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+    });
 
-builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddConfig(builder.Configuration);
-
-var app = builder.Build();
+WebApplication? app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseSwagger();
@@ -35,7 +36,7 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseCors("AllowAllOrigins");
 app.MapControllers();
 
 app.Run();
