@@ -186,6 +186,30 @@ namespace MilkStore.Services.Service
 
             return newUser;
         }
+
+        public async Task AccumulatePoints(Guid userId, double totalAmount)
+        {
+            // Kiểm tra nếu totalAmount <= 0 thì không cần cộng điểm
+            if (totalAmount <= 0)
+            {
+                return;
+            }
+
+            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("User not found");
+            }
+
+            // Tính điểm thưởng: 10 điểm cho mỗi 10.000 VND
+            int earnedPoints = (int)(totalAmount / 10000) * 10;
+
+            user.Points += earnedPoints;
+
+            await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
+            await _unitOfWork.SaveAsync();
+        }
+
     }
 
 

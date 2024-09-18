@@ -22,12 +22,14 @@ namespace MilkStore.Services.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly DatabaseContext _context;
         protected readonly DbSet<Order> _dbSet;
+        private readonly IUserService _userService;
 
-        public OrderService(IUnitOfWork unitOfWork, DatabaseContext context)
+        public OrderService(IUnitOfWork unitOfWork, DatabaseContext context, IUserService userService)
         {
             _unitOfWork = unitOfWork;
             _context = context;
             _dbSet = _context.Set<Order>();
+            _userService = userService;
         }
 
         public async Task<IEnumerable<Order>> GetAsync(string? id)
@@ -56,6 +58,13 @@ namespace MilkStore.Services.Service
                 PaymentMethod = ord.PaymentMethod,
                 OrderDate = ord.OrderDate,
             };
+
+            // Nếu đơn hàng có trạng thái "Completed", tích lũy điểm cho người dùng
+            if (item.Status == "Completed" && item.TotalAmount >= 10000)
+            {
+                await _userService.AccumulatePoints(item.UserId, item.TotalAmount);
+            }
+
             await _unitOfWork.GetRepository<Order>().InsertAsync(item);
             await _unitOfWork.SaveAsync();
         }
@@ -70,6 +79,13 @@ namespace MilkStore.Services.Service
             orderss.PaymentMethod = ord.PaymentMethod;
             orderss.OrderDate = ord.OrderDate;
             orderss.LastUpdatedTime = CoreHelper.SystemTimeNow;
+
+            // Nếu đơn hàng có trạng thái "Completed", tích lũy điểm cho người dùng
+            if (orderss.Status == "Completed" && orderss.TotalAmount >= 10000)
+            {
+                await _userService.AccumulatePoints(orderss.UserId, orderss.TotalAmount);
+            }
+
             await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
             await _unitOfWork.SaveAsync();
         }
@@ -89,7 +105,7 @@ namespace MilkStore.Services.Service
                     await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
                 }
             }
-
+   
             ord.TotalAmount += amount;
             await _unitOfWork.GetRepository<Order>().UpdateAsync(ord);
             await _unitOfWork.SaveAsync();

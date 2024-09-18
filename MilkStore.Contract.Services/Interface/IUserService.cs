@@ -4,6 +4,7 @@ using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
+using System.Threading.Tasks;
 
 namespace MilkStore.Contract.Services.Interface
 {
@@ -15,7 +16,7 @@ namespace MilkStore.Contract.Services.Interface
         Task<ApplicationUser> DeleteUser(Guid userId, string deleteby);
         Task<IEnumerable<UserResponeseDTO>> GetUser(string? id, int index = 1, int pageSize = 10);
         Task<ApplicationUser> AddUser(UserModelView userModel, string createdBy);
-
+        Task AccumulatePoints(Guid userId, double totalAmount);
 
     }
 }
