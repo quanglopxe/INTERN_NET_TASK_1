@@ -17,9 +17,9 @@ public class AuthService : IAuthService
         this.signInManager = signInManager;
 
     }
-    public async Task<ApplicationUser> CheckUser(string userName)
+    public async Task<ApplicationUser> ExistingUser(string email)
     {
-        ApplicationUser? user = await userManager.FindByNameAsync(userName);
+        ApplicationUser? user = await userManager.FindByEmailAsync(email);
         if (user != null)
         {
             if (user.DeletedTime.HasValue)
@@ -38,7 +38,12 @@ public class AuthService : IAuthService
     }
     public async Task<SignInResult> CheckPassword(LoginModelView loginModel)
     {
-        return await signInManager.PasswordSignInAsync(loginModel.Username, loginModel.Password, false, false);
+        SignInResult result = await signInManager.PasswordSignInAsync(loginModel.Email, loginModel.Password, false, false);
+        if (!result.Succeeded)
+        {
+            throw new BaseException.ErrorException(401, "Unauthorized", "Không đúng mật khẩu");
+        }
+        return result;
     }
     public (string token, IEnumerable<string> roles) GenerateJwtToken(ApplicationUser user)
     {

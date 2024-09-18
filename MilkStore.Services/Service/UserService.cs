@@ -28,20 +28,19 @@ namespace MilkStore.Services.Service
             this.signInManager = signInManager;
             _unitOfWork = unitOfWork;
         }
-        public async Task<ApplicationUser> GetUserByEmail(string email)
+        public async Task GetUserByEmailToRegister(string email)
         {
-            ApplicationUser? user = await userManager.FindByEmailAsync(email);
-            if (string.IsNullOrWhiteSpace(user?.Email))
+            ApplicationUser? user = await userManager.FindByNameAsync(email);
+            if (user != null)
             {
-                return null;
+                throw new BaseException.ErrorException(400, "BadRequest", "Email đã tồn tại!");
             }
-            return user;
         }
-        public async Task<IdentityResult> CreateUser(RegisterModelView userModel)
+        public async Task CreateUser(RegisterModelView userModel)
         {
             ApplicationUser? newUser = new ApplicationUser
             {
-                UserName = userModel.Username,
+                UserName = userModel.Email,
                 Email = userModel.Email,
                 PhoneNumber = userModel.PhoneNumber
             };
@@ -56,7 +55,10 @@ namespace MilkStore.Services.Service
                 }
                 await userManager.AddToRoleAsync(newUser, "Member");
             }
-            return result;
+            else
+            {
+                throw new BaseException.ErrorException(500, "InternalServerError", $"Lỗi khi tạo người dùng {result.Errors.FirstOrDefault()?.Description}");
+            }
         }
         public async Task<IdentityResult> CreateUserLoginGoogle(LoginGoogleModel loginGoogleModel)
         {
