@@ -27,6 +27,7 @@ namespace MilkStore.API.Controllers
         [HttpGet()]
         public async Task<IActionResult> GetUsers(string? id, int index = 1, int pageSize = 10)
         {
+<<<<<<< HEAD
             try
             {
                 IEnumerable<UserResponeseDTO> users = await _userService.GetUser(id, index, pageSize);
@@ -40,6 +41,10 @@ namespace MilkStore.API.Controllers
             {
                 return StatusCode(500, new { message = "An error occurred while Get the user", details = ex.Message });
             }
+=======
+            IList<UserResponeseDTO> users = (IList<UserResponeseDTO>)await _userService.GetUser(id);
+            return Ok(BaseResponse<IList<UserResponeseDTO>>.OkResponse(users));
+>>>>>>> 52fd018609a28659b6699cb92f33183308af2277
         }
         [HttpPost("add")]
         [Authorize(Roles = "Admin")]

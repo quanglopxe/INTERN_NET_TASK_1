@@ -12,8 +12,13 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
+<<<<<<<< HEAD:MilkStore.Repositories/Migrations/20240917023938_InitialMigration.Designer.cs
     [Migration("20240917023938_InitialMigration")]
     partial class InitialMigration
+========
+    [Migration("20240917144033_test")]
+    partial class test
+>>>>>>>> 52fd018609a28659b6699cb92f33183308af2277:MilkStore.Repositories/Migrations/20240917144033_test.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
