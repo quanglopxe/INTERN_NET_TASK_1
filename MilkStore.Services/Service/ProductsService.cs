@@ -29,7 +29,6 @@ namespace MilkStore.Services.Service
         }
         public async Task<Products> CreateProducts(ProductsModel productsModel)
         {
-            // Ánh xạ từ ProductsModel sang Products
             Products newProduct = _mapper.Map<Products>(productsModel);
             newProduct.CreatedTime = DateTime.UtcNow;
 
@@ -52,21 +51,24 @@ namespace MilkStore.Services.Service
 
             return product;
         }
-        
+
 
         public async Task<IEnumerable<ProductsModel>> GetProducts(string? id)
         {
             if (id == null)
             {
-                var products = await _unitOfWork.GetRepository<Products>().GetAllAsync();
+                IEnumerable<Products> products = await _unitOfWork.GetRepository<Products>().GetAllAsync();
                 return _mapper.Map<IEnumerable<ProductsModel>>(products);
             }
             else
             {
                 Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id);
-                return product != null ? new List<ProductsModel> { _mapper.Map<ProductsModel>(product) } : new List<ProductsModel>();
+                return product != null
+                    ? new List<ProductsModel> { _mapper.Map<ProductsModel>(product) }
+                    : new List<ProductsModel>();
             }
         }
+
 
         public async Task<Products> UpdateProducts(string id, ProductsModel productsModel)
         {
