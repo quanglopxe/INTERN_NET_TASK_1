@@ -12,7 +12,7 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20240918080839_initTable")]
+    [Migration("20240918094041_initTable")]
     partial class initTable
     {
         /// <inheritdoc />
@@ -280,6 +280,9 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PointsAdded")
+                        .HasColumnType("int");
 
                     b.Property<string>("ShippingAddress")
                         .IsRequired()

@@ -62,6 +62,7 @@ namespace MilkStore.Services.Service
             // Nếu đơn hàng có trạng thái "Completed", tích lũy điểm cho người dùng
             if (item.Status == "Completed" && item.TotalAmount >= 10000)
             {
+                item.PointsAdded = 1;
                 await _userService.AccumulatePoints(item.UserId, item.TotalAmount);
             }
 
@@ -81,8 +82,9 @@ namespace MilkStore.Services.Service
             orderss.LastUpdatedTime = CoreHelper.SystemTimeNow;
 
             // Nếu đơn hàng có trạng thái "Completed", tích lũy điểm cho người dùng
-            if (orderss.Status == "Completed" && orderss.TotalAmount >= 10000)
+            if (orderss.Status == "Completed" && orderss.TotalAmount >= 10000 && orderss.PointsAdded!=1)
             {
+                orderss.PointsAdded = 1;
                 await _userService.AccumulatePoints(orderss.UserId, orderss.TotalAmount);
             }
 
