@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace MilkStore.Contract.Repositories.Entity
@@ -15,7 +16,9 @@ namespace MilkStore.Contract.Repositories.Entity
         public required double UnitPrice { get; set; }
         public double TotalAmount => Quantity * UnitPrice;
 
+        [JsonIgnore]
         public virtual Order Order { get; set; }
+        [JsonIgnore]
         public virtual Products Products { get; set; }
     }
 }
