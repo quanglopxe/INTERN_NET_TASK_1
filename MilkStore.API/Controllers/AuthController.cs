@@ -28,30 +28,42 @@ namespace MilkStore.API.Controllers
         [HttpPost("auth_account")]
         public async Task<IActionResult> Login(LoginModelView model)
         {
-            ApplicationUser result = await authService.CheckUser(model.Username);
-            if (result == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound(new BaseException.ErrorException(404, "NotFound", "Không tìm thấy người dùng"));
+                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            Microsoft.AspNetCore.Identity.SignInResult resultPassword = await authService.CheckPassword(model);
-            if (!resultPassword.Succeeded)
+            else
             {
-                return Unauthorized(new BaseException.ErrorException(401, "Unauthorized", "Không đúng mật khẩu"));
-            }
-            (string token, IEnumerable<string> roles) = authService.GenerateJwtToken(result);
-            return Ok(BaseResponse<object>.OkResponse(new
-            {
-                access_token = token,
-                token_type = "JWT",
-                auth_type = "Bearer",
-                expires_in = DateTime.UtcNow.AddHours(1),
-                user = new
+                try
                 {
-                    userName = result.UserName,
-                    email = result.Email,
-                    role = roles
+                    ApplicationUser result = await authService.CheckUser(model.Username);
+                    Microsoft.AspNetCore.Identity.SignInResult resultPassword = await authService.CheckPassword(model);
+                    if (!resultPassword.Succeeded)
+                    {
+                        return Unauthorized(new BaseException.ErrorException(401, "Unauthorized", "Không đúng mật khẩu"));
+                    }
+                    (string token, IEnumerable<string> roles) = authService.GenerateJwtToken(result);
+                    return Ok(BaseResponse<object>.OkResponse(new
+                    {
+                        access_token = token,
+                        token_type = "JWT",
+                        auth_type = "Bearer",
+                        expires_in = DateTime.UtcNow.AddHours(1),
+                        user = new
+                        {
+                            userName = result.UserName,
+                            email = result.Email,
+                            role = roles
+                        }
+                    }));
+
                 }
-            }));
+                catch (BaseException.ErrorException e)
+                {
+
+                    return StatusCode(e.StatusCode, new { message = e.ErrorDetail.ErrorMessage, code = e.ErrorDetail.ErrorCode });
+                }
+            }
         }
 
         [HttpPost("new_account")]
