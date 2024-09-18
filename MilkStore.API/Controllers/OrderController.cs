@@ -9,6 +9,7 @@ using MilkStore.Services.Service;
 using MilkStore.Core.Base;
 using Microsoft.Extensions.Hosting;
 using MilkStore.Core;
+using MilkStore.Repositories.Entity;
 
 namespace MilkStore.API.Controllers
 {
@@ -47,42 +48,66 @@ namespace MilkStore.API.Controllers
         //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Add(OrderModelView item)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+                }
+
+                Order ord = await _orderService.AddAsync(item);
+                return Ok(new { message = "Add Order thành công" });
             }
-            Order ord = await _orderService.AddAsync(item);
-            return Ok(new { message = "Add Order thành công" });
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);  // Trả về 400 BadRequest nếu có lỗi do dữ liệu
+            }
+            catch (ApplicationException ex)
+            {
+                return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
+            }
         }
 
         [HttpPut("{id}")]
         //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Update(string id, OrderModelView item)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+                }
+                Order ord = await _orderService.UpdateAsync(id, item);
+                return Ok(new { message = "Update Order thành công" });
             }
-            OrderResponseDTO existingOrder = (OrderResponseDTO) await _orderService.GetAsync(id);
-            if (existingOrder is null)
+            catch (ArgumentException ex)
             {
-                return NotFound(new { message = "Không tìm thấy Order" });
+                return BadRequest(ex.Message);  // Trả về 400 BadRequest nếu có lỗi do dữ liệu
             }
-            Order ord = await _orderService.UpdateAsync(id, item);
-            return Ok(new { message = "Update Order thành công" });
+            catch (ApplicationException ex)
+            {
+                return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
+            }
         }
 
         [HttpDelete("{id}")]
         //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Delete(string id)
         {
-            OrderResponseDTO existingOrder = (OrderResponseDTO)await _orderService.GetAsync(id);
-            if (existingOrder is null)
+            try
             {
-                return NotFound(new { message = "Không tìm thấy Order" });
+                await _orderService.DeleteAsync(id);
+                return Ok(new { message = "Xóa thành công" });
             }
-            await _orderService.DeleteAsync(id);
-            return Ok(new { message = "Xóa thành công" });
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);  // Trả về 400 BadRequest nếu có lỗi do dữ liệu
+            }
+            catch (ApplicationException ex)
+            {
+                return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
+            }
         }
     }
 }
