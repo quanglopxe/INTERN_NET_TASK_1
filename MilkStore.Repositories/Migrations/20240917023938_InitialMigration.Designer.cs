@@ -12,13 +12,8 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-<<<<<<<< HEAD:MilkStore.Repositories/Migrations/20240918094041_initTable.Designer.cs
-    [Migration("20240918094041_initTable")]
-    partial class initTable
-========
-    [Migration("20240917144033_test")]
-    partial class test
->>>>>>>> 52fd018609a28659b6699cb92f33183308af2277:MilkStore.Repositories/Migrations/20240917144033_test.Designer.cs
+    [Migration("20240917023938_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -286,9 +281,6 @@ namespace MilkStore.Repositories.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("PointsAdded")
-                        .HasColumnType("int");
-
                     b.Property<string>("ShippingAddress")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -300,8 +292,9 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<double>("TotalAmount")
                         .HasColumnType("float");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("VoucherId")
                         .HasColumnType("nvarchar(450)");

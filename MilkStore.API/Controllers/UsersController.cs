@@ -117,7 +117,5 @@ namespace MilkStore.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while deleting the user", details = ex.Message });
             }
         }
-
-
     }
 }

@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core.Base;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MilkStore.API.Controllers
 {
@@ -22,12 +24,14 @@ namespace MilkStore.API.Controllers
 
         // GET
         [HttpGet]
-        public async Task<IEnumerable<OrderDetails>> GetOrderDetails(string? orderId = null, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> GetOrderDetails(string? orderId, int page=1, int pageSize=10)
         {
-            return await _orderDetailsService.ReadOrderDetails(orderId, page, pageSize);
+            IList<OrderDetails> detail = (IList<OrderDetails>)await _orderDetailsService.ReadOrderDetails(orderId, page, pageSize);
+            return Ok(BaseResponse<IList<OrderDetails>>.OkResponse(detail));
         }
 
         // POST
+        [Authorize(Roles = "Guest, Member")]
         [HttpPost]
         public async Task<IActionResult> CreateOrderDetails(OrderDetailsModelView model)
         {
@@ -43,26 +47,21 @@ namespace MilkStore.API.Controllers
         }
 
         // PUT
+        [Authorize(Roles = "Guest, Member")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateOrderDetails(string id, OrderDetailsModelView model)
-        { 
-            try
+        {
+            if (!ModelState.IsValid)
             {
-                var items = await _orderDetailsService.ReadOrderDetails(id);
-                if (items == null)
-                {
-                    return NotFound();
-                }
-                await _orderDetailsService.UpdateOrderDetails(id, model); 
-                return Ok();
+                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            OrderDetails detail = await _orderDetailsService.UpdateOrderDetails(id, model);
+            
+            return Ok(BaseResponse<OrderDetails>.OkResponse(detail));
         }
 
         // DELETE
+        [Authorize(Roles = "Guest, Member")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrderDetails(string id)
         {

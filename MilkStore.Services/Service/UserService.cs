@@ -20,38 +20,71 @@ namespace MilkStore.Services.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> userManager;
         private readonly RoleManager<ApplicationRole> roleManager;
-        private readonly DatabaseContext context;
-        private readonly IUserService _userService;
-
-        public UserService(DatabaseContext context, UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IUnitOfWork unitOfWork)
+        private readonly SignInManager<ApplicationUser> signInManager;
+        public UserService(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IUnitOfWork unitOfWork, SignInManager<ApplicationUser> signInManager)
         {
-            this.context = context;
             this.userManager = userManager;
             this.roleManager = roleManager;
+            this.signInManager = signInManager;
             _unitOfWork = unitOfWork;
         }
         public async Task<ApplicationUser> GetUserByEmail(string email)
         {
-            return await userManager.FindByEmailAsync(email);
+            ApplicationUser? user = await userManager.FindByEmailAsync(email);
+            if (string.IsNullOrWhiteSpace(user?.Email))
+            {
+                return null;
+            }
+            return user;
         }
         public async Task<IdentityResult> CreateUser(RegisterModelView userModel)
         {
-            var newUser = new ApplicationUser
+            ApplicationUser? newUser = new ApplicationUser
             {
                 UserName = userModel.Username,
                 Email = userModel.Email,
                 PhoneNumber = userModel.PhoneNumber
             };
 
-            var result = await userManager.CreateAsync(newUser, userModel.Password);
+            IdentityResult? result = await userManager.CreateAsync(newUser, userModel.Password);
             if (result.Succeeded)
             {
-                var roleExist = await roleManager.RoleExistsAsync("Member");
+                bool roleExist = await roleManager.RoleExistsAsync("Member");
                 if (!roleExist)
                 {
                     await roleManager.CreateAsync(new ApplicationRole { Name = "Member" });
                 }
                 await userManager.AddToRoleAsync(newUser, "Member");
+            }
+            return result;
+        }
+        public async Task<IdentityResult> CreateUserLoginGoogle(LoginGoogleModel loginGoogleModel)
+        {
+            ApplicationUser? newUser = new ApplicationUser
+            {
+                UserName = loginGoogleModel.Gmail,
+                Email = loginGoogleModel.Gmail,
+            };
+            if (string.IsNullOrEmpty(loginGoogleModel.ProviderKey))
+            {
+                throw new Exception("Provider key not found in claims");
+            }
+            IdentityResult? result = await userManager.CreateAsync(newUser);
+            if (result.Succeeded)
+            {
+                string roleName = "Member";
+                bool roleExist = await roleManager.RoleExistsAsync(roleName);
+                if (!roleExist)
+                {
+                    await roleManager.CreateAsync(new ApplicationRole { Name = roleName });
+                }
+                await userManager.AddToRoleAsync(newUser, roleName);
+                UserLoginInfo? userInfoLogin = new("Google", loginGoogleModel.ProviderKey, "Google");
+                IdentityResult loginResult = await userManager.AddLoginAsync(newUser, userInfoLogin);
+                if (!loginResult.Succeeded)
+                {
+                    return loginResult;
+                }
             }
             return result;
         }
@@ -149,7 +182,7 @@ namespace MilkStore.Services.Service
                 DeletedBy = user.DeletedBy,
                 LastUpdatedTime = user.LastUpdatedTime,
                 CreatedTime = user.CreatedTime,
-       
+
             };
         }
         public async Task<ApplicationUser> AddUser(UserModelView userModel, string createdBy)
@@ -173,7 +206,7 @@ namespace MilkStore.Services.Service
             {
                 UserName = userModel.UserName,
                 Email = userModel.Email,
-                Password= userModel.Password,
+                Password = userModel.Password,
                 PasswordHash = userModel.PasswordHash,
                 PhoneNumber = userModel.PhoneNumber,
                 Points = 0,

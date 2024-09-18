@@ -27,7 +27,7 @@ namespace MilkStore.API.Controllers
 
 
         [HttpPost]
-        //[Authorize(Roles = "Guest, Member")]
+        [Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Add(OrderModelView item)
         {
             await _orderService.AddAsync(item);
@@ -35,7 +35,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpPut("{id}")]
-        //[Authorize(Roles = "Guest, Member")]
+        [Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Update(string id, OrderModelView item)
         {
             var items = await _orderService.GetAsync(id);
@@ -48,7 +48,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Guest, Member")]
+        [Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Delete(string id)
         {
             await _orderService.DeleteAsync(id);
