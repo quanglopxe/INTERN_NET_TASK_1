@@ -76,6 +76,8 @@ namespace MilkStore.Services.Service
                 DateTimeOffset d2 = item.OrderDate.AddDays(5);
                 item.estimatedDeliveryDate = $"từ {d1:dd/MM/yyyy} đến {d2:dd/MM/yyyy}";
 
+                item.Status = "waiting";
+
                 // Đảm bảo gán các giá trị khác không được ánh xạ từ model view
                 item.TotalAmount = 0;
                 item.DiscountedAmount = 0;
