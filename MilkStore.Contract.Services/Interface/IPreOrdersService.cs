@@ -10,10 +10,9 @@ namespace MilkStore.Contract.Services.Interface
 {
     public interface IPreOrdersService
     {
-        Task<IEnumerable<PreOrders>> GetPreOrders(string? id);
+        Task<IEnumerable<PreOrders>> GetPreOrders(string? id, int page, int pageSize);
         Task<PreOrders> CreatePreOrders(PreOrdersModelView preOrdersModel);
         Task<PreOrders> UpdatePreOrders(string id, PreOrdersModelView preOrdersModel);
-        Task<PreOrders> DeletePreOrders(string id);
-        Task<IList<PreOrdersModelView>> Pagination(int pageSize, int pageNumber);
+        Task DeletePreOrders(string id);
     }
 }

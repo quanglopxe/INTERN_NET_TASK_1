@@ -45,6 +45,32 @@ public class AuthService : IAuthService
         }
         return result;
     }
+
+    public async Task ChangePasswordAdmin(string id, ChangePasswordAdminModel model)
+    {
+        ApplicationUser? admin = await userManager.FindByIdAsync(id);
+        if (admin is null)
+        {
+            throw new BaseException.ErrorException(404, "NotFound", "Không tìm thấy người dùng");
+        }
+        else
+        {
+            if (admin.DeletedTime.HasValue)
+            {
+                throw new BaseException.ErrorException(400, "BadRequest", "Tài khoản đã bị xóa");
+            }
+            else
+            {
+                IdentityResult result = await userManager.ChangePasswordAsync(admin, model.OldPassword, model.NewPassword);
+                if (!result.Succeeded)
+                {
+                    throw new BaseException.ErrorException(500, " InternalServerError", result.Errors.FirstOrDefault()?.Description);
+                }
+            }
+        }
+    }
+
+
     public (string token, IEnumerable<string> roles) GenerateJwtToken(ApplicationUser user)
     {
         byte[] key = Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new Exception("JWT_KEY is not set"));
@@ -68,6 +94,5 @@ public class AuthService : IAuthService
         JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
         SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
         return (tokenHandler.WriteToken(token), roles);
-
     }
 }

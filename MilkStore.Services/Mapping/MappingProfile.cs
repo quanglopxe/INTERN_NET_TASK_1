@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.OrderModelViews;
@@ -11,19 +6,35 @@ using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
 using MilkStore.ModelViews.CategoryModelViews;
+using MilkStore.ModelViews.ReviewsModelView;
+using MilkStore.ModelViews.PreOrdersModelView;
+using MilkStore.ModelViews.PostModelViews;
 
-namespace MilkStore.Services.Service
+
+namespace MilkStore.Services.Mapping
 {
 
     public class MappingProfile : Profile
     {
         public MappingProfile()
         {
-            //Map category
             CreateMap<Category, CategoryModel>();
-            CreateMap<CategoryModel,Category>();
+            CreateMap<CategoryModel,Category>();            
 
-            //Map products
+            #region Post
+            CreateMap<PostModelView, Post>();
+            CreateMap<Post, PostResponseDTO>()
+                .ForMember(dest => dest.Products, opt => opt.MapFrom(src => src.PostProducts.Select(pp => new ProductResponseDTO
+                {
+                    ProductID = pp.Product.Id,
+                    ProductName = pp.Product.ProductName,
+                    Description = pp.Product.Description,
+                    Price = pp.Product.Price,
+                    QuantityInStock = pp.Product.QuantityInStock,
+                    ImageUrl = pp.Product.ImageUrl
+                }).ToList()));
+            #endregion
+
             CreateMap<Products, ProductsModel>();
             CreateMap<ProductsModel, Products>();
 
@@ -36,14 +47,17 @@ namespace MilkStore.Services.Service
             .ForMember(dest => dest.LastUpdatedTime, opt => opt.Ignore())
             .ForMember(dest => dest.Points, opt => opt.Ignore()); // Nếu không muốn ánh xạ Points
 
-            CreateMap<OrderModelView, Order>();            
+            CreateMap<OrderModelView, Order>();
             CreateMap<Order, OrderResponseDTO>()
-                .ForMember(dest => dest.OrderDetailss, opt => opt.MapFrom(src => src.OrderDetailss));            
+                .ForMember(dest => dest.OrderDetailss, opt => opt.MapFrom(src => src.OrderDetailss));
             CreateMap<OrderDetails, OrderDetailResponseDTO>();
 
             // Ánh xạ từ OrderModelView sang Order, nhưng chỉ cập nhật các thuộc tính thay đổi
             CreateMap<OrderModelView, Order>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null)); // Chỉ ánh xạ khi giá trị mới khác null
+
+            CreateMap<Review, ReviewsModel>().ReverseMap();
+            CreateMap<PreOrders, PreOrdersModelView>().ReverseMap();
         }
     }
 }
