@@ -202,6 +202,11 @@ namespace MilkStore.Services.Service
                 Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
                         .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
                         ?? throw new KeyNotFoundException($"Voucher với ID {voucherId} không tồn tại.");
+
+                if (vch.ExpiryDate < orderss.OrderDate) 
+                {
+                    throw new KeyNotFoundException($"Voucher đã hết thời hạn áp dụng.");
+                }
                 vch.UsedCount++;
                 await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
 
