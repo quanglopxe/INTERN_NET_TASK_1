@@ -52,7 +52,7 @@ namespace MilkStore.API.Controllers
 
 
         [HttpPost]
-        //[Authorize(Roles = "Guest, Member")]
+        [Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Add(OrderModelView item)
         {
             try
@@ -98,6 +98,7 @@ namespace MilkStore.API.Controllers
             }
         }
 
+
         [HttpPut("Update{id}")]
         //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Update(string id, OrderModelView item)
@@ -122,7 +123,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Guest, Member")]
+        [Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Delete(string id)
         {
             try

@@ -2,15 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.ResponseDTO;
-using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Context;
-using MilkStore.Repositories.Entity;
-using System.Linq;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
 
 namespace MilkStore.Services.Service
 {
@@ -32,8 +28,7 @@ namespace MilkStore.Services.Service
                 Content = postModel.Content,
                 Image = postModel.Image,
                 CreatedTime = CoreHelper.SystemTimeNow,
-                LastUpdatedTime = CoreHelper.SystemTimeNow,
-                DeletedTime = null
+                LastUpdatedTime = CoreHelper.SystemTimeNow                
             };
             // Thêm sản phẩm vào bài đăng bằng PostProduct
             if (postModel.ProductIDs != null && postModel.ProductIDs.Any())
@@ -42,6 +37,8 @@ namespace MilkStore.Services.Service
 
                 foreach (var productId in postModel.ProductIDs)
                 {
+                    //check deletetime
+
                     var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(productId);
                     if (product != null)
                     {
@@ -83,7 +80,10 @@ namespace MilkStore.Services.Service
         }
         public async Task DeletePost(string id)
         {
-            var post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
+            //fix lỗi xóa 2 lần
+            // ko dùng var
+            Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
+            //rule code
             if (post == null)
             {
                 throw new KeyNotFoundException($"Post with ID {id} was not found.");
@@ -93,17 +93,23 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
 
         }
-
-        public async Task<IEnumerable<PostResponseDTO>> GetPosts(string? id)
+        //tên
+        public async Task<BasePaginatedList<PostResponseDTO>> GetPosts(string? id, int pageIndex, int pageSize)
         {
-            if (id == null)
+            //rule code
+            if(id == null)
             {
-                var listPosts = await _unitOfWork.GetRepository<Post>().Entities
-                    .Where(post => post.DeletedTime == null)
-                    .ToListAsync();
+                var query = _unitOfWork.GetRepository<Post>().Entities.Where(post => post.DeletedTime == null);
+                var paginatedPosts = await _unitOfWork.GetRepository<Post>().GetPagging(query, pageIndex, pageSize);
 
-                // Ánh xạ listPosts sang kiểu trả về khác
-                return listPosts.Select(MapToPostResponseDto).ToList();
+                // Ánh xạ paginatedPosts sang kiểu trả về khác
+                var paginatedPostDtos = new BasePaginatedList<PostResponseDTO>(
+                    paginatedPosts.Items.Select(MapToPostResponseDto).ToList(),
+                    paginatedPosts.TotalPages,
+                    paginatedPosts.CurrentPage,
+                    paginatedPosts.PageSize
+                    );
+                return paginatedPostDtos;
             }
             else
             {
@@ -112,11 +118,13 @@ namespace MilkStore.Services.Service
                 {
                     throw new KeyNotFoundException($"Post with ID {id} was not found.");
                 }
-                return new List<PostResponseDTO> { MapToPostResponseDto(post) };
-            }
+
+                var postDto = new List<PostResponseDTO> { MapToPostResponseDto(post) };
+                return new BasePaginatedList<PostResponseDTO>(postDto, 1, 1, 1);
+            }            
 
         }
-
+        //kiểm tra trùng với db trước khi update
         public async Task<PostResponseDTO> UpdatePost(string id, PostModelView postModel)
         {
             var post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
@@ -132,6 +140,11 @@ namespace MilkStore.Services.Service
             await _unitOfWork.GetRepository<Post>().UpdateAsync(post);
             await _unitOfWork.SaveAsync();
             return MapToPostResponseDto(post);
+        }
+
+        Task<BasePaginatedList<PostResponseDTO>> IPostService.GetPosts(string? id, int index, int pageSize)
+        {
+            throw new NotImplementedException();
         }
     }
 }

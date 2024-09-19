@@ -20,18 +20,18 @@ namespace MilkStore.Services.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly IOrderService _orderService;
         private readonly DatabaseContext _context;
-        protected readonly DbSet<OrderDetails> _dbSet;
+        //protected readonly DbSet<OrderDetails> _dbSet;
 
         public OrderDetailsService(IUnitOfWork unitOfWork, DatabaseContext context, IOrderService orderService)
         {
             _unitOfWork = unitOfWork;
             _context = context;
-            _dbSet = _context.Set<OrderDetails>();
+            //_dbSet = _context.Set<OrderDetails>();
             _orderService = orderService;
         }
 
         // Create OrderDetails
-        public async Task CreateOrderDetails(OrderDetailsModelView model)
+        public async Task<OrderDetails> CreateOrderDetails(OrderDetailsModelView model)
         {
             var orderDetails = new OrderDetails
             {
@@ -49,33 +49,40 @@ namespace MilkStore.Services.Service
         }
 
         //Read OrderDetails
-        public async Task<IEnumerable<OrderDetails>> ReadOrderDetails(string? orderId, int page = 1, int pageSize = 10)
+        public async Task<IEnumerable<OrderDetails>> ReadOrderDetails(string? id, int page, int pageSize)
         {
-            IQueryable<OrderDetails> query = _dbSet.Where(e => EF.Property<DateTimeOffset?>(e, "DeletedTime") == null); // Lọc các bản ghi chưa bị xóa mềm
-
-            if (!string.IsNullOrEmpty(orderId))
+            if (id == null)
             {
-                query = query.Where(od => od.OrderID == orderId);
+                var query = _unitOfWork.GetRepository<OrderDetails>()
+                    .Entities
+                    .Where(detail => detail.DeletedTime == null)
+                    .OrderBy(detail => detail.OrderID);
+                    
+                    
+                var paginated = await _unitOfWork.GetRepository<OrderDetails>()
+                    .GetPagging(query, page, pageSize);
+                
+                return paginated.Items;
+
             }
-
-            // Tính toán phân trang
-            var totalItems = await query.CountAsync();
-            var totalPages = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
-            page = Math.Max(1, Math.Min(page, totalPages));
-
-            var orderDetailsPaged = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return orderDetailsPaged;
+            else
+            {
+                var od = await _unitOfWork.GetRepository<OrderDetails>()
+                    .Entities
+                    .FirstOrDefaultAsync(or => or.Id == id && or.DeletedTime == null);
+                if (od == null)
+                {
+                    throw new KeyNotFoundException($"Order Details have ID: {id} was not found.");
+                }
+                return new List<OrderDetails> { od };
+            }
         }
 
         // Update OrderDetails
-        public async Task UpdateOrderDetails(string id, OrderDetailsModelView model)
+        public async Task<OrderDetails> UpdateOrderDetails(string id, OrderDetailsModelView model)
         {
             var orderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id);
-            if (orderDetails != null)
+            if (orderDetails == null)
             {
                 //orderDetails.OrderID = model.OrderID;
                 orderDetails.ProductID = model.ProductID;

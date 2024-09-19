@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.Repositories.Entity;
 using Microsoft.AspNetCore.Identity;
+using MilkStore.Core.Base;
 public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> userManager;
@@ -16,28 +17,47 @@ public class AuthService : IAuthService
         this.signInManager = signInManager;
 
     }
-    public async Task<ApplicationUser> CheckUser(string userName)
+    public async Task<ApplicationUser> ExistingUser(string email)
     {
-        return await userManager.FindByNameAsync(userName);
+        ApplicationUser? user = await userManager.FindByEmailAsync(email);
+        if (user != null)
+        {
+            if (user.DeletedTime.HasValue)
+            {
+                throw new BaseException.ErrorException(400, "BadRequest", "Tài khoản đã bị xóa");
+            }
+            else
+            {
+                return user;
+            }
+        }
+        else
+        {
+            throw new BaseException.ErrorException(404, "NotFound", "Không tìm thấy người dùng");
+        }
     }
     public async Task<SignInResult> CheckPassword(LoginModelView loginModel)
     {
-        return await signInManager.PasswordSignInAsync(loginModel.Username, loginModel.Password, false, false);
+        SignInResult result = await signInManager.PasswordSignInAsync(loginModel.Email, loginModel.Password, false, false);
+        if (!result.Succeeded)
+        {
+            throw new BaseException.ErrorException(401, "Unauthorized", "Không đúng mật khẩu");
+        }
+        return result;
     }
-    public (string token, IList<string> roles) GenerateJwtToken(ApplicationUser user)
+    public (string token, IEnumerable<string> roles) GenerateJwtToken(ApplicationUser user)
     {
-        var key = Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new Exception("JWT_KEY is not set"));
-        var claims = new List<Claim>{
+        byte[] key = Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new Exception("JWT_KEY is not set"));
+        List<Claim> claims = new List<Claim> {
             new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
-            new Claim(ClaimTypes.Name,user.UserName),
             new Claim(ClaimTypes.Email, user.Email)
         };
-        var roles = userManager.GetRolesAsync(user: user).Result;
-        foreach (var role in roles)
+        IEnumerable<string> roles = userManager.GetRolesAsync(user: user).Result;
+        foreach (string role in roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
-        var tokenDescriptor = new SecurityTokenDescriptor
+        SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddHours(1),
@@ -45,9 +65,8 @@ public class AuthService : IAuthService
             Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? throw new Exception("JWT_AUDIENCE is not set"),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var token = tokenHandler.CreateToken(tokenDescriptor);
+        JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
+        SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
         return (tokenHandler.WriteToken(token), roles);
 
     }

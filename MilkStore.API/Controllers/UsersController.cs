@@ -27,7 +27,7 @@ namespace MilkStore.API.Controllers
         [HttpGet()]
         public async Task<IActionResult> GetUsers(string? id, int index = 1, int pageSize = 10)
         {
-            IList<UserResponeseDTO> users = (IList<UserResponeseDTO>)await _userService.GetUser(id);  
+            IList<UserResponeseDTO> users = (IList<UserResponeseDTO>)await _userService.GetUser(id);
             return Ok(BaseResponse<IList<UserResponeseDTO>>.OkResponse(users));
         }
         [HttpPost("add")]
@@ -86,7 +86,5 @@ namespace MilkStore.API.Controllers
             }
             return Ok(deletedUser);
         }
-
-
     }
 }
