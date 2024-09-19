@@ -5,6 +5,7 @@ using MilkStore.ModelViews.OrderModelViews;
 using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
+using MilkStore.ModelViews.PostModelViews;
 
 namespace MilkStore.Services.Mapping
 {
@@ -14,6 +15,20 @@ namespace MilkStore.Services.Mapping
         public MappingProfile()
         {
             // CreateMap<Products, ProductsModel>().ReverseMap(); Có thể cấu hình như này để ánh xạ các thuộc tính của ProductsModel sang Products và nguoc lại
+
+            #region Post
+            CreateMap<PostModelView, Post>();
+            CreateMap<Post, PostResponseDTO>()
+                .ForMember(dest => dest.Products, opt => opt.MapFrom(src => src.PostProducts.Select(pp => new ProductResponseDTO
+                {
+                    ProductID = pp.Product.Id,
+                    ProductName = pp.Product.ProductName,
+                    Description = pp.Product.Description,
+                    Price = pp.Product.Price,
+                    QuantityInStock = pp.Product.QuantityInStock,
+                    ImageUrl = pp.Product.ImageUrl
+                }).ToList()));
+            #endregion
 
             CreateMap<Products, ProductsModel>();
             CreateMap<ProductsModel, Products>();
