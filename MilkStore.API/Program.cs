@@ -6,7 +6,6 @@ using MilkStore.Contract.Repositories;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.UOW;
-using MilkStore.Services.MappingProfile;
 using MilkStore.Services.Configs;
 using MilkStore.Services.Service;
 
@@ -27,9 +26,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
-var automapper = new MapperConfiguration(item => item.AddProfile(new Mappings()));
-IMapper mapper = automapper.CreateMapper();
-builder.Services.AddSingleton(mapper);
+
 
 
 builder.Services.AddEndpointsApiExplorer();

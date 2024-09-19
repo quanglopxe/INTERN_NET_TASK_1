@@ -13,7 +13,6 @@ using MilkStore.Contract.Services.Interface;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
 using MilkStore.Services;
-using MilkStore.Services.MappingProfile;
 using MilkStore.Services.Service;
 
 namespace MilkStore.API
@@ -31,6 +30,7 @@ namespace MilkStore.API
             services.AddServices();
             services.AddAuthenticationGoogle();
             services.AddAuthenticationBearer(configuration);
+            services.AddAutoMapperConfig();
         }
         public static void AddAuthenticationBearer(this IServiceCollection services, IConfiguration configuration)
         {
@@ -77,10 +77,7 @@ namespace MilkStore.API
              .AddDefaultTokenProviders();
         }
         public static void AddServices(this IServiceCollection services)
-        {
-            // Đăng ký AutoMapper
-            services.AddAutoMapper(typeof(MappingProfile));
-
+        {            
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();
@@ -90,9 +87,14 @@ namespace MilkStore.API
             services.AddScoped<IVoucherService, VoucherService>();
             services.AddScoped<IReviewsService, ReviewsService>();
             services.AddScoped<IPreOrdersService, PreOrdersService>();
-            services.AddAutoMapper(typeof(Mappings));
+            
             services.AddHttpContextAccessor();
         }
+        public static void AddAutoMapperConfig(this IServiceCollection services)
+        {            
+            services.AddAutoMapper(typeof(MappingProfile));
+        }
+
         public static void AddSwaggerUIAuthentication(this IServiceCollection services)
         {
             services.AddSwaggerGen(c =>
