@@ -36,7 +36,7 @@ namespace MilkStore.API.Controllers
             Voucher voucher = await _voucherService.CreateVoucher(voucherModel);
             return Ok(BaseResponse<Voucher>.OkResponse(voucher));
         }
-        [Authorize(Roles = "Staff")]
+        //[Authorize(Roles = "Staff")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateVoucher(string id, VoucherModelView voucherModel)
         {

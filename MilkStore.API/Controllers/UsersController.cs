@@ -31,7 +31,7 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<IList<UserResponeseDTO>>.OkResponse(users));
         }
         [HttpPost("add")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddUser(UserModelView userModel)
         {
             var createdBy = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "System";
