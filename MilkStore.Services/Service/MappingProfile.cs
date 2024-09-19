@@ -10,6 +10,7 @@ using MilkStore.ModelViews.OrderModelViews;
 using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
+using MilkStore.ModelViews.CategoryModelViews;
 
 namespace MilkStore.Services.Service
 {
@@ -18,6 +19,11 @@ namespace MilkStore.Services.Service
     {
         public MappingProfile()
         {
+            //Map category
+            CreateMap<Category, CategoryModel>();
+            CreateMap<CategoryModel,Category>();
+
+            //Map products
             CreateMap<Products, ProductsModel>();
             CreateMap<ProductsModel, Products>();
 
