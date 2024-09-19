@@ -71,6 +71,10 @@ namespace MilkStore.Services.Service
             {
                 // Sử dụng mapper để ánh xạ từ OrderModelView sang Order
                 Order item = _mapper.Map<Order>(ord);
+                item.OrderDate = CoreHelper.SystemTimeNow;
+                DateTimeOffset d1 = item.OrderDate.AddDays(3);
+                DateTimeOffset d2 = item.OrderDate.AddDays(5);
+                item.estimatedDeliveryDate = $"từ {d1:dd/MM/yyyy} đến {d2:dd/MM/yyyy}";
 
                 // Đảm bảo gán các giá trị khác không được ánh xạ từ model view
                 item.TotalAmount = 0;

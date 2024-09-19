@@ -1,11 +1,9 @@
 ﻿using System.Text;
-using dotenv.net;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MilkStore.Contract.Repositories.Entity;
@@ -13,6 +11,7 @@ using MilkStore.Contract.Services.Interface;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
 using MilkStore.Services;
+using MilkStore.Services.Mapping;
 using MilkStore.Services.Service;
 
 namespace MilkStore.API
@@ -77,7 +76,7 @@ namespace MilkStore.API
              .AddDefaultTokenProviders();
         }
         public static void AddServices(this IServiceCollection services)
-        {            
+        {
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();
@@ -87,11 +86,11 @@ namespace MilkStore.API
             services.AddScoped<IVoucherService, VoucherService>();
             services.AddScoped<IReviewsService, ReviewsService>();
             services.AddScoped<IPreOrdersService, PreOrdersService>();
-            
+
             services.AddHttpContextAccessor();
         }
         public static void AddAutoMapperConfig(this IServiceCollection services)
-        {            
+        {
             services.AddAutoMapper(typeof(MappingProfile));
         }
 
