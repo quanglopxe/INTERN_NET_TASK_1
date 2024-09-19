@@ -274,8 +274,8 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<DateTimeOffset>("LastUpdatedTime")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTime>("OrderDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("OrderDate")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
@@ -300,6 +300,13 @@ namespace MilkStore.Repositories.Migrations
 
                     b.Property<string>("VoucherId")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTimeOffset?>("deliveryDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("estimatedDeliveryDate")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
