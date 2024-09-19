@@ -10,6 +10,8 @@ using MilkStore.ModelViews.OrderModelViews;
 using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
+using MilkStore.ModelViews.ReviewsModelView;
+using MilkStore.ModelViews.PreOrdersModelView;
 
 namespace MilkStore.Services.Service
 {
@@ -38,6 +40,9 @@ namespace MilkStore.Services.Service
             // Ánh xạ từ OrderModelView sang Order, nhưng chỉ cập nhật các thuộc tính thay đổi
             CreateMap<OrderModelView, Order>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null)); // Chỉ ánh xạ khi giá trị mới khác null
+
+            CreateMap<Review, ReviewsModel>().ReverseMap();
+            CreateMap<PreOrders, PreOrdersModelView>().ReverseMap();
         }
     }
 }

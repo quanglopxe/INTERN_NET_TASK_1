@@ -461,8 +461,9 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<DateTime>("PreoderDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("ProductID")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("ProductID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
@@ -471,10 +472,13 @@ namespace MilkStore.Repositories.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("UserID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ProductID");
 
                     b.ToTable("PreOrders");
                 });
@@ -552,16 +556,20 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<DateTimeOffset>("LastUpdatedTime")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<Guid>("ProductID")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("ProductID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Rating")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("UserID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ProductID");
 
                     b.ToTable("Reviews");
                 });
@@ -755,6 +763,28 @@ namespace MilkStore.Repositories.Migrations
                     b.Navigation("Post");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.PreOrders", b =>
+                {
+                    b.HasOne("MilkStore.Contract.Repositories.Entity.Products", "Products")
+                        .WithMany()
+                        .HasForeignKey("ProductID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Review", b =>
+                {
+                    b.HasOne("MilkStore.Contract.Repositories.Entity.Products", "Products")
+                        .WithMany()
+                        .HasForeignKey("ProductID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Order", b =>
