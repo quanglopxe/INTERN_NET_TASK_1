@@ -42,10 +42,11 @@ namespace MilkStore.Services.Service
                 //TotalAmount = model.Quantity * model.UnitPrice
             };
             //Update lên bảng Order
-            
-            await _dbSet.AddAsync(orderDetails);
+
+            await _unitOfWork.GetRepository<OrderDetails>().InsertAsync(orderDetails);
             await _unitOfWork.SaveAsync();
             await _orderService.UpdateToTalAmount(orderDetails.OrderID);
+            return orderDetails;
         }
 
         //Read OrderDetails
@@ -82,7 +83,7 @@ namespace MilkStore.Services.Service
         public async Task<OrderDetails> UpdateOrderDetails(string id, OrderDetailsModelView model)
         {
             var orderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id);
-            if (orderDetails == null)
+            if (orderDetails != null)
             {
                 //orderDetails.OrderID = model.OrderID;
                 orderDetails.ProductID = model.ProductID;
@@ -90,10 +91,17 @@ namespace MilkStore.Services.Service
                 orderDetails.UnitPrice = model.UnitPrice;
                 //orderDetails.TotalAmount = model.Quantity * model.UnitPrice; // tính tự động
                 //await _orderService.UpdateToTalAmount(orderDetails.OrderID, orderDetails.TotalAmount);
-                _dbSet.Update(orderDetails);
+                await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(orderDetails);
                 await _unitOfWork.SaveAsync();
+
                 await _orderService.UpdateToTalAmount(orderDetails.OrderID);
+                return orderDetails;
             }
+            else
+            {
+                throw new KeyNotFoundException($"Order Details have ID: {id} was not found.");
+            }
+            
         }
 
         // Delete OrderDetails by OrderID and ProductID
