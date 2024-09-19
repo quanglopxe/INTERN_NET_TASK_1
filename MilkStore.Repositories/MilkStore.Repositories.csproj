@@ -26,4 +26,8 @@
     <ProjectReference Include="..\MilkStore.ModelViews\MilkStore.ModelViews.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Migrations\" />
+  </ItemGroup>
+
 </Project>

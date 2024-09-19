@@ -13,6 +13,7 @@ using MilkStore.Contract.Services.Interface;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
 using MilkStore.Services;
+using MilkStore.Services.MappingProfile;
 using MilkStore.Services.Service;
 
 namespace MilkStore.API
@@ -89,6 +90,7 @@ namespace MilkStore.API
             services.AddScoped<IVoucherService, VoucherService>();
             services.AddScoped<IReviewsService, ReviewsService>();
             services.AddScoped<IPreOrdersService, PreOrdersService>();
+            services.AddAutoMapper(typeof(Mappings));
             services.AddHttpContextAccessor();
         }
         public static void AddSwaggerUIAuthentication(this IServiceCollection services)
