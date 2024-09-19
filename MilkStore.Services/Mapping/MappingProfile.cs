@@ -5,9 +5,11 @@ using MilkStore.ModelViews.OrderModelViews;
 using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
+using MilkStore.ModelViews.CategoryModelViews;
 using MilkStore.ModelViews.ReviewsModelView;
 using MilkStore.ModelViews.PreOrdersModelView;
 using MilkStore.ModelViews.PostModelViews;
+
 
 namespace MilkStore.Services.Mapping
 {
@@ -16,7 +18,8 @@ namespace MilkStore.Services.Mapping
     {
         public MappingProfile()
         {
-            // CreateMap<Products, ProductsModel>().ReverseMap(); Có thể cấu hình như này để ánh xạ các thuộc tính của ProductsModel sang Products và nguoc lại
+            CreateMap<Category, CategoryModel>();
+            CreateMap<CategoryModel,Category>();            
 
             #region Post
             CreateMap<PostModelView, Post>();

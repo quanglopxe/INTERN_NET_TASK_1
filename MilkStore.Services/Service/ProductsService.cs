@@ -45,8 +45,8 @@ namespace MilkStore.Services.Service
             {
                 throw new Exception($"Mã hàng đã được xóa:{id}");
             }
-
-            await _unitOfWork.GetRepository<Products>().DeleteAsync(id);
+            product.DeletedTime = DateTime.UtcNow;
+            await _unitOfWork.GetRepository<Products>().UpdateAsync(product);
             await _unitOfWork.SaveAsync();
 
             return product;
@@ -57,17 +57,31 @@ namespace MilkStore.Services.Service
         {
             if (id == null)
             {
+                // Lấy tất cả sản phẩm
                 IEnumerable<Products> products = await _unitOfWork.GetRepository<Products>().GetAllAsync();
+
+                // Lọc sản phẩm có DeleteTime == null
+                products = products.Where(p => p.DeletedTime == null);
+
                 return _mapper.Map<IEnumerable<ProductsModel>>(products);
             }
             else
             {
+                // Lấy sản phẩm theo ID
                 Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id);
-                return product != null
-                    ? new List<ProductsModel> { _mapper.Map<ProductsModel>(product) }
-                    : new List<ProductsModel>();
+
+                if (product != null && product.DeletedTime == null) // Kiểm tra DeleteTime
+                {
+                    return new List<ProductsModel> { _mapper.Map<ProductsModel>(product) };
+                }
+                else
+                {
+                    return new List<ProductsModel>();
+                }
             }
         }
+
+
 
 
         public async Task<Products> UpdateProducts(string id, ProductsModel productsModel)

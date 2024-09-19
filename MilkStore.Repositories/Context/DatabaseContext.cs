@@ -24,7 +24,7 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<OrderDetails> OrderDetails => Set<OrderDetails>();
         public virtual DbSet<Voucher> Vouchers => Set<Voucher>();
         public virtual DbSet<PreOrders> PreOrders => Set<PreOrders>();
-
+        public virtual DbSet<Category> Category => Set<Category>();
 
         #endregion
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -33,7 +33,6 @@ namespace MilkStore.Repositories.Context
             //    .HasMany(p => p.Products)
             //    .WithMany(p => p.Posts)
             //    .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table
-
             //Add FK_Order_Voucher
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.Voucher)

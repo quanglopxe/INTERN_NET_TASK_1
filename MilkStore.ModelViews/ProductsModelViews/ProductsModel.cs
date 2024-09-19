@@ -13,6 +13,8 @@ namespace MilkStore.ModelViews.ProductsModelViews
         [Required(ErrorMessage = "sl sp không được để trống")]
         public required int QuantityInStock { get; set; }
         public string ImageUrl { get; set; }
+        [Required(ErrorMessage = "Id loại không được để trống")]
+        public string CategoryId { get; set; }
         //public List<int>? ProductIDs { get; set; }
     }
 }

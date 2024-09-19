@@ -86,6 +86,7 @@ namespace MilkStore.API
             services.AddScoped<IVoucherService, VoucherService>();
             services.AddScoped<IReviewsService, ReviewsService>();
             services.AddScoped<IPreOrdersService, PreOrdersService>();
+            services.AddScoped<ICategoryService, CategoryService>();
 
             services.AddHttpContextAccessor();
         }
