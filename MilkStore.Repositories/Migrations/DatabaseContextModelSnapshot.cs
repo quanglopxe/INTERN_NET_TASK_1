@@ -60,7 +60,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ApplicationRole");
+                    b.ToTable("ApplicationRole", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationRoleClaims", b =>
@@ -100,7 +100,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ApplicationRoleClaims");
+                    b.ToTable("ApplicationRoleClaims", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserClaims", b =>
@@ -140,7 +140,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ApplicationUserClaims");
+                    b.ToTable("ApplicationUserClaims", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserLogins", b =>
@@ -177,7 +177,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("UserId", "LoginProvider", "ProviderKey");
 
-                    b.ToTable("ApplicationUserLogins");
+                    b.ToTable("ApplicationUserLogins", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserRoles", b =>
@@ -208,7 +208,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("UserId", "RoleId");
 
-                    b.ToTable("ApplicationUserRoles");
+                    b.ToTable("ApplicationUserRoles", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserTokens", b =>
@@ -245,7 +245,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
-                    b.ToTable("ApplicationUserTokens");
+                    b.ToTable("ApplicationUserTokens", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Order", b =>
@@ -264,9 +264,6 @@ namespace MilkStore.Repositories.Migrations
 
                     b.Property<DateTimeOffset?>("DeletedTime")
                         .HasColumnType("datetimeoffset");
-
-                    b.Property<double>("DiscountedAmount")
-                        .HasColumnType("float");
 
                     b.Property<string>("LastUpdatedBy")
                         .HasColumnType("nvarchar(max)");
@@ -303,11 +300,9 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
                     b.HasIndex("VoucherId");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.OrderDetails", b =>
@@ -353,7 +348,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasIndex("ProductID");
 
-                    b.ToTable("OrderDetails");
+                    b.ToTable("OrderDetails", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Post", b =>
@@ -392,7 +387,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Posts");
+                    b.ToTable("Posts", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.PostProduct", b =>
@@ -432,7 +427,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("PostProduct");
+                    b.ToTable("PostProduct", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.PreOrders", b =>
@@ -476,7 +471,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PreOrders");
+                    b.ToTable("PreOrders", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Products", b =>
@@ -522,7 +517,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Review", b =>
@@ -563,7 +558,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Voucher", b =>
@@ -620,7 +615,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Vouchers");
+                    b.ToTable("Vouchers", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Repositories.Entity.ApplicationUser", b =>
@@ -698,23 +693,15 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ApplicationUser");
+                    b.ToTable("ApplicationUser", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Order", b =>
                 {
-                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "User")
-                        .WithMany("Orders")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("MilkStore.Contract.Repositories.Entity.Voucher", "Voucher")
                         .WithMany("Orders")
                         .HasForeignKey("VoucherId")
                         .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("User");
 
                     b.Navigation("Voucher");
                 });
@@ -775,11 +762,6 @@ namespace MilkStore.Repositories.Migrations
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Voucher", b =>
-                {
-                    b.Navigation("Orders");
-                });
-
-            modelBuilder.Entity("MilkStore.Repositories.Entity.ApplicationUser", b =>
                 {
                     b.Navigation("Orders");
                 });

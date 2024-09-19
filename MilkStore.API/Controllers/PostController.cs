@@ -33,8 +33,8 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            PostResponseDTO post = await _postService.CreatePost(postModel);
-            return Ok(BaseResponse<PostResponseDTO>.OkResponse(post));
+            await _postService.CreatePost(postModel);
+            return Ok();
         }
         [Authorize(Roles = "Staff")]
         [HttpPut("{id}")]
@@ -44,8 +44,8 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            PostResponseDTO post = await _postService.UpdatePost(id, postModel);
-            return Ok(BaseResponse<PostResponseDTO>.OkResponse(post));
+            await _postService.UpdatePost(id, postModel);
+            return Ok();
         }
         [Authorize(Roles = "Staff")]
         [HttpDelete("{id}")]
