@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.OrderModelViews;
@@ -12,19 +7,17 @@ using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
 using MilkStore.ModelViews.PostModelViews;
 
-namespace MilkStore.Services.Service
+namespace MilkStore.Services.Mapping
 {
 
     public class MappingProfile : Profile
     {
         public MappingProfile()
         {
+            // CreateMap<Products, ProductsModel>().ReverseMap(); Có thể cấu hình như này để ánh xạ các thuộc tính của ProductsModel sang Products và nguoc lại
+
             #region Post
             CreateMap<PostModelView, Post>();
-                //.ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(src => DateTimeOffset.UtcNow))
-                //.ForMember(dest => dest.LastUpdatedTime, opt => opt.MapFrom(src => DateTimeOffset.UtcNow))
-                //.ForMember(dest => dest.DeletedTime, opt => opt.Ignore());
-
             CreateMap<Post, PostResponseDTO>()
                 .ForMember(dest => dest.Products, opt => opt.MapFrom(src => src.PostProducts.Select(pp => new ProductResponseDTO
                 {
@@ -36,6 +29,7 @@ namespace MilkStore.Services.Service
                     ImageUrl = pp.Product.ImageUrl
                 }).ToList()));
             #endregion
+
             CreateMap<Products, ProductsModel>();
             CreateMap<ProductsModel, Products>();
 
@@ -48,9 +42,9 @@ namespace MilkStore.Services.Service
             .ForMember(dest => dest.LastUpdatedTime, opt => opt.Ignore())
             .ForMember(dest => dest.Points, opt => opt.Ignore()); // Nếu không muốn ánh xạ Points
 
-            CreateMap<OrderModelView, Order>();            
+            CreateMap<OrderModelView, Order>();
             CreateMap<Order, OrderResponseDTO>()
-                .ForMember(dest => dest.OrderDetailss, opt => opt.MapFrom(src => src.OrderDetailss));            
+                .ForMember(dest => dest.OrderDetailss, opt => opt.MapFrom(src => src.OrderDetailss));
             CreateMap<OrderDetails, OrderDetailResponseDTO>();
 
             // Ánh xạ từ OrderModelView sang Order, nhưng chỉ cập nhật các thuộc tính thay đổi

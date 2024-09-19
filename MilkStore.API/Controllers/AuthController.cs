@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Services.Interface;
@@ -45,7 +47,6 @@ namespace MilkStore.API.Controllers
                         expires_in = DateTime.UtcNow.AddHours(1),
                         user = new
                         {
-                            userName = result.UserName,
                             email = result.Email,
                             role = roles
                         }
@@ -82,6 +83,33 @@ namespace MilkStore.API.Controllers
                 }
             }
         }
+        [Authorize(Roles = "Admin")]
+        [HttpPatch("Change_Password_Admin")]
+        public async Task<IActionResult> ChangePasswordForAdmin(ChangePasswordAdminModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new BaseException.ErrorException(400, "BadRequest", ModelState.ToString()));
+            }
+            else
+            {
+                try
+                {
+                    // get id from token
+                    string? Id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    await authService.ChangePasswordAdmin(Id, model);
+                    return Ok(BaseResponse<string>.OkResponse("Đổi mật khẩu thành công"));
+                }
+                catch (BaseException.ErrorException ex)
+                {
+                    return StatusCode(ex.StatusCode, new BaseException.ErrorException(ex.StatusCode, ex.ErrorDetail.ErrorCode, ex.ErrorDetail.ErrorMessage.ToString()));
+
+                }
+            }
+        }
+
+
+
         [HttpGet("signin-google")]
         public IActionResult LoginGoogle()
         {
