@@ -20,9 +20,9 @@ namespace MilkStore.API.Controllers
             _postService = postService;    
         }        
         [HttpGet()]
-        public async Task<IActionResult> GetPost(string? id, int index = 1, int pageSize = 10)
+        public async Task<IActionResult> GetPost(string? id, string? name, int index = 1, int pageSize = 10)
         {
-            var paginatedPosts = await _postService.GetPosts(id, index, pageSize);
+            var paginatedPosts = await _postService.GetPosts(id, name, index, pageSize);
             return Ok(BaseResponse<BasePaginatedList<PostResponseDTO>>.OkResponse(paginatedPosts));
         }
         [Authorize(Roles = "Staff")]
