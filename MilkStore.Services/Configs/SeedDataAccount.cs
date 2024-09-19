@@ -14,7 +14,7 @@ namespace MilkStore.Services.Configs
 
             if (!await roleManager.RoleExistsAsync("Admin"))
             {
-                await roleManager.CreateAsync(new ApplicationRole { Name = "Member" });
+                await roleManager.CreateAsync(new ApplicationRole { Name = "Admin" });
             }
             string email = "Admin@gmail.com";
             string password = "Admin123.";
