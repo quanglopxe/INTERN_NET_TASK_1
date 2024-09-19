@@ -10,6 +10,7 @@ using MilkStore.ModelViews.OrderModelViews;
 using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
+using MilkStore.ModelViews.PostModelViews;
 
 namespace MilkStore.Services.Service
 {
@@ -18,6 +19,23 @@ namespace MilkStore.Services.Service
     {
         public MappingProfile()
         {
+            #region Post
+            CreateMap<PostModelView, Post>();
+                //.ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(src => DateTimeOffset.UtcNow))
+                //.ForMember(dest => dest.LastUpdatedTime, opt => opt.MapFrom(src => DateTimeOffset.UtcNow))
+                //.ForMember(dest => dest.DeletedTime, opt => opt.Ignore());
+
+            CreateMap<Post, PostResponseDTO>()
+                .ForMember(dest => dest.Products, opt => opt.MapFrom(src => src.PostProducts.Select(pp => new ProductResponseDTO
+                {
+                    ProductID = pp.Product.Id,
+                    ProductName = pp.Product.ProductName,
+                    Description = pp.Product.Description,
+                    Price = pp.Product.Price,
+                    QuantityInStock = pp.Product.QuantityInStock,
+                    ImageUrl = pp.Product.ImageUrl
+                }).ToList()));
+            #endregion
             CreateMap<Products, ProductsModel>();
             CreateMap<ProductsModel, Products>();
 
