@@ -12,8 +12,8 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20240917023938_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20240918095230_InitDB")]
+    partial class InitDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

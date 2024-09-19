@@ -77,6 +77,9 @@ namespace MilkStore.API
         }
         public static void AddServices(this IServiceCollection services)
         {
+            // Đăng ký AutoMapper
+            services.AddAutoMapper(typeof(MappingProfile));
+
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();

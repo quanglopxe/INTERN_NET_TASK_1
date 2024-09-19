@@ -42,11 +42,10 @@ namespace MilkStore.Services.Service
                 //TotalAmount = model.Quantity * model.UnitPrice
             };
             //Update lên bảng Order
-            await _orderService.UpdateToTalAmount(orderDetails.OrderID, orderDetails.TotalAmount);
-
-            await _unitOfWork.GetRepository<OrderDetails>().InsertAsync(orderDetails);
+            
+            await _dbSet.AddAsync(orderDetails);
             await _unitOfWork.SaveAsync();
-            return orderDetails;
+            await _orderService.UpdateToTalAmount(orderDetails.OrderID);
         }
 
         //Read OrderDetails
@@ -85,17 +84,16 @@ namespace MilkStore.Services.Service
             var orderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id);
             if (orderDetails == null)
             {
-                throw new KeyNotFoundException($"Order Details have ID: {id} was not found.");
-            }                       
-            //orderDetails.OrderID = model.OrderID;
-            orderDetails.ProductID = model.ProductID;
-            orderDetails.Quantity = model.Quantity;
-            orderDetails.UnitPrice = model.UnitPrice;
-            //orderDetails.TotalAmount = model.Quantity * model.UnitPrice;
-            //await _orderService.UpdateToTalAmount(orderDetails.OrderID, orderDetails.TotalAmount);
-            await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(orderDetails);
-            await _unitOfWork.SaveAsync();
-            return orderDetails;            
+                //orderDetails.OrderID = model.OrderID;
+                orderDetails.ProductID = model.ProductID;
+                orderDetails.Quantity = model.Quantity;
+                orderDetails.UnitPrice = model.UnitPrice;
+                //orderDetails.TotalAmount = model.Quantity * model.UnitPrice; // tính tự động
+                //await _orderService.UpdateToTalAmount(orderDetails.OrderID, orderDetails.TotalAmount);
+                _dbSet.Update(orderDetails);
+                await _unitOfWork.SaveAsync();
+                await _orderService.UpdateToTalAmount(orderDetails.OrderID);
+            }
         }
 
         // Delete OrderDetails by OrderID and ProductID
@@ -105,6 +103,7 @@ namespace MilkStore.Services.Service
             od.DeletedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(od);
             await _unitOfWork.SaveAsync();
+            await _orderService.UpdateToTalAmount(od.OrderID);
         }
     }
 }

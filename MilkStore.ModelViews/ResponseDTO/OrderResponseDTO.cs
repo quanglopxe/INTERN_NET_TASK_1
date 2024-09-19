@@ -1,28 +1,23 @@
-﻿using MilkStore.Core.Base;
-using MilkStore.Repositories.Entity;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MilkStore.Contract.Repositories.Entity
+namespace MilkStore.ModelViews.ResponseDTO
 {
-    public class Order : BaseEntity
+    public class OrderResponseDTO
     {
+        public required string Id { get; set; }
         public required Guid UserId { get; set; }
         public string? VoucherId { get; set; }
         public DateTime OrderDate { get; set; }
         public required string Status { get; set; }
-        public required double TotalAmount { get; set; }
+        public double TotalAmount { get; set; }
         public double DiscountedAmount { get; set; }
         public required string ShippingAddress { get; set; }
         public required string PaymentMethod { get; set; }
 
-        public virtual Voucher? Voucher { get; set; }
-
-        public virtual ApplicationUser User { get; set; } // Một đơn hàng thuộc về một người dùng
-
-        public virtual ICollection<OrderDetails> OrderDetailss { get; set; }
+        public IList<OrderDetailResponseDTO> OrderDetailss { get; set; } = new List<OrderDetailResponseDTO>();
     }
 }
