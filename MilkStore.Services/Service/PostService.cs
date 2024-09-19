@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
@@ -22,7 +23,7 @@ namespace MilkStore.Services.Service
 
         public async Task<PostResponseDTO> CreatePost(PostModelView postModel)
         {
-            var newPost = new Post
+            Post newPost = new Post
             {
                 Title = postModel.Title,
                 Content = postModel.Content,
@@ -79,14 +80,15 @@ namespace MilkStore.Services.Service
             };
         }
         public async Task DeletePost(string id)
-        {
-            //fix lỗi xóa 2 lần
-            // ko dùng var
-            Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
-            //rule code
+        {            
+            Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);            
             if (post == null)
             {
                 throw new KeyNotFoundException($"Post with ID {id} was not found.");
+            }
+            if (post.DeletedTime != null)
+            {
+                throw new InvalidOperationException($"Post with ID {id} has already been deleted.");
             }
             post.DeletedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<Post>().UpdateAsync(post);
@@ -94,40 +96,108 @@ namespace MilkStore.Services.Service
 
         }
         //tên
-        public async Task<BasePaginatedList<PostResponseDTO>> GetPosts(string? id, int pageIndex, int pageSize)
-        {
-            //rule code
-            if(id == null)
-            {
-                var query = _unitOfWork.GetRepository<Post>().Entities.Where(post => post.DeletedTime == null);
-                var paginatedPosts = await _unitOfWork.GetRepository<Post>().GetPagging(query, pageIndex, pageSize);
+        //public async Task<BasePaginatedList<PostResponseDTO>> GetPosts(string? id, string? name, int pageIndex, int pageSize)
+        //{
+        //    //rule code
+        //    if(id.IsNullOrEmpty() && name.IsNullOrEmpty())
+        //    {
+        //        var query = _unitOfWork.GetRepository<Post>().Entities.Where(post => post.DeletedTime == null);
+        //        var paginatedPosts = await _unitOfWork.GetRepository<Post>().GetPagging(query, pageIndex, pageSize);
 
-                // Ánh xạ paginatedPosts sang kiểu trả về khác
-                var paginatedPostDtos = new BasePaginatedList<PostResponseDTO>(
-                    paginatedPosts.Items.Select(MapToPostResponseDto).ToList(),
-                    paginatedPosts.TotalPages,
-                    paginatedPosts.CurrentPage,
-                    paginatedPosts.PageSize
-                    );
-                return paginatedPostDtos;
-            }
-            else
+        //        // Ánh xạ paginatedPosts sang kiểu trả về khác
+        //        var paginatedPostDtos = new BasePaginatedList<PostResponseDTO>(
+        //            paginatedPosts.Items.Select(MapToPostResponseDto).ToList(),
+        //            paginatedPosts.TotalPages,
+        //            paginatedPosts.CurrentPage,
+        //            paginatedPosts.PageSize
+        //            );
+        //        return paginatedPostDtos;
+        //    }
+        //    if (!id.IsNullOrEmpty())
+        //    {
+        //        Post post = await _unitOfWork.GetRepository<Post>().Entities.FirstOrDefaultAsync(post => post.Id == id && post.DeletedTime == null);
+        //        if (post == null)
+        //        {
+        //            throw new KeyNotFoundException($"Post with ID {id} was not found.");
+        //        }
+
+        //        var postDto = new List<PostResponseDTO> { MapToPostResponseDto(post) };
+        //        return new BasePaginatedList<PostResponseDTO>(postDto, 1, 1, 1);
+        //    }
+        //    if (!name.IsNullOrEmpty())
+        //    {
+        //        var query = _unitOfWork.GetRepository<Post>().Entities.Where(post => post.Title.Contains(name) && post.DeletedTime == null);
+        //        var paginatedPosts = await _unitOfWork.GetRepository<Post>().GetPagging(query, pageIndex, pageSize);
+
+        //        // Ánh xạ paginatedPosts sang kiểu trả về khác
+        //        var paginatedPostDtos = new BasePaginatedList<PostResponseDTO>(
+        //            paginatedPosts.Items.Select(MapToPostResponseDto).ToList(),
+        //            paginatedPosts.TotalPages,
+        //            paginatedPosts.CurrentPage,
+        //            paginatedPosts.PageSize
+        //            );
+        //        return paginatedPostDtos;
+        //    }
+
+        //}
+        public async Task<BasePaginatedList<PostResponseDTO>> GetPosts(string? id, string? name, int pageIndex, int pageSize)
+        {            
+            var query = _unitOfWork.GetRepository<Post>().Entities.Where(post => post.DeletedTime == null);
+            if (!id.IsNullOrEmpty())
             {
-                var post = await _unitOfWork.GetRepository<Post>().Entities.FirstOrDefaultAsync(post => post.Id == id && post.DeletedTime == null);
-                if (post == null)
+                query = query.Where(post => post.Id == id);
+            }
+            if (!name.IsNullOrEmpty())
+            {
+                query = query.Where(post => post.Title.Contains(name));
+            }
+            var paginatedPosts = await _unitOfWork.GetRepository<Post>().GetPagging(query, pageIndex, pageSize);
+
+            if (!paginatedPosts.Items.Any())
+            {
+                if (!id.IsNullOrEmpty())
                 {
-                    throw new KeyNotFoundException($"Post with ID {id} was not found.");
+                    var postById = await _unitOfWork.GetRepository<Post>().Entities
+                        .FirstOrDefaultAsync(post => post.Id == id && post.DeletedTime == null);
+                    if (postById != null)
+                    {
+                        var postDto = new List<PostResponseDTO> { MapToPostResponseDto(postById) };
+                        return new BasePaginatedList<PostResponseDTO>(postDto, 1, 1, 1);
+                    }
                 }
 
-                var postDto = new List<PostResponseDTO> { MapToPostResponseDto(post) };
-                return new BasePaginatedList<PostResponseDTO>(postDto, 1, 1, 1);
-            }            
+                if (!name.IsNullOrEmpty())
+                {
+                    var postsByName = await _unitOfWork.GetRepository<Post>().Entities
+                        .Where(post => post.Title.Contains(name) && post.DeletedTime == null)
+                        .ToListAsync();
+                    if (postsByName.Any())
+                    {
+                        var paginatedPostDtos = new BasePaginatedList<PostResponseDTO>(
+                            postsByName.Select(MapToPostResponseDto).ToList(),
+                            1, // TotalPages
+                            1, // CurrentPage
+                            postsByName.Count // PageSize
+                        );
+                        return paginatedPostDtos;
+                    }
+                }
+            }
 
+            // Ánh xạ paginatedPosts sang kiểu trả về khác
+            var paginatedPostDtosResult = new BasePaginatedList<PostResponseDTO>(
+                paginatedPosts.Items.Select(MapToPostResponseDto).ToList(),
+                paginatedPosts.TotalPages,
+                paginatedPosts.CurrentPage,
+                paginatedPosts.PageSize
+            );
+
+            return paginatedPostDtosResult;
         }
-        //kiểm tra trùng với db trước khi update
+        //kiểm tra trùng với db trước khi update        
         public async Task<PostResponseDTO> UpdatePost(string id, PostModelView postModel)
         {
-            var post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
+            Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
             if (post == null)
             {
                 throw new KeyNotFoundException($"Post with ID {id} was not found.");
@@ -142,9 +212,9 @@ namespace MilkStore.Services.Service
             return MapToPostResponseDto(post);
         }
 
-        Task<BasePaginatedList<PostResponseDTO>> IPostService.GetPosts(string? id, int index, int pageSize)
-        {
-            throw new NotImplementedException();
-        }
+        //Task<BasePaginatedList<PostResponseDTO>> IPostService.GetPosts(string? id, int index, int pageSize)
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
 }
