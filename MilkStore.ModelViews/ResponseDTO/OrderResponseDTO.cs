@@ -1,21 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MilkStore.ModelViews.OrderModelViews
+namespace MilkStore.ModelViews.ResponseDTO
 {
-    public class OrderModelView
+    public class OrderResponseDTO
     {
+        public required string Id { get; set; }
         public required Guid UserId { get; set; }
         public string? VoucherId { get; set; }
         public DateTime OrderDate { get; set; }
         public required string Status { get; set; }
-        [Required(ErrorMessage = "ShippingAddress không được để trống")]
+        public double TotalAmount { get; set; }
+        public double DiscountedAmount { get; set; }
         public required string ShippingAddress { get; set; }
-        [Required(ErrorMessage = "PaymentMethod không được để trống")]
         public required string PaymentMethod { get; set; }
+
+        public IList<OrderDetailResponseDTO> OrderDetailss { get; set; } = new List<OrderDetailResponseDTO>();
     }
 }

@@ -15,11 +15,13 @@ namespace MilkStore.Contract.Repositories.Entity
         public DateTime OrderDate { get; set; }
         public required string Status { get; set; }
         public required double TotalAmount { get; set; }
+        public double DiscountedAmount { get; set; }
         public required string ShippingAddress { get; set; }
         public required string PaymentMethod { get; set; }
 
         public int PointsAdded { get; set; } = 0; // đánh dấu đã đơn hàng đã cộng điểm cho người dùng
         public virtual Voucher? Voucher { get; set; }
+        public virtual ApplicationUser User { get; set; } // Một đơn hàng thuộc về một người dùng
         public virtual ICollection<OrderDetails> OrderDetailss { get; set; }
     }
 }
