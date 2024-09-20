@@ -38,5 +38,20 @@ namespace MilkStore.Services.EmailSettings
                 smtp.Dispose();
             }
         }
+        //public async Task SendOrderStatusUpdateEmail(string customerEmail, string orderId, string orderStatus)
+        //{
+        //    var subject = $"Trạng thái đơn hàng #{orderId} đã được cập nhật";
+        //    var body = $"Kính gửi quý khách hàng, đơn hàng của quý khách đã được cập nhật sang: {orderStatus}. Cảm ơn quý khách đã tin dùng!";
+
+        //    await SendEmailAsync(customerEmail, subject, body);
+        //}
+        //public async Task SendFeedbackResponseEmail(string customerEmail, string feedback)
+        //{
+        //    var subject = "Phản hồi ý kiến của quý khách hàng";
+        //    var body = $"MilkStore chào quý khách hàng, chúng tôi đã nhận được ý kiến đóng góp của quý khách như sau: {feedback}. Cảm ơn quý khách đã góp ý giúp MilkStore phát triển hơn!" +
+        //        $" Chúng tôi sẽ xem xét và cải thiện! Cảm ơn quý khách đã sử dụng sản phẩm của chúng tôi!";
+
+        //    await SendEmailAsync(customerEmail, subject, body);
+        //}
     }
 }
