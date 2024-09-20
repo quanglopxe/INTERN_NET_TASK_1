@@ -17,7 +17,7 @@ namespace MilkStore.Contract.Repositories.Entity
         [ForeignKey("CategoryId")]
         public virtual Category Category { get; set; }
 
-
+        public virtual ICollection<Gift> gift { get; set; }
         public virtual ICollection<PostProduct> PostProducts { get; set; } = new List<PostProduct>();
         public virtual ICollection<OrderDetails> OrderDetail { get; set; }
 

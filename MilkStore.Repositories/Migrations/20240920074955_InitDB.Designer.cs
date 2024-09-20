@@ -12,7 +12,7 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20240919144818_InitDB")]
+    [Migration("20240920074955_InitDB")]
     partial class InitDB
     {
         /// <inheritdoc />
@@ -281,6 +281,46 @@ namespace MilkStore.Repositories.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Category");
+                });
+
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Gift", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("GiftName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastUpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("LastUpdatedTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ProductId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("point")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("Gifts");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Order", b =>
@@ -757,6 +797,15 @@ namespace MilkStore.Repositories.Migrations
                     b.ToTable("ApplicationUser");
                 });
 
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Gift", b =>
+                {
+                    b.HasOne("MilkStore.Contract.Repositories.Entity.Products", "Products")
+                        .WithMany("gift")
+                        .HasForeignKey("ProductId");
+
+                    b.Navigation("Products");
+                });
+
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Order", b =>
                 {
                     b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "User")
@@ -866,6 +915,8 @@ namespace MilkStore.Repositories.Migrations
                     b.Navigation("OrderDetail");
 
                     b.Navigation("PostProducts");
+
+                    b.Navigation("gift");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Voucher", b =>

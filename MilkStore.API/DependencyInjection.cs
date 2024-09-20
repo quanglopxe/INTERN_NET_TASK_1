@@ -87,7 +87,8 @@ namespace MilkStore.API
             services.AddScoped<IReviewsService, ReviewsService>();
             services.AddScoped<IPreOrdersService, PreOrdersService>();
             services.AddScoped<ICategoryService, CategoryService>();
-
+            services.AddTransient<IEmailSender,MailService>();
+            services.AddScoped<IGiftService,GiftService>();
             services.AddHttpContextAccessor();
         }
         public static void AddAutoMapperConfig(this IServiceCollection services)

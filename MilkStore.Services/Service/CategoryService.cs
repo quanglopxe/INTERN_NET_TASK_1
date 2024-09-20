@@ -43,7 +43,7 @@ namespace MilkStore.Services.Service
 
             if (Category.DeletedTime != null)
             {
-                throw new Exception($"Mã hàng đã được xóa:{id}");
+                throw new Exception($"Mã loại đã được xóa:{id}");
             }
             Category.DeletedTime = DateTime.UtcNow;
             await _unitOfWork.GetRepository<Category>().UpdateAsync(Category);
@@ -88,7 +88,7 @@ namespace MilkStore.Services.Service
 
             if (existingCategory == null)
             {
-                throw new Exception("Sản phẩm không tồn tại.");
+                throw new Exception("Loại  không tồn tại.");
             }
 
             // Cập nhật thông tin sản phẩm bằng cách ánh xạ từ DTO

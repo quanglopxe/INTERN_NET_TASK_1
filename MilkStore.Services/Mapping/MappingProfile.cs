@@ -9,6 +9,7 @@ using MilkStore.ModelViews.CategoryModelViews;
 using MilkStore.ModelViews.ReviewsModelView;
 using MilkStore.ModelViews.PreOrdersModelView;
 using MilkStore.ModelViews.PostModelViews;
+using MilkStore.ModelViews.GiftModelViews;
 
 
 namespace MilkStore.Services.Mapping
@@ -18,8 +19,8 @@ namespace MilkStore.Services.Mapping
     {
         public MappingProfile()
         {
-            CreateMap<Category, CategoryModel>();
-            CreateMap<CategoryModel,Category>();            
+            CreateMap<Gift,GiftModel>().ReverseMap();
+            CreateMap<Category, CategoryModel>().ReverseMap();
 
             #region Post
             CreateMap<PostModelView, Post>();
@@ -35,8 +36,7 @@ namespace MilkStore.Services.Mapping
                 }).ToList()));
             #endregion
 
-            CreateMap<Products, ProductsModel>();
-            CreateMap<ProductsModel, Products>();
+            CreateMap<Products, ProductsModel>().ReverseMap();
 
             CreateMap<UserModelView, ApplicationUser>()
             .ForMember(dest => dest.Points, opt => opt.MapFrom(src => 0)) // Set Points to 0
