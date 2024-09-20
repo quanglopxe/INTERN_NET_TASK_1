@@ -37,14 +37,13 @@ namespace MilkStore.Services.Configs
             }
             string emailStaff = "Staff@gmail.com";
             string passwordStaff = "Staff123*";
-
             ApplicationUser? staffAccount = await userManager.FindByEmailAsync(emailStaff);
             if (staffAccount is null)
             {
                 ApplicationUser? newAccount = new ApplicationUser
                 {
                     UserName = emailStaff,
-                    Email = emailStaff,                    
+                    Email = emailStaff,
                 };
                 await userManager.CreateAsync(newAccount, passwordStaff);
                 await userManager.AddToRoleAsync(newAccount, "Staff");
