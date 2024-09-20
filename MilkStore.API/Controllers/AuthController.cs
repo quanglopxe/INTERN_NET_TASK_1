@@ -42,7 +42,7 @@ namespace MilkStore.API.Controllers
                     return Ok(BaseResponse<object>.OkResponse(new
                     {
                         access_token = token,
-                        refreshToke = refreshToken,
+                        refreshToken,
                         token_type = "JWT",
                         auth_type = "Bearer",
                         expires_in = DateTime.UtcNow.AddHours(1),
@@ -96,7 +96,6 @@ namespace MilkStore.API.Controllers
             {
                 try
                 {
-                    // get id from token
                     string? Id = User.FindFirstValue(ClaimTypes.NameIdentifier);
                     await authService.ChangePasswordAdmin(Id, model);
                     return Ok(BaseResponse<string>.OkResponse("Đổi mật khẩu thành công"));
@@ -117,7 +116,7 @@ namespace MilkStore.API.Controllers
             }
             try
             {
-                var payload = await GoogleJsonWebSignature.ValidateAsync(tokenGoogle.token);
+                GoogleJsonWebSignature.Payload payload = await GoogleJsonWebSignature.ValidateAsync(tokenGoogle.token);
                 string email = payload.Email;
                 string providerKey = payload.Subject;
                 LoginGoogleModel loginModel = new() { Gmail = email, ProviderKey = providerKey };
@@ -125,12 +124,13 @@ namespace MilkStore.API.Controllers
                 {
                     ApplicationUser? userLoginGoogle = await userService.CreateUserLoginGoogle(loginModel);
                     (string token, IEnumerable<string> roles) = authService.GenerateJwtToken(userLoginGoogle);
-                    string refreshToken = authService.
+                    string refreshToken = await authService.GenerateRefreshToken(userLoginGoogle);
                     return Ok(BaseResponse<object>.OkResponse(new
                     {
                         access_token = token,
                         token_type = "JWT",
                         auth_type = "Bearer",
+                        refreshToken,
                         expires_in = DateTime.UtcNow.AddHours(1),
                         user = new
                         {
@@ -149,10 +149,42 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.ErrorException(400, "BadRequest", "Token không hợp lệ"));
             }
-
         }
+        [HttpPost("RefreshToken")]
+        public async Task<IActionResult> RefreshToken(RefreshTokenModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new BaseException.ErrorException(400, "BadRequest", ModelState.ToString()));
+            }
+            else
+            {
+                try
+                {
+                    ApplicationUser? user = await authService.CheckRefreshToken(model.refreshToken);
+                    (string token, IEnumerable<string> roles) = authService.GenerateJwtToken(user);
+                    string refreshToken = await authService.GenerateRefreshToken(user);
+                    return Ok(BaseResponse<object>.OkResponse(new
+                    {
+                        access_token = token,
+                        token_type = "JWT",
+                        auth_type = "Bearer",
+                        refreshToken,
+                        expires_in = DateTime.UtcNow.AddHours(1),
+                        user = new
+                        {
+                            email = user.Email,
+                            role = roles
+                        }
+                    }));
+                }
+                catch (BaseException.ErrorException ex)
+                {
 
-
+                    return StatusCode(ex.StatusCode, new BaseException.ErrorException(ex.StatusCode, ex.ErrorDetail.ErrorCode, ex.ErrorDetail.ErrorMessage.ToString()));
+                }
+            }
+        }
 
     }
 }
