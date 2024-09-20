@@ -1,18 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace MilkStore.ModelViews.ResponseDTO
 {
     public class PostResponseDTO
     {
-        public string PostID { get; set; }
-        public string Title { get; set; }
-        public string Content { get; set; }
-        public DateTimeOffset CreatedAt { get; set; }
-        public string CreatedBy { get; set; }
+        public required string ID { get; set; }
+        public required string Title { get; set; }
+        public required string Content { get; set; }
+        public string? Image { get; set; }
+        public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.Now;
+        public required string CreatedBy { get; set; }
+        public DateTimeOffset LastUpdatedAt { get; set; } = DateTimeOffset.Now;
+        public DateTimeOffset? DeletedTime { get; set; } = null;
         public List<ProductResponseDTO> Products { get; set; } = new List<ProductResponseDTO>();
     }
 }

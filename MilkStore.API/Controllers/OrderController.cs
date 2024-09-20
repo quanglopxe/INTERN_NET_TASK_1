@@ -3,6 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using MilkStore.ModelViews.OrderModelViews;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Contract.Repositories.Entity;
+using Microsoft.AspNetCore.Authorization;
+using MilkStore.ModelViews.ResponseDTO;
+using MilkStore.Services.Service;
+using MilkStore.Core.Base;
+using Microsoft.Extensions.Hosting;
+using MilkStore.Core;
+using MilkStore.Repositories.Entity;
 
 namespace MilkStore.API.Controllers
 {
@@ -18,35 +25,120 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpGet()]
-        public async Task<IEnumerable<Order>> GetAll(string? id)
+        
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAll(string? id, int index = 1, int pageSize = 10)
         {
-            return await _orderService.GetAsync(id);
+            try
+            {
+                IList<OrderResponseDTO> ord = (IList<OrderResponseDTO>)await _orderService.GetAsync(id);
+                int totalItems = ord.Count;
+                List<OrderResponseDTO> pagedOrder = ord.Skip((index - 1) * pageSize).Take(pageSize).ToList();
+
+                // Tạo danh sách phân trang
+                BasePaginatedList<OrderResponseDTO> paginatedList = new BasePaginatedList<OrderResponseDTO>(
+                    pagedOrder, totalItems, index, pageSize);
+                return Ok(BaseResponse<BasePaginatedList<OrderResponseDTO>>.OkResponse(paginatedList));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);  // Trả về 400 BadRequest nếu có lỗi do dữ liệu
+            }
+            catch (ApplicationException ex)
+            {
+                return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
+            }
         }
+
 
         [HttpPost]
+        //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Add(OrderModelView item)
         {
-            await _orderService.AddAsync(item);
-            return Ok();
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+                }
+
+                await _orderService.AddAsync(item);
+                return Ok(new { message = "Add Order thành công" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);  // Trả về 400 BadRequest nếu có lỗi do dữ liệu
+            }
+            catch (ApplicationException ex)
+            {
+                return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
+            }
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("AddVoucher{id}")]
+        //[Authorize(Roles = "Guest, Member")]
+        public async Task<IActionResult> AddVoucher(string id, string item)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+                }
+                await _orderService.AddVoucher(id, item);
+                return Ok(new { message = "Add voucher thành công" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);  // Trả về 400 BadRequest nếu có lỗi do dữ liệu
+            }
+            catch (ApplicationException ex)
+            {
+                return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
+            }
+        }
+
+
+        [HttpPut("Update{id}")]
+        //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Update(string id, OrderModelView item)
         {
-            var items = await _orderService.GetAsync(id);
-            if (items == null)
+            try
             {
-                return NotFound();
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+                }
+                await _orderService.UpdateAsync(id, item);
+                return Ok(new { message = "Update Order thành công" });
             }
-            await _orderService.UpdateAsync(id, item);
-            return NoContent();
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);  // Trả về 400 BadRequest nếu có lỗi do dữ liệu
+            }
+            catch (ApplicationException ex)
+            {
+                return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
+            }
         }
 
         [HttpDelete("{id}")]
+        //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Delete(string id)
         {
-            await _orderService.DeleteAsync(id);
-            return NoContent();
+            try
+            {
+                await _orderService.DeleteAsync(id);
+                return Ok(new { message = "Xóa thành công" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);  // Trả về 400 BadRequest nếu có lỗi do dữ liệu
+            }
+            catch (ApplicationException ex)
+            {
+                return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
+            }
         }
     }
 }

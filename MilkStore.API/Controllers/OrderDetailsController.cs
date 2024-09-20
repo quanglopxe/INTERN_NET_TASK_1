@@ -6,6 +6,9 @@ using MilkStore.Services.Service;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using MilkStore.Contract.Services.Interface;
+using MilkStore.Core.Base;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MilkStore.API.Controllers
 {
@@ -13,64 +16,29 @@ namespace MilkStore.API.Controllers
     [ApiController]
     public class OrderDetailsController : ControllerBase
     {
-        private readonly OrderDetailsService _orderDetailsService;
-        public OrderDetailsController(OrderDetailsService orderDetailsService)
+        private readonly IOrderDetailsService _orderDetailsService;
+        public OrderDetailsController(IOrderDetailsService orderDetailsService)
         {
             _orderDetailsService = orderDetailsService;
         }
 
         // GET
         [HttpGet]
-        public async Task<IActionResult> GetOrderDetails(Guid? orderId = null, Guid? productId = null, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> GetOrderDetails(string? orderId, int page=1, int pageSize=10)
         {
-            try
-            {
-                IEnumerable<OrderDetails> orderDetails;
-
-                if (orderId.HasValue)
-                {
-                    if (productId.HasValue)
-                    {
-                        // Có cả orderId và productId
-                        orderDetails = await _orderDetailsService.ReadOrderDetails(orderId.Value, productId.Value);
-                        if (orderDetails == null || !orderDetails.Any())
-                        {
-                            return NotFound();
-                        }
-                    }
-                    else
-                    {
-                        // Có orderId nhưng không có productId
-                        orderDetails = await _orderDetailsService.ReadOrderDetails(orderId.Value, null, page, pageSize);
-                    }
-                }
-                else if (productId.HasValue)
-                {
-                    // Không có orderId nhưng có productId
-                    orderDetails = await _orderDetailsService.ReadOrderDetails(null, productId.Value, page, pageSize);
-                }
-                else
-                {
-                    // Không có orderId và không có productId
-                    orderDetails = await _orderDetailsService.ReadOrderDetails(null, null, page, pageSize);
-                }
-
-                return Ok(orderDetails);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            IList<OrderDetails> detail = (IList<OrderDetails>)await _orderDetailsService.ReadOrderDetails(orderId, page, pageSize);
+            return Ok(BaseResponse<IList<OrderDetails>>.OkResponse(detail));
         }
 
         // POST
+        [Authorize(Roles = "Guest, Member")]
         [HttpPost]
         public async Task<IActionResult> CreateOrderDetails(OrderDetailsModelView model)
         {
             try
             {
                 await _orderDetailsService.CreateOrderDetails(model);
-                return Ok();
+                return Ok(new { message = "Thêm thành công" });
             }
             catch (Exception ex)
             {
@@ -79,28 +47,28 @@ namespace MilkStore.API.Controllers
         }
 
         // PUT
-        [HttpPut]
-        public async Task<IActionResult> UpdateOrderDetails(OrderDetailsModelView model)
-        { 
-            try
+        [Authorize(Roles = "Guest, Member")]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateOrderDetails(string id, OrderDetailsModelView model)
+        {
+            if (!ModelState.IsValid)
             {
-                await _orderDetailsService.UpdateOrderDetails(model);
-                return NoContent();
+                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            OrderDetails detail = await _orderDetailsService.UpdateOrderDetails(id, model);
+            
+            return Ok(new { message = "Sửa thành công" });
         }
 
         // DELETE
-        [HttpDelete("{orderId}/{productId}")]
-        public async Task<IActionResult> DeleteOrderDetails(Guid orderId, Guid productId, string deletedBy)
+        [Authorize(Roles = "Guest, Member")]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteOrderDetails(string id)
         {
             try
             {
-                await _orderDetailsService.DeleteOrderDetails(orderId, productId, deletedBy);
-                return NoContent();
+                await _orderDetailsService.DeleteOrderDetails(id);
+                return Ok(new { message = "Xóa thành công" });
             }
             catch (Exception ex)
             {

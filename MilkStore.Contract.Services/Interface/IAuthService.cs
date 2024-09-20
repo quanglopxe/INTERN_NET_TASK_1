@@ -4,7 +4,10 @@ using MilkStore.Repositories.Entity;
 
 public interface IAuthService
 {
-    Task<ApplicationUser> CheckUser(string userName);
+    Task<ApplicationUser> ExistingUser(string userName);
+    Task<ApplicationUser> CheckRefreshToken(string refreshToken);
+    Task ChangePasswordAdmin(string id, ChangePasswordAdminModel model);
     Task<SignInResult> CheckPassword(LoginModelView loginModel);
-    (string token, IList<string> roles) GenerateJwtToken(ApplicationUser user);
+    (string token, IEnumerable<string> roles) GenerateJwtToken(ApplicationUser user);
+    Task<string> GenerateRefreshToken(ApplicationUser user);
 }

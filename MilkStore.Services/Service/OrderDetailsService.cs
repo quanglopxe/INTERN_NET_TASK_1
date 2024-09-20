@@ -10,111 +10,138 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MilkStore.Core.Utils;
+using MilkStore.Contract.Services.Interface;
+using MilkStore.ModelViews.OrderModelViews;
+using AutoMapper;
+using MilkStore.ModelViews.ResponseDTO;
 
 namespace MilkStore.Services.Service
 {
-    public class OrderDetailsService
+    public class OrderDetailsService : IOrderDetailsService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IOrderService _orderService;
         private readonly DatabaseContext _context;
-        protected readonly DbSet<OrderDetails> _dbSet;
+        private readonly IMapper _mapper;
 
-        public OrderDetailsService(IUnitOfWork unitOfWork, DatabaseContext context)
+
+        public OrderDetailsService(IUnitOfWork unitOfWork, DatabaseContext context, IOrderService orderService, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _context = context;
-            _dbSet = _context.Set<OrderDetails>();
+            _orderService = orderService;
+            _mapper = mapper;
+        }
+
+        private OrderDetailResponseDTO MapToOrderDetailResponseDTO(OrderDetails details)
+        {
+            return _mapper.Map<OrderDetailResponseDTO>(details);
         }
 
         // Create OrderDetails
-        public async Task CreateOrderDetails(OrderDetailsModelView model)
+        public async Task<OrderDetails> CreateOrderDetails(OrderDetailsModelView model)
         {
-            var orderDetails = new OrderDetails
+            try
             {
-                OrderID = model.OrderID,
-                ProductID = model.ProductID,
-                Quantity = model.Quantity,
-                UnitPrice = model.UnitPrice,
-                //TotalAmount = model.Quantity * model.UnitPrice
-            };
+                // Truy cập trực tiếp vào DbContext để tìm sản phẩm
+                Products product = await _context.Products.FirstOrDefaultAsync(p => p.Id == model.ProductID);
+                if (product == null)
+                {
+                    throw new Exception("Product not found");
+                }
 
-            await _dbSet.AddAsync(orderDetails);
-            await _unitOfWork.SaveAsync();
+                // Map từ model sang OrderDetails
+                OrderDetails orderDetails = _mapper.Map<OrderDetails>(model, opts =>
+                {
+                    opts.AfterMap((src, dest) =>
+                    {
+                        dest.UnitPrice = product.Price; // Cập nhật UnitPrice từ Product
+                    });
+                });
+
+                // Chèn OrderDetails trực tiếp bằng DbContext
+                _context.OrderDetails.Add(orderDetails);
+                await _context.SaveChangesAsync();
+
+                // Cập nhật tổng giá trị đơn hàng
+                await _orderService.UpdateToTalAmount(orderDetails.OrderID);
+                return orderDetails;
+            }
+            catch (Exception ex)
+            {
+                string innerExceptionMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception($"An error occurred: {innerExceptionMessage}");
+            }
         }
 
         //Read OrderDetails
-        public async Task<IEnumerable<OrderDetails>> ReadOrderDetails(Guid? orderId = null, Guid? productId = null, int page = 1, int pageSize = 10)
+        public async Task<IEnumerable<OrderDetails>> ReadOrderDetails(string? id, int page, int pageSize)
         {
-            IQueryable<OrderDetails> query = _dbSet.Where(od => od.DeletedTime == null); // Lọc các bản ghi chưa bị xóa mềm
-
-            //Có OrderID - ProductID
-            if (orderId.HasValue)
+            if (id == null)
             {
-                query = query.Where(od => od.OrderID == orderId.Value);
+                IQueryable<OrderDetails> query = _unitOfWork.GetRepository<OrderDetails>().Entities
+                    .Where(detail => detail.DeletedTime == null)
+                    .OrderBy(detail => detail.OrderID);
 
-                if (productId.HasValue)
+                var paginated = await _unitOfWork.GetRepository<OrderDetails>()
+                    .GetPagging(query, page, pageSize);
+
+                return paginated.Items;
+            }
+            else
+            {
+                OrderDetails? od = await _unitOfWork.GetRepository<OrderDetails>()
+                    .Entities
+                    .FirstOrDefaultAsync(or => or.Id == id && or.DeletedTime == null);
+                if (od == null)
                 {
-                    query = query.Where(od => od.ProductID == productId.Value);
+                    return Enumerable.Empty<OrderDetails>();
                 }
+                return new List<OrderDetails> { od };
             }
-            else if (productId.HasValue)
-            {
-                // không có OrderID nhưng có ProductID, lọc theo ProductID
-                query = query.Where(od => od.ProductID == productId.Value);
-            }
-           
-            var totalItems = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
-
-            if (page > totalPages && totalPages > 0)
-            {
-                page = totalPages;
-            }
-
-            if (totalPages == 0)
-            {
-                page = 1;
-                totalPages = 1;
-            }
-
-            var orderDetailsPaged = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            // Trả về danh sách chi tiết đơn hàng và thông tin phân trang
-            return orderDetailsPaged;            
         }
 
         // Update OrderDetails
-        public async Task UpdateOrderDetails(OrderDetailsModelView model)
+        public async Task<OrderDetails> UpdateOrderDetails(string id, OrderDetailsModelView model)
         {
-            var orderDetails = await _dbSet.FirstOrDefaultAsync(od => od.OrderID == model.OrderID && od.ProductID == model.ProductID);
-            if (orderDetails != null)
+            OrderDetails? orderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id);
+            if (orderDetails == null)
             {
-                orderDetails.Quantity = model.Quantity;
-                //orderDetails.UnitPrice = model.UnitPrice; //muốn thay đổi giá sản phẩm thì đổi bên Product
-                //orderDetails.TotalAmount = model.Quantity * model.UnitPrice; // tính tự động
-
-                _dbSet.Update(orderDetails);
-                await _unitOfWork.SaveAsync();
+                throw new KeyNotFoundException($"Order Details with ID: {id} was not found.");
             }
+
+            string productID = orderDetails.ProductID;
+            Products? product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(productID);
+            if (product == null)
+            {
+                throw new KeyNotFoundException($"Product with ID: {productID} was not found.");
+            }
+
+            // Cập nhật số lượng sản phẩm từ model
+            orderDetails.Quantity = model.Quantity;
+
+            // Cập nhật giá sản phẩm (UnitPrice) từ thông tin sản phẩm
+            orderDetails.UnitPrice = product.Price;
+
+            await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(orderDetails);
+            await _unitOfWork.SaveAsync();
+
+            await _orderService.UpdateToTalAmount(orderDetails.OrderID);
+            return orderDetails;
         }
 
         // Delete OrderDetails by OrderID and ProductID
-        public async Task DeleteOrderDetails(Guid orderId, Guid productId, string deletedBy)
+        public async Task DeleteOrderDetails(string id)
         {
-            var orderDetails = await _dbSet.FirstOrDefaultAsync(od => od.OrderID == orderId && od.ProductID == productId);
-            if (orderDetails != null)
+            OrderDetails? od = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id);
+            if (od == null)
             {
-                orderDetails.DeletedTime = CoreHelper.SystemTimeNow; // Gán thời gian xóa
-                orderDetails.DeletedBy = deletedBy; // Gán người thực hiện
-                orderDetails.LastUpdatedTime = CoreHelper.SystemTimeNow; // Cập nhật thời gian thay đổi cuối cùng
-                _dbSet.Update(orderDetails); // Cập nhật lại bản ghi
-                await _unitOfWork.SaveAsync();
+                throw new KeyNotFoundException($"Order Details with ID: {id} was not found.");
             }
+            od.DeletedTime = CoreHelper.SystemTimeNow;
+            await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(od);
+            await _unitOfWork.SaveAsync();
+            await _orderService.UpdateToTalAmount(od.OrderID);
         }
-
-        
     }
 }

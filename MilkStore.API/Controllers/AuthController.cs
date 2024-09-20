@@ -1,7 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Google.Apis.Auth;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.AuthModelViews;
+using MilkStore.Repositories.Entity;
 
 namespace MilkStore.API.Controllers
 {
@@ -11,39 +16,50 @@ namespace MilkStore.API.Controllers
     {
         private readonly IAuthService authService;
         private readonly IUserService userService;
-        public AuthController(IAuthService authService, IUserService userService)
+        private readonly SignInManager<ApplicationUser> signInManager;
+        public AuthController(IAuthService authService, IUserService userService, SignInManager<ApplicationUser> signInManager)
         {
             this.authService = authService;
             this.userService = userService;
+            this.signInManager = signInManager;
         }
 
         [HttpPost("auth_account")]
         public async Task<IActionResult> Login(LoginModelView model)
         {
-            var result = await authService.CheckUser(model.Username);
-            if (result == null)
+            if (!ModelState.IsValid)
             {
-                return Unauthorized(new BaseException.ErrorException(401, "Unauthorized", "Không tìm thấy người dùng"));
+                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            var resultPassword = await authService.CheckPassword(model);
-            if (!resultPassword.Succeeded)
+            else
             {
-                return Unauthorized(new BaseException.ErrorException(401, "Unauthorized", "Không đúng mật khẩu"));
-            }
-            var (token, roles) = authService.GenerateJwtToken(result);
-            return Ok(BaseResponse<object>.OkResponse(new
-            {
-                access_token = token,
-                token_type = "JWT",
-                auth_type = "Bearer",
-                expires_in = DateTime.UtcNow.AddHours(1),
-                user = new
+                try
                 {
-                    userName = result.UserName,
-                    email = result.Email,
-                    role = roles
+                    ApplicationUser result = await authService.ExistingUser(model.Email);
+                    Microsoft.AspNetCore.Identity.SignInResult resultPassword = await authService.CheckPassword(model);
+                    (string token, IEnumerable<string> roles) = authService.GenerateJwtToken(result);
+                    string refreshToken = await authService.GenerateRefreshToken(result);
+                    return Ok(BaseResponse<object>.OkResponse(new
+                    {
+                        access_token = token,
+                        refreshToken,
+                        token_type = "JWT",
+                        auth_type = "Bearer",
+                        expires_in = DateTime.UtcNow.AddHours(1),
+                        user = new
+                        {
+                            email = result.Email,
+                            role = roles
+                        }
+                    }));
+
                 }
-            }));
+                catch (BaseException.ErrorException e)
+                {
+
+                    return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
+                }
+            }
         }
 
         [HttpPost("new_account")]
@@ -53,17 +69,122 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            var existingUser = await userService.GetUserByEmail(model.Email);
-            if (existingUser != null)
+            else
             {
-                return Conflict(new BaseException.ErrorException(409, "Conflict", "User đã tồn tại!"));
+                try
+                {
+                    await userService.GetUserByEmailToRegister(model.Email);
+                    await userService.CreateUser(model);
+                    return Ok(BaseResponse<string>.OkResponse("Tạo thành công"));
+                }
+                catch (BaseException.ErrorException e)
+                {
+
+                    return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
+                }
             }
-            var result = await userService.CreateUser(model);
-            if (result.Succeeded)
-            {
-                return Ok(BaseResponse<string>.OkResponse("Tạo thành công"));
-            }
-            return StatusCode(500, new BaseException.ErrorException(500, "InternalServerError", "Lỗi khi tạo người dùng"));
         }
+        [Authorize(Roles = "Admin")]
+        [HttpPatch("Change_Password_Admin")]
+        public async Task<IActionResult> ChangePasswordForAdmin(ChangePasswordAdminModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new BaseException.ErrorException(400, "BadRequest", ModelState.ToString()));
+            }
+            else
+            {
+                try
+                {
+                    string? Id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    await authService.ChangePasswordAdmin(Id, model);
+                    return Ok(BaseResponse<string>.OkResponse("Đổi mật khẩu thành công"));
+                }
+                catch (BaseException.ErrorException ex)
+                {
+                    return StatusCode(ex.StatusCode, new BaseException.ErrorException(ex.StatusCode, ex.ErrorDetail.ErrorCode, ex.ErrorDetail.ErrorMessage.ToString()));
+
+                }
+            }
+        }
+        [HttpPost("signin-google")]
+        public async Task<IActionResult> LoginGoogle([FromBody] TokenGoogleModel tokenGoogle)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new BaseException.ErrorException(400, "BadRequest", ModelState.ToString()));
+            }
+            try
+            {
+                GoogleJsonWebSignature.Payload payload = await GoogleJsonWebSignature.ValidateAsync(tokenGoogle.token);
+                string email = payload.Email;
+                string providerKey = payload.Subject;
+                LoginGoogleModel loginModel = new() { Gmail = email, ProviderKey = providerKey };
+                try
+                {
+                    ApplicationUser? userLoginGoogle = await userService.CreateUserLoginGoogle(loginModel);
+                    (string token, IEnumerable<string> roles) = authService.GenerateJwtToken(userLoginGoogle);
+                    string refreshToken = await authService.GenerateRefreshToken(userLoginGoogle);
+                    return Ok(BaseResponse<object>.OkResponse(new
+                    {
+                        access_token = token,
+                        token_type = "JWT",
+                        auth_type = "Bearer",
+                        refreshToken,
+                        expires_in = DateTime.UtcNow.AddHours(1),
+                        user = new
+                        {
+                            email = userLoginGoogle.Email,
+                            role = roles
+                        }
+                    }));
+                }
+                catch (BaseException.ErrorException ex)
+                {
+                    return StatusCode(ex.StatusCode, new BaseException.ErrorException(ex.StatusCode, ex.ErrorDetail.ErrorCode, ex.ErrorDetail.ErrorMessage.ToString()));
+
+                }
+            }
+            catch
+            {
+                return BadRequest(new BaseException.ErrorException(400, "BadRequest", "Token không hợp lệ"));
+            }
+        }
+        [HttpPost("RefreshToken")]
+        public async Task<IActionResult> RefreshToken(RefreshTokenModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new BaseException.ErrorException(400, "BadRequest", ModelState.ToString()));
+            }
+            else
+            {
+                try
+                {
+                    ApplicationUser? user = await authService.CheckRefreshToken(model.refreshToken);
+                    (string token, IEnumerable<string> roles) = authService.GenerateJwtToken(user);
+                    string refreshToken = await authService.GenerateRefreshToken(user);
+                    return Ok(BaseResponse<object>.OkResponse(new
+                    {
+                        access_token = token,
+                        token_type = "JWT",
+                        auth_type = "Bearer",
+                        refreshToken,
+                        expires_in = DateTime.UtcNow.AddHours(1),
+                        user = new
+                        {
+                            email = user.Email,
+                            role = roles
+                        }
+                    }));
+                }
+                catch (BaseException.ErrorException ex)
+                {
+
+                    return StatusCode(ex.StatusCode, new BaseException.ErrorException(ex.StatusCode, ex.ErrorDetail.ErrorCode, ex.ErrorDetail.ErrorMessage.ToString()));
+                }
+            }
+        }
+
     }
 }

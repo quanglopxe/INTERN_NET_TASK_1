@@ -1,13 +1,17 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core.Base;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.AuthModelViews;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
+using System.ComponentModel.DataAnnotations;
 
 namespace MilkStore.Services.Service
 {
@@ -16,60 +20,109 @@ namespace MilkStore.Services.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> userManager;
         private readonly RoleManager<ApplicationRole> roleManager;
-        private readonly DatabaseContext context;
-        private readonly IUserService _userService;
-
-        public UserService(DatabaseContext context, UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IUnitOfWork unitOfWork)
+        private readonly SignInManager<ApplicationUser> signInManager;
+        private readonly IMapper _mapper;
+        public UserService(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IUnitOfWork unitOfWork, SignInManager<ApplicationUser> signInManager, IMapper mapper)
         {
-            this.context = context;
             this.userManager = userManager;
             this.roleManager = roleManager;
+            this.signInManager = signInManager;
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
-        public async Task<ApplicationUser> GetUserByEmail(string email)
+        public async Task GetUserByEmailToRegister(string email)
         {
-            return await userManager.FindByEmailAsync(email);
-        }
-        public async Task<IdentityResult> CreateUser(RegisterModelView userModel)
-        {
-            var newUser = new ApplicationUser
+            ApplicationUser? user = await userManager.FindByNameAsync(email);
+            if (user != null)
             {
-                UserName = userModel.Username,
+                throw new BaseException.ErrorException(400, "BadRequest", "Email đã tồn tại!");
+            }
+        }
+        public async Task CreateUser(RegisterModelView userModel)
+        {
+            ApplicationUser? newUser = new ApplicationUser
+            {
+                UserName = userModel.Email,
                 Email = userModel.Email,
-                PhoneNumber = userModel.PhoneNumber                
+                PhoneNumber = userModel.PhoneNumber
             };
 
-            var result = await userManager.CreateAsync(newUser, userModel.Password);
+            IdentityResult? result = await userManager.CreateAsync(newUser, userModel.Password);
             if (result.Succeeded)
             {
-                var roleExist = await roleManager.RoleExistsAsync("Member");
+                bool roleExist = await roleManager.RoleExistsAsync("Member");
                 if (!roleExist)
                 {
                     await roleManager.CreateAsync(new ApplicationRole { Name = "Member" });
                 }
                 await userManager.AddToRoleAsync(newUser, "Member");
             }
-            return result;
+            else
+            {
+                throw new BaseException.ErrorException(500, "InternalServerError", $"Lỗi khi tạo người dùng {result.Errors.FirstOrDefault()?.Description}");
+            }
+        }
+        public async Task<ApplicationUser> CreateUserLoginGoogle(LoginGoogleModel loginGoogleModel)
+        {
+            ApplicationUser? user = await userManager.FindByEmailAsync(loginGoogleModel.Gmail);
+            if (user is not null)
+            {
+                if (user.DeletedTime.HasValue)
+                {
+                    throw new BaseException.ErrorException(400, "BadRequest", "Tài khoản đã bị xóa");
+                }
+                else
+                {
+                    return user;
+                }
+            }
+            else
+            {
+                ApplicationUser? newUser = _mapper.Map<ApplicationUser>(loginGoogleModel);
+                newUser.UserName = loginGoogleModel.Gmail;
+                IdentityResult? result = await userManager.CreateAsync(newUser);
+                if (result.Succeeded)
+                {
+                    string roleName = "Member";
+                    bool roleExist = await roleManager.RoleExistsAsync(roleName);
+                    if (!roleExist)
+                    {
+                        await roleManager.CreateAsync(new ApplicationRole { Name = roleName });
+                    }
+                    await userManager.AddToRoleAsync(newUser, roleName);
+                    UserLoginInfo? userInfoLogin = new("Google", loginGoogleModel.ProviderKey, "Google");
+                    IdentityResult loginResult = await userManager.AddLoginAsync(newUser, userInfoLogin);
+                    if (!loginResult.Succeeded)
+                    {
+                        throw new BaseException.ErrorException(500, "InternalServerError", $"Lỗi khi tạo người dùng {loginResult.Errors.FirstOrDefault()?.Description}");
+                    }
+                }
+                else
+                {
+                    throw new BaseException.ErrorException(505, "InternalServerError", $"Lỗi khi tạo người dùng {result.Errors.FirstOrDefault()?.Description}");
+                }
+                return newUser;
+            }
         }
         // Cập nhật thông tin người dùng
-        public async Task<User> UpdateUser(string id, UserModelView userModel, string updatedBy)
+        public async Task<ApplicationUser> UpdateUser(Guid id, UserModelView userModel, string updatedBy)
         {
-            var user = await _unitOfWork.GetRepository<User>().GetByIdAsync(id);
-            if (user == null)
+            if (string.IsNullOrWhiteSpace(id.ToString()))
             {
-                throw new KeyNotFoundException($"User with ID {id} was not found.");
+                throw new KeyNotFoundException("User ID cannot be null, empty, or contain only whitespace.");
             }
 
-            user.FullName = userModel.FullName;
-            user.Email = userModel.Email;
-            user.PasswordHash = userModel.PasswordHash;
-            user.Address = userModel.Address;
-            user.PhoneNumber = userModel.PhoneNumber;
-            user.Points = userModel.Points;
+            var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(id)
+              ?? throw new KeyNotFoundException($"User with ID {id} was not found.");
+
+            _mapper.Map(userModel, user);
+
+            // Gán các trường không được ánh xạ bởi AutoMapper
             user.LastUpdatedTime = CoreHelper.SystemTimeNow;
             user.LastUpdatedBy = updatedBy;
 
-            await _unitOfWork.GetRepository<User>().UpdateAsync(user);
+
+            await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
             await _unitOfWork.SaveAsync();
 
             return user;
@@ -79,58 +132,122 @@ namespace MilkStore.Services.Service
 
 
         // Xóa người dùng
-        public async Task<User> DeleteUser(string userId, string createdBy)
+        public async Task<ApplicationUser> DeleteUser(Guid userId, string deleteby)
         {
-            var user = await _unitOfWork.GetRepository<User>().GetByIdAsync(userId);
-            if (user == null)
+            if (string.IsNullOrWhiteSpace(userId.ToString()))
             {
-                return null; 
+                throw new KeyNotFoundException("User ID cannot be null, empty, or contain only whitespace.");
+            }
+            var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId)
+                ?? throw new KeyNotFoundException("User does not exist or has already been deleted.");
+
+            if (user.DeletedTime.HasValue)
+            {
+                throw new KeyNotFoundException("User does not exist or has already been deleted.");
             }
 
-            user.DeletedTime = DateTimeOffset.UtcNow;
-            user.DeletedBy = createdBy;
 
-            await _unitOfWork.GetRepository<User>().UpdateAsync(user);
+            user.DeletedTime = DateTimeOffset.UtcNow;
+            user.DeletedBy = deleteby;
+
+            await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
             await _unitOfWork.SaveAsync();
 
             return user;
         }
 
         // Lấy thông tin người dùng theo ID
-        public async Task<IEnumerable<User>> GetUser(Guid? id)
+        public async Task<IEnumerable<UserResponeseDTO>> GetUser(string? id, int index = 1, int pageSize = 10)
         {
-            if (id == null)
+            if (string.IsNullOrWhiteSpace(id))
             {
-                return await _unitOfWork.GetRepository<User>().GetAllAsync();
+                IQueryable<ApplicationUser> usersQuery = _unitOfWork.GetRepository<ApplicationUser>().Entities
+                    .Where(u => u.DeletedTime == null);
+
+                var paginatedUsers = await _unitOfWork.GetRepository<ApplicationUser>().GetPagging(usersQuery, index, pageSize);
+
+                List<UserResponeseDTO> userResponseDtos = paginatedUsers.Items
+                    .Select(MapToUserResponseDto)
+                    .ToList();
+
+                return userResponseDtos;
             }
             else
             {
-                var user = await _unitOfWork.GetRepository<User>().GetByIdAsync(id.Value);
-                return user != null ? new List<User> { user } : new List<User>();
+                ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().Entities
+                    .FirstOrDefaultAsync(u => u.Id.ToString() == id && u.DeletedTime == null)
+                    ?? throw new KeyNotFoundException($"User with ID {id} was not found.");
+
+                return new List<UserResponeseDTO> { MapToUserResponseDto(user) };
             }
         }
-        public async Task<User> AddUser(UserModelView userModel, string createdBy)
-        {
-            var newUser = new User
-            {
-                FullName = userModel.FullName,
-                Email = userModel.Email,
-                PasswordHash = userModel.PasswordHash,
-                Address = userModel.Address,
-                PhoneNumber = userModel.PhoneNumber,
-                Points = 0,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = createdBy, 
-                CreatedTime = DateTimeOffset.UtcNow
-            };
 
-            await _unitOfWork.GetRepository<User>().InsertAsync(newUser);
+
+        private UserResponeseDTO MapToUserResponseDto(ApplicationUser user)
+        {
+            return new UserResponeseDTO
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Email = user.Email,
+                Points = user.Points,
+                CreatedBy = user.CreatedBy,
+                DeletedBy = user.DeletedBy,
+                LastUpdatedTime = user.LastUpdatedTime,
+                CreatedTime = user.CreatedTime,
+
+            };
+        }
+        public async Task<ApplicationUser> AddUser(UserModelView userModel, string createdBy)
+        {
+            bool emailExists = await _unitOfWork.GetRepository<ApplicationUser>().Entities
+                .AnyAsync(u => u.Email == userModel.Email);
+
+            if (emailExists)
+            {
+                throw new ArgumentException("Email already exists");
+            }
+
+            bool userNameExists = await _unitOfWork.GetRepository<ApplicationUser>().Entities
+                .AnyAsync(u => u.UserName == userModel.UserName);
+
+            if (userNameExists)
+            {
+                throw new ArgumentException("UserName already exists");
+            }
+            ApplicationUser newUser = _mapper.Map<ApplicationUser>(userModel);
+            newUser.CreatedBy = createdBy;
+
+            await _unitOfWork.GetRepository<ApplicationUser>().InsertAsync(newUser);
             await _unitOfWork.SaveAsync();
 
             return newUser;
         }
+
+        public async Task AccumulatePoints(Guid userId, double totalAmount)
+        {
+            // Kiểm tra nếu totalAmount <= 0 thì không cần cộng điểm
+            if (totalAmount <= 0)
+            {
+                return;
+            }
+
+            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("User not found");
+            }
+
+            // Tính điểm thưởng: 10 điểm cho mỗi 10.000 VND
+            int earnedPoints = (int)(totalAmount / 10000) * 10;
+
+            user.Points += earnedPoints;
+
+            await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
+            await _unitOfWork.SaveAsync();
+        }
+
     }
 
 
- }
-
+}

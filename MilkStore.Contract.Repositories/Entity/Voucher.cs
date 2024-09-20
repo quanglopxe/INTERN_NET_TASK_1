@@ -14,6 +14,6 @@ namespace MilkStore.Contract.Repositories.Entity
         public int Status { get; set; }
         public string Name { get; set; } = string.Empty;
 
-        //public ICollection<Order> Orders { get; set; }
+        public virtual ICollection<Order> Orders { get; set; }
     }
 }
