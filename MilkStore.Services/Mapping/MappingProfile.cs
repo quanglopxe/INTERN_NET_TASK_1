@@ -5,6 +5,7 @@ using MilkStore.ModelViews.OrderModelViews;
 using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
+using MilkStore.ModelViews.OrderDetailsModelView;
 using MilkStore.ModelViews.CategoryModelViews;
 using MilkStore.ModelViews.ReviewsModelView;
 using MilkStore.ModelViews.PreOrdersModelView;
@@ -31,7 +32,8 @@ namespace MilkStore.Services.Mapping
                     Description = pp.Product.Description,
                     Price = pp.Product.Price,
                     QuantityInStock = pp.Product.QuantityInStock,
-                    ImageUrl = pp.Product.ImageUrl
+                    ImageUrl = pp.Product.ImageUrl,
+                    CategoryId = pp.Product.CategoryId
                 }).ToList()));
             #endregion
 
@@ -50,6 +52,10 @@ namespace MilkStore.Services.Mapping
             CreateMap<OrderModelView, Order>();
             CreateMap<Order, OrderResponseDTO>()
                 .ForMember(dest => dest.OrderDetailss, opt => opt.MapFrom(src => src.OrderDetailss));
+
+            CreateMap<OrderDetailsModelView, OrderDetails>();
+            CreateMap<OrderDetails, OrderDetailResponseDTO>()
+            .ForMember(dest => dest.UnitPrice, opt => opt.Ignore()); //
             CreateMap<OrderDetails, OrderDetailResponseDTO>();
 
             // Ánh xạ từ OrderModelView sang Order, nhưng chỉ cập nhật các thuộc tính thay đổi
