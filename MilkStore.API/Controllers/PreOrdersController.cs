@@ -36,7 +36,7 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<PreOrders>.OkResponse(PreOrder));
         }
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> UpdatePreOrder(string id, [FromBody] PreOrdersModelView preOrdersModel)
         {
             if (!ModelState.IsValid)
