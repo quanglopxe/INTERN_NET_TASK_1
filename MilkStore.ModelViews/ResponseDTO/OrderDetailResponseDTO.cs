@@ -10,7 +10,7 @@ namespace MilkStore.ModelViews.ResponseDTO
     {
         public string ProductID { get; set; }
         public required int Quantity { get; set; }
-        public required double UnitPrice { get; set; }
+        public double UnitPrice { get; set; }
         public double TotalAmount => Quantity * UnitPrice;
     }
 }

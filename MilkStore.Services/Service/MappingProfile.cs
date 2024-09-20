@@ -10,6 +10,7 @@ using MilkStore.ModelViews.OrderModelViews;
 using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
+using MilkStore.ModelViews.OrderDetailsModelView;
 
 namespace MilkStore.Services.Service
 {
@@ -32,8 +33,11 @@ namespace MilkStore.Services.Service
 
             CreateMap<OrderModelView, Order>();            
             CreateMap<Order, OrderResponseDTO>()
-                .ForMember(dest => dest.OrderDetailss, opt => opt.MapFrom(src => src.OrderDetailss));            
-            CreateMap<OrderDetails, OrderDetailResponseDTO>();
+                .ForMember(dest => dest.OrderDetailss, opt => opt.MapFrom(src => src.OrderDetailss));
+
+            CreateMap<OrderDetailsModelView, OrderDetails>();
+            CreateMap<OrderDetails, OrderDetailResponseDTO>()
+            .ForMember(dest => dest.UnitPrice, opt => opt.Ignore()); //
 
             // Ánh xạ từ OrderModelView sang Order, nhưng chỉ cập nhật các thuộc tính thay đổi
             CreateMap<OrderModelView, Order>()
