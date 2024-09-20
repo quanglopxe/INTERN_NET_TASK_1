@@ -38,7 +38,7 @@ namespace MilkStore.API.Controllers
             try
             {
                 await _orderDetailsService.CreateOrderDetails(model);
-                return Ok();
+                return Ok(new { message = "Thêm thành công" });
             }
             catch (Exception ex)
             {
@@ -57,7 +57,7 @@ namespace MilkStore.API.Controllers
             }
             OrderDetails detail = await _orderDetailsService.UpdateOrderDetails(id, model);
             
-            return Ok(BaseResponse<OrderDetails>.OkResponse(detail));
+            return Ok(new { message = "Sửa thành công" });
         }
 
         // DELETE
@@ -68,7 +68,7 @@ namespace MilkStore.API.Controllers
             try
             {
                 await _orderDetailsService.DeleteOrderDetails(id);
-                return Ok();
+                return Ok(new { message = "Xóa thành công" });
             }
             catch (Exception ex)
             {
