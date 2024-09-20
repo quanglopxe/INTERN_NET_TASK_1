@@ -6,15 +6,19 @@ using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.Repositories.Entity;
 using Microsoft.AspNetCore.Identity;
 using MilkStore.Core.Base;
+using MilkStore.Contract.Repositories.Entity;
+using MilkStore.Repositories.UOW;
 public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> userManager;
     private readonly SignInManager<ApplicationUser> signInManager;
+    private readonly UnitOfWork unitOfWork;
 
-    public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+    public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, UnitOfWork unitOfWork)
     {
         this.userManager = userManager;
         this.signInManager = signInManager;
+        this.unitOfWork = unitOfWork;
 
     }
     public async Task<ApplicationUser> ExistingUser(string email)
@@ -94,5 +98,22 @@ public class AuthService : IAuthService
         JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
         SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
         return (tokenHandler.WriteToken(token), roles);
+    }
+    public async Task<string> GenerateRefreshToken(ApplicationUser user)
+    {
+        string? refreshToken = Guid.NewGuid().ToString();
+        DateTime expiryDate = DateTime.UtcNow.AddDays(30);
+        ApplicationUserTokens? userToken = new ApplicationUserTokens
+        {
+            UserId = user.Id,
+            LoginProvider = "Default",
+            Name = "RefreshToken",
+            Value = refreshToken,
+
+        };
+
+        unitOfWork.GetRepository<ApplicationUserTokens>().Insert(userToken);
+        await unitOfWork.SaveAsync();
+        return Guid.NewGuid().ToString();
     }
 }

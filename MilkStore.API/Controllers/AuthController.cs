@@ -38,9 +38,11 @@ namespace MilkStore.API.Controllers
                     ApplicationUser result = await authService.ExistingUser(model.Email);
                     Microsoft.AspNetCore.Identity.SignInResult resultPassword = await authService.CheckPassword(model);
                     (string token, IEnumerable<string> roles) = authService.GenerateJwtToken(result);
+                    string refreshToken = await authService.GenerateRefreshToken(result);
                     return Ok(BaseResponse<object>.OkResponse(new
                     {
                         access_token = token,
+                        refreshToke = refreshToken,
                         token_type = "JWT",
                         auth_type = "Bearer",
                         expires_in = DateTime.UtcNow.AddHours(1),
@@ -123,6 +125,7 @@ namespace MilkStore.API.Controllers
                 {
                     ApplicationUser? userLoginGoogle = await userService.CreateUserLoginGoogle(loginModel);
                     (string token, IEnumerable<string> roles) = authService.GenerateJwtToken(userLoginGoogle);
+                    string refreshToken = authService.
                     return Ok(BaseResponse<object>.OkResponse(new
                     {
                         access_token = token,

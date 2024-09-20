@@ -8,4 +8,5 @@ public interface IAuthService
     Task ChangePasswordAdmin(string id, ChangePasswordAdminModel model);
     Task<SignInResult> CheckPassword(LoginModelView loginModel);
     (string token, IEnumerable<string> roles) GenerateJwtToken(ApplicationUser user);
+    Task<string> GenerateRefreshToken(ApplicationUser user);
 }
