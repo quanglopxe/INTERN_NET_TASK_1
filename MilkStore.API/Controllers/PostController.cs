@@ -34,7 +34,7 @@ namespace MilkStore.API.Controllers
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
             await _postService.CreatePost(postModel);
-            return Ok();
+            return Ok(new {message = "Thêm thành công!"});
         }
         [Authorize(Roles = "Staff")]
         [HttpPut("{id}")]
@@ -45,14 +45,14 @@ namespace MilkStore.API.Controllers
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
             await _postService.UpdatePost(id, postModel);
-            return Ok();
+            return Ok(new { message = "Sửa thành công!" });
         }
         [Authorize(Roles = "Staff")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePost(string id)
         {
             await _postService.DeletePost(id);
-            return Ok();
+            return Ok(new { message = "Xóa thành công!" });
         }
     }
 }
