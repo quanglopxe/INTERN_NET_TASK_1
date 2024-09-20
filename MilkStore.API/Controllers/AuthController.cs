@@ -1,6 +1,5 @@
 ﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -107,81 +106,50 @@ namespace MilkStore.API.Controllers
                 }
             }
         }
-
-
-
-        [HttpGet("signin-google")]
-        public IActionResult LoginGoogle()
+        [HttpPost("signin-google")]
+        public async Task<IActionResult> LoginGoogle([FromBody] TokenGoogleModel tokenGoogle)
         {
-            AuthenticationProperties properties = new()
+            if (!ModelState.IsValid)
             {
-                RedirectUri = Url.Action(nameof(GoogleResponse))
-            };
-            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
-        }
-        [HttpGet("signin-google/callback")]
-        public async Task<IActionResult> GoogleResponse()
-        {
-            // AuthenticateResult result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            // if (!result.Succeeded)
-            // {
-            //     return Unauthorized(new BaseException.ErrorException(401, "Unauthorized", "Xác thực không thành công"));
-            // }
-            // IEnumerable<Claim> claims = result.Principal.Claims;
+                return BadRequest(new BaseException.ErrorException(400, "BadRequest", ModelState.ToString()));
+            }
+            try
+            {
+                var payload = await GoogleJsonWebSignature.ValidateAsync(tokenGoogle.token);
+                string email = payload.Email;
+                string providerKey = payload.Subject;
+                LoginGoogleModel loginModel = new() { Gmail = email, ProviderKey = providerKey };
+                try
+                {
+                    ApplicationUser? userLoginGoogle = await userService.CreateUserLoginGoogle(loginModel);
+                    (string token, IEnumerable<string> roles) = authService.GenerateJwtToken(userLoginGoogle);
+                    return Ok(BaseResponse<object>.OkResponse(new
+                    {
+                        access_token = token,
+                        token_type = "JWT",
+                        auth_type = "Bearer",
+                        expires_in = DateTime.UtcNow.AddHours(1),
+                        user = new
+                        {
+                            email = userLoginGoogle.Email,
+                            role = roles
+                        }
+                    }));
+                }
+                catch (BaseException.ErrorException ex)
+                {
+                    return StatusCode(ex.StatusCode, new BaseException.ErrorException(ex.StatusCode, ex.ErrorDetail.ErrorCode, ex.ErrorDetail.ErrorMessage.ToString()));
 
-            // LoginGoogleModel loginModel = new()
-            // {
-            //     Gmail = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value,
-            //     ProviderKey = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
-            // };
-            // ApplicationUser existingEmail = await userService.GetUserByEmail(loginModel.Gmail);
-            // if (existingEmail != null)
-            // {
-            //     if (existingEmail.DeletedTime.HasValue)
-            //     {
-            //         return BadRequest(new BaseException.ErrorException(400, "BadRequest", "Tài khoản đã bị xóa"));
-            //     }
-            //     (string token, IEnumerable<string> roles) = authService.GenerateJwtToken(existingEmail);
-            //     return Ok(BaseResponse<object>.OkResponse(new
-            //     {
-            //         access_token = token,
-            //         token_type = "JWT",
-            //         auth_type = "Bearer",
-            //         expires_in = DateTime.UtcNow.AddHours(1),
-            //         user = new
-            //         {
-            //             email = existingEmail.Email,
-            //             role = roles
-            //         }
-            //     }));
+                }
+            }
+            catch
+            {
+                return BadRequest(new BaseException.ErrorException(400, "BadRequest", "Token không hợp lệ"));
+            }
 
-            // }
-            // else
-            // {
-            //     IdentityResult createUserGoogle = await userService.CreateUserLoginGoogle(loginModel);
-            //     if (createUserGoogle.Succeeded)
-            //     {
-            //         (string token, IEnumerable<string> roles) = authService.GenerateJwtToken(existingEmail);
-            //         return Ok(BaseResponse<object>.OkResponse(new
-            //         {
-            //             access_token = token,
-            //             token_type = "JWT",
-            //             auth_type = "Bearer",
-            //             expires_in = DateTime.UtcNow.AddHours(1),
-            //             user = new
-            //             {
-            //                 email = existingEmail.Email,
-            //                 role = roles
-            //             }
-            //         }));
-            //     }
-            //     else
-            //     {
-            //         return StatusCode(500, new BaseException.ErrorException(500, "InternalServerError", $"Lỗi khi tạo người dùng {createUserGoogle.Errors.FirstOrDefault()?.Description}"));
-            //     }
-            // }
-            /// fix sau
-            return Ok();
         }
+
+
+
     }
 }

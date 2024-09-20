@@ -62,35 +62,47 @@ namespace MilkStore.Services.Service
                 throw new BaseException.ErrorException(500, "InternalServerError", $"Lỗi khi tạo người dùng {result.Errors.FirstOrDefault()?.Description}");
             }
         }
-        public async Task<IdentityResult> CreateUserLoginGoogle(LoginGoogleModel loginGoogleModel)
+        public async Task<ApplicationUser> CreateUserLoginGoogle(LoginGoogleModel loginGoogleModel)
         {
-            ApplicationUser? newUser = new ApplicationUser
+            ApplicationUser? user = await userManager.FindByEmailAsync(loginGoogleModel.Gmail);
+            if (user is not null)
             {
-                UserName = loginGoogleModel.Gmail,
-                Email = loginGoogleModel.Gmail,
-            };
-            if (string.IsNullOrEmpty(loginGoogleModel.ProviderKey))
-            {
-                throw new Exception("Provider key not found in claims");
-            }
-            IdentityResult? result = await userManager.CreateAsync(newUser);
-            if (result.Succeeded)
-            {
-                string roleName = "Member";
-                bool roleExist = await roleManager.RoleExistsAsync(roleName);
-                if (!roleExist)
+                if (user.DeletedTime.HasValue)
                 {
-                    await roleManager.CreateAsync(new ApplicationRole { Name = roleName });
+                    throw new BaseException.ErrorException(400, "BadRequest", "Tài khoản đã bị xóa");
                 }
-                await userManager.AddToRoleAsync(newUser, roleName);
-                UserLoginInfo? userInfoLogin = new("Google", loginGoogleModel.ProviderKey, "Google");
-                IdentityResult loginResult = await userManager.AddLoginAsync(newUser, userInfoLogin);
-                if (!loginResult.Succeeded)
+                else
                 {
-                    return loginResult;
+                    return user;
                 }
             }
-            return result;
+            else
+            {
+                ApplicationUser? newUser = _mapper.Map<ApplicationUser>(loginGoogleModel);
+                newUser.UserName = loginGoogleModel.Gmail;
+                IdentityResult? result = await userManager.CreateAsync(newUser);
+                if (result.Succeeded)
+                {
+                    string roleName = "Member";
+                    bool roleExist = await roleManager.RoleExistsAsync(roleName);
+                    if (!roleExist)
+                    {
+                        await roleManager.CreateAsync(new ApplicationRole { Name = roleName });
+                    }
+                    await userManager.AddToRoleAsync(newUser, roleName);
+                    UserLoginInfo? userInfoLogin = new("Google", loginGoogleModel.ProviderKey, "Google");
+                    IdentityResult loginResult = await userManager.AddLoginAsync(newUser, userInfoLogin);
+                    if (!loginResult.Succeeded)
+                    {
+                        throw new BaseException.ErrorException(500, "InternalServerError", $"Lỗi khi tạo người dùng {loginResult.Errors.FirstOrDefault()?.Description}");
+                    }
+                }
+                else
+                {
+                    throw new BaseException.ErrorException(505, "InternalServerError", $"Lỗi khi tạo người dùng {result.Errors.FirstOrDefault()?.Description}");
+                }
+                return newUser;
+            }
         }
         // Cập nhật thông tin người dùng
         public async Task<ApplicationUser> UpdateUser(Guid id, UserModelView userModel, string updatedBy)
