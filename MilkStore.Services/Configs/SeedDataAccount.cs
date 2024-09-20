@@ -14,21 +14,40 @@ namespace MilkStore.Services.Configs
 
             if (!await roleManager.RoleExistsAsync("Admin"))
             {
-                await roleManager.CreateAsync(new ApplicationRole { Name = "Member" });
+                await roleManager.CreateAsync(new ApplicationRole { Name = "Admin" });
             }
-            string email = "Admin@gmail.com";
-            string password = "Admin123.";
+            string emailAdmin = "Admin@gmail.com";
+            string passwordAdmin = "Admin123.";
 
-            ApplicationUser? adminAccount = await userManager.FindByEmailAsync(email);
+            ApplicationUser? adminAccount = await userManager.FindByEmailAsync(emailAdmin);
             if (adminAccount is null)
             {
                 ApplicationUser? newAccount = new ApplicationUser
                 {
-                    UserName = email,
-                    Email = email,
+                    UserName = emailAdmin,
+                    Email = emailAdmin,
                 };
-                await userManager.CreateAsync(newAccount, password);
+                await userManager.CreateAsync(newAccount, passwordAdmin);
                 await userManager.AddToRoleAsync(newAccount, "Admin");
+            }
+
+            if (!await roleManager.RoleExistsAsync("Staff"))
+            {
+                await roleManager.CreateAsync(new ApplicationRole { Name = "Staff" });
+            }
+            string emailStaff = "Staff@gmail.com";
+            string passwordStaff = "Staff123*";
+
+            ApplicationUser? staffAccount = await userManager.FindByEmailAsync(emailStaff);
+            if (staffAccount is null)
+            {
+                ApplicationUser? newAccount = new ApplicationUser
+                {
+                    UserName = emailStaff,
+                    Email = emailStaff,                    
+                };
+                await userManager.CreateAsync(newAccount, passwordStaff);
+                await userManager.AddToRoleAsync(newAccount, "Staff");
             }
         }
     }

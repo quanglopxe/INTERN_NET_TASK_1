@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MilkStore.Contract.Repositories.Entity;
@@ -13,35 +14,28 @@ namespace MilkStore.Services.Service
 {
     public class PostService : IPostService
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly DatabaseContext context;
-        public PostService(DatabaseContext context, IUnitOfWork unitOfWork)
-        {
-            this.context = context;
+        private readonly IUnitOfWork _unitOfWork;        
+        private readonly IMapper _mapper;
+        public PostService(IUnitOfWork unitOfWork, IMapper mapper)
+        {            
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
-        public async Task<PostResponseDTO> CreatePost(PostModelView postModel)
+        public async Task CreatePost(PostModelView postModel)
         {
-            Post newPost = new Post
-            {
-                Title = postModel.Title,
-                Content = postModel.Content,
-                Image = postModel.Image,
-                CreatedTime = CoreHelper.SystemTimeNow,
-                LastUpdatedTime = CoreHelper.SystemTimeNow                
-            };
+            Post newPost = _mapper.Map<Post>(postModel);
+            newPost.CreatedTime = CoreHelper.SystemTimeNow;
+            newPost.DeletedTime = null;
             // Thêm sản phẩm vào bài đăng bằng PostProduct
             if (postModel.ProductIDs != null && postModel.ProductIDs.Any())
             {
                 newPost.PostProducts = new List<PostProduct>();
 
                 foreach (var productId in postModel.ProductIDs)
-                {
-                    //check deletetime
-
+                {                    
                     var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(productId);
-                    if (product != null)
+                    if (product != null && product.DeletedTime == null)
                     {
                         newPost.PostProducts.Add(new PostProduct
                         {
@@ -49,36 +43,20 @@ namespace MilkStore.Services.Service
                             Product = product
                         });
                     }
-                    else
+                    else if (product == null)
                     {
                         throw new KeyNotFoundException($"Product with ID {productId} was not found.");
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Product with ID {productId} has been deleted.");
                     }
                 }
             }
             await _unitOfWork.GetRepository<Post>().InsertAsync(newPost);
-            await _unitOfWork.SaveAsync();
-            return MapToPostResponseDto(newPost);
+            await _unitOfWork.SaveAsync();            
         }
-        private PostResponseDTO MapToPostResponseDto(Post post)
-        {
-            return new PostResponseDTO
-            {
-                PostID = post.Id,
-                Title = post.Title,
-                Content = post.Content,
-                CreatedAt = post.CreatedTime,
-                CreatedBy = post.CreatedBy,
-                Products = post.PostProducts.Select(pp => new ProductResponseDTO
-                {
-                    ProductID = pp.Product.Id,
-                    ProductName = pp.Product.ProductName,
-                    Description = pp.Product.Description,
-                    Price = pp.Product.Price,
-                    QuantityInStock = pp.Product.QuantityInStock,
-                    ImageUrl = pp.Product.ImageUrl
-                }).ToList()
-            };
-        }
+        
         public async Task DeletePost(string id)
         {            
             Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);            
@@ -93,53 +71,8 @@ namespace MilkStore.Services.Service
             post.DeletedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<Post>().UpdateAsync(post);
             await _unitOfWork.SaveAsync();
-
         }
-        //tên
-        //public async Task<BasePaginatedList<PostResponseDTO>> GetPosts(string? id, string? name, int pageIndex, int pageSize)
-        //{
-        //    //rule code
-        //    if(id.IsNullOrEmpty() && name.IsNullOrEmpty())
-        //    {
-        //        var query = _unitOfWork.GetRepository<Post>().Entities.Where(post => post.DeletedTime == null);
-        //        var paginatedPosts = await _unitOfWork.GetRepository<Post>().GetPagging(query, pageIndex, pageSize);
-
-        //        // Ánh xạ paginatedPosts sang kiểu trả về khác
-        //        var paginatedPostDtos = new BasePaginatedList<PostResponseDTO>(
-        //            paginatedPosts.Items.Select(MapToPostResponseDto).ToList(),
-        //            paginatedPosts.TotalPages,
-        //            paginatedPosts.CurrentPage,
-        //            paginatedPosts.PageSize
-        //            );
-        //        return paginatedPostDtos;
-        //    }
-        //    if (!id.IsNullOrEmpty())
-        //    {
-        //        Post post = await _unitOfWork.GetRepository<Post>().Entities.FirstOrDefaultAsync(post => post.Id == id && post.DeletedTime == null);
-        //        if (post == null)
-        //        {
-        //            throw new KeyNotFoundException($"Post with ID {id} was not found.");
-        //        }
-
-        //        var postDto = new List<PostResponseDTO> { MapToPostResponseDto(post) };
-        //        return new BasePaginatedList<PostResponseDTO>(postDto, 1, 1, 1);
-        //    }
-        //    if (!name.IsNullOrEmpty())
-        //    {
-        //        var query = _unitOfWork.GetRepository<Post>().Entities.Where(post => post.Title.Contains(name) && post.DeletedTime == null);
-        //        var paginatedPosts = await _unitOfWork.GetRepository<Post>().GetPagging(query, pageIndex, pageSize);
-
-        //        // Ánh xạ paginatedPosts sang kiểu trả về khác
-        //        var paginatedPostDtos = new BasePaginatedList<PostResponseDTO>(
-        //            paginatedPosts.Items.Select(MapToPostResponseDto).ToList(),
-        //            paginatedPosts.TotalPages,
-        //            paginatedPosts.CurrentPage,
-        //            paginatedPosts.PageSize
-        //            );
-        //        return paginatedPostDtos;
-        //    }
-
-        //}
+        
         public async Task<BasePaginatedList<PostResponseDTO>> GetPosts(string? id, string? name, int pageIndex, int pageSize)
         {            
             var query = _unitOfWork.GetRepository<Post>().Entities.Where(post => post.DeletedTime == null);
@@ -161,8 +94,8 @@ namespace MilkStore.Services.Service
                         .FirstOrDefaultAsync(post => post.Id == id && post.DeletedTime == null);
                     if (postById != null)
                     {
-                        var postDto = new List<PostResponseDTO> { MapToPostResponseDto(postById) };
-                        return new BasePaginatedList<PostResponseDTO>(postDto, 1, 1, 1);
+                        var postDto = _mapper.Map<PostResponseDTO>(postById);
+                        return new BasePaginatedList<PostResponseDTO>(new List<PostResponseDTO> { postDto }, 1, 1, 1);
                     }
                 }
 
@@ -173,48 +106,64 @@ namespace MilkStore.Services.Service
                         .ToListAsync();
                     if (postsByName.Any())
                     {
-                        var paginatedPostDtos = new BasePaginatedList<PostResponseDTO>(
-                            postsByName.Select(MapToPostResponseDto).ToList(),
-                            1, // TotalPages
-                            1, // CurrentPage
-                            postsByName.Count // PageSize
-                        );
-                        return paginatedPostDtos;
+                        var paginatedPostDtos = _mapper.Map<List<PostResponseDTO>>(postsByName);
+                        return new BasePaginatedList<PostResponseDTO>(paginatedPostDtos, 1, 1, postsByName.Count());
                     }
                 }
             }
 
-            // Ánh xạ paginatedPosts sang kiểu trả về khác
-            var paginatedPostDtosResult = new BasePaginatedList<PostResponseDTO>(
-                paginatedPosts.Items.Select(MapToPostResponseDto).ToList(),
-                paginatedPosts.TotalPages,
+            //GetAll
+            var postDtosResult = _mapper.Map<List<PostResponseDTO>>(paginatedPosts.Items);
+
+            return new BasePaginatedList<PostResponseDTO>(
+                postDtosResult,
+                paginatedPosts.TotalItems,
                 paginatedPosts.CurrentPage,
                 paginatedPosts.PageSize
-            );
-
-            return paginatedPostDtosResult;
+            );            
         }
-        //kiểm tra trùng với db trước khi update        
-        public async Task<PostResponseDTO> UpdatePost(string id, PostModelView postModel)
-        {
-            Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);
+             
+        public async Task UpdatePost(string id, PostModelView postModel)
+        {            
+            Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);            
             if (post == null)
             {
                 throw new KeyNotFoundException($"Post with ID {id} was not found.");
             }
-            post.Title = postModel.Title;
-            post.Content = postModel.Content;
-            post.Image = postModel.Image;
-            post.DeletedTime = postModel.DeletedTime;
+
+            //map từ PostModelView sang Post (chỉ cập nhật các trường thay đổi)
+            _mapper.Map(postModel, post);
+            
             post.LastUpdatedTime = CoreHelper.SystemTimeNow;
+
+            // Kiểm tra xem sản phẩm có bị xóa chưa, thêm sản phẩm nếu cần
+            if (postModel.ProductIDs != null && postModel.ProductIDs.Any())
+            {
+                post.PostProducts = new List<PostProduct>();
+
+                foreach (var productId in postModel.ProductIDs)
+                {
+                    var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(productId);
+                    if (product != null)
+                    {
+                        post.PostProducts.Add(new PostProduct
+                        {
+                            Post = post,
+                            Product = product
+                        });
+                    }
+                    else
+                    {
+                        throw new KeyNotFoundException($"Product with ID {productId} was not found.");
+                    }
+                }
+            }
+            
             await _unitOfWork.GetRepository<Post>().UpdateAsync(post);
-            await _unitOfWork.SaveAsync();
-            return MapToPostResponseDto(post);
+            await _unitOfWork.SaveAsync();            
         }
 
-        //Task<BasePaginatedList<PostResponseDTO>> IPostService.GetPosts(string? id, int index, int pageSize)
-        //{
-        //    throw new NotImplementedException();
-        //}
+
+
     }
 }

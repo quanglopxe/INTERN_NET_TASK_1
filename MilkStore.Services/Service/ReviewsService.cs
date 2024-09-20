@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
@@ -19,50 +20,68 @@ namespace MilkStore.Services.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly DatabaseContext _context;
-        public ReviewsService(DatabaseContext context, IUnitOfWork unitOfWork)
+        private readonly IMapper _mapper;
+        public ReviewsService(DatabaseContext context, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _context = context;
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         public async Task<Review> CreateReviews(ReviewsModel reviewsModel)
         {
-            var newReview = new Review
-            {
-                ProductID = reviewsModel.ProductID,
-                UserID = reviewsModel.UserID,
-                Rating = reviewsModel.Rating,
-                Comment = reviewsModel.Comment,
-            };
+            //var newReview = new Review
+            //{
+            //    ProductId = reviewsModel.ProductId,
+            //    UserId = reviewsModel.UserId,
+            //    Rating = reviewsModel.Rating,
+            //    Comment = reviewsModel.Comment,
+            //};
+            Review newReview = _mapper.Map<Review>(reviewsModel);
+            newReview.CreatedTime = DateTime.UtcNow;
             await _unitOfWork.GetRepository<Review>().InsertAsync(newReview);
             await _unitOfWork.SaveAsync();
             return newReview;
         }
 
-        public async Task<Review> DeletReviews(string id)
+        public async Task DeletReviews(string id)
         {
-            var review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);
-
+            Review review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);
             if (review == null)
             {
-                throw new Exception("Review không tồn tại.");
+                throw new KeyNotFoundException($"Review with ID {id} was not found.");
             }
-
-            await _unitOfWork.GetRepository<Review>().DeleteAsync(id);
+            review.DeletedTime = CoreHelper.SystemTimeNow;
+            await _unitOfWork.GetRepository<Review>().UpdateAsync(review);
             await _unitOfWork.SaveAsync();
-            return review;
         }
 
-        public async Task<IEnumerable<Review>> GetReviews(string? id)
+        public async Task<IEnumerable<Review>> GetReviews(string? id, int page, int pageSize)
         {
             if (id == null)
             {
-                return await _unitOfWork.GetRepository<Review>().GetAllAsync();
+                var query = _unitOfWork.GetRepository<Review>()
+                    .Entities
+                    .Where(detail => detail.DeletedTime == null)
+                    .OrderBy(detail => detail.ProductID);
+
+
+                var paginated = await _unitOfWork.GetRepository<Review>()
+                .GetPagging(query, page, pageSize);
+
+                return paginated.Items;
+
             }
             else
             {
-                var reviews = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);
-                return reviews != null ? new List<Review> { reviews } : new List<Review>();
+                var review = await _unitOfWork.GetRepository<Review>()
+                    .Entities
+                    .FirstOrDefaultAsync(r => r.Id == id && r.DeletedTime == null);
+                if (review == null)
+                {
+                    throw new KeyNotFoundException($"Review have ID: {id} was not found.");
+                }
+                return _mapper.Map<List<Review>>(review);
             }
 
         }
@@ -70,32 +89,22 @@ namespace MilkStore.Services.Service
         public async Task<Review> UpdateReviews(string id, ReviewsModel reviewsModel)
         {
 
-            var review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);
+            Review review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);
 
             if (review == null)
             {
-                throw new Exception("Pre-order không tồn tại.");
+                throw new Exception($"Review have ID: {id} was not found.");
             }
 
-            review.ProductID = reviewsModel.ProductID;
-            review.UserID = reviewsModel.UserID;
-            review.Rating = reviewsModel.Rating;
-            review.Comment = reviewsModel.Comment;
+            //review.ProductId = reviewsModel.ProductId;
+            //review.UserId = reviewsModel.UserId;
+            //review.Rating = reviewsModel.Rating;
+            //review.Comment = reviewsModel.Comment;
+            _mapper.Map(reviewsModel, review);
             review.LastUpdatedTime = DateTime.UtcNow;
             await _unitOfWork.GetRepository<Review>().UpdateAsync(review);
             await _unitOfWork.SaveAsync();
             return review;
-        }
-        public async Task<IList<ReviewsModel>> Pagination(int pageSize, int pageNumber)
-        {
-            var skip = (pageNumber - 1) * pageSize;
-            return await _context.Reviews.Skip(skip).Take(pageSize).Select(r => new ReviewsModel
-            {
-                ProductID = r.ProductID,
-                UserID = r.UserID,
-                Rating = r.Rating,
-                Comment = r.Comment,
-            }).ToArrayAsync();
         }
     }
 }
