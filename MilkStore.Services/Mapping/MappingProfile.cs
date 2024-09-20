@@ -31,7 +31,8 @@ namespace MilkStore.Services.Mapping
                     Description = pp.Product.Description,
                     Price = pp.Product.Price,
                     QuantityInStock = pp.Product.QuantityInStock,
-                    ImageUrl = pp.Product.ImageUrl
+                    ImageUrl = pp.Product.ImageUrl,
+                    CategoryId = pp.Product.CategoryId
                 }).ToList()));
             #endregion
 
