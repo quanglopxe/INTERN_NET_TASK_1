@@ -10,6 +10,7 @@ using MilkStore.ModelViews.CategoryModelViews;
 using MilkStore.ModelViews.ReviewsModelView;
 using MilkStore.ModelViews.PreOrdersModelView;
 using MilkStore.ModelViews.PostModelViews;
+using MilkStore.ModelViews.VoucherModelViews;
 
 
 namespace MilkStore.Services.Mapping
@@ -56,6 +57,7 @@ namespace MilkStore.Services.Mapping
             CreateMap<OrderDetailsModelView, OrderDetails>();
             CreateMap<OrderDetails, OrderDetailResponseDTO>()
             .ForMember(dest => dest.UnitPrice, opt => opt.Ignore()); //
+
             CreateMap<OrderDetails, OrderDetailResponseDTO>();
 
             // Ánh xạ từ OrderModelView sang Order, nhưng chỉ cập nhật các thuộc tính thay đổi
@@ -64,6 +66,8 @@ namespace MilkStore.Services.Mapping
 
             CreateMap<Review, ReviewsModel>().ReverseMap();
             CreateMap<PreOrders, PreOrdersModelView>().ReverseMap();
+
+            CreateMap<Voucher, VoucherModelView>().ReverseMap();
         }
     }
 }
