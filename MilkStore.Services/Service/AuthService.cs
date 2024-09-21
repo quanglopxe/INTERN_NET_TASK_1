@@ -14,16 +14,11 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> userManager;
     private readonly SignInManager<ApplicationUser> signInManager;
-    private readonly IUnitOfWork unitOfWork;
-    private readonly IMapper mapper;
 
-    public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IUnitOfWork unitOfWork, IMapper mapper)
+    public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
     {
         this.userManager = userManager;
         this.signInManager = signInManager;
-        this.unitOfWork = unitOfWork;
-        this.mapper = mapper;
-
     }
     public async Task<ApplicationUser> ExistingUser(string email)
     {

@@ -9,9 +9,8 @@ using MilkStore.Core.Utils;
 using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
-using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
-using System.ComponentModel.DataAnnotations;
+
 
 namespace MilkStore.Services.Service
 {
