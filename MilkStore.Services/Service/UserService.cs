@@ -124,14 +124,14 @@ namespace MilkStore.Services.Service
         {
             if (string.IsNullOrWhiteSpace(userId.ToString()))
             {
-                throw new KeyNotFoundException("User ID cannot be null, empty, or contain only whitespace.");
+                throw new ArgumentException("User ID cannot be null, empty, or contain only whitespace.");
             }
             var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId)
                 ?? throw new KeyNotFoundException("User does not exist or has already been deleted.");
 
             if (user.DeletedTime.HasValue)
             {
-                throw new KeyNotFoundException("User does not exist or has already been deleted.");
+                throw new InvalidOperationException("User does not exist or has already been deleted.");
             }
 
 
