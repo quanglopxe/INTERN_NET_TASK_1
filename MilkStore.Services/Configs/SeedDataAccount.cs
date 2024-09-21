@@ -30,6 +30,7 @@ namespace MilkStore.Services.Configs
                 await userManager.CreateAsync(newAccount, passwordAdmin);
                 await userManager.AddToRoleAsync(newAccount, "Admin");
             }
+
             if (!await roleManager.RoleExistsAsync("Staff"))
             {
                 await roleManager.CreateAsync(new ApplicationRole { Name = "Staff" });

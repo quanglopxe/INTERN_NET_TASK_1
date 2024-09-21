@@ -8,5 +8,6 @@
         public double Price { get; set; }
         public int QuantityInStock { get; set; }
         public required string ImageUrl { get; set; }
+        public required string CategoryId { get; set; }
     }
 }
