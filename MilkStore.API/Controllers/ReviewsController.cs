@@ -22,14 +22,14 @@ namespace MilkStore.API.Controllers
             _reviewsService = reviewsService;
         }
         [HttpGet]
-        //[Authorize(Roles = "Member")]
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> GetReviews(string? id, int page = 1, int pageSize = 10)
         {
             IList<Review> reviews = (IList<Review>)await _reviewsService.GetReviews(id, page, pageSize);
             return Ok(BaseResponse<IList<Review>>.OkResponse(reviews));
         }
         [HttpPost()]
-        //[Authorize(Roles = "Member")]
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> CreateReviews(ReviewsModel reviewsModel)
         {
             if (!ModelState.IsValid)
@@ -40,7 +40,7 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<Review>.OkResponse(Reviews));
         }
         [HttpPut("{id}")]
-        //[Authorize(Roles = "Member")]
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> UpdateReview(string id, [FromBody] ReviewsModel reviewsModel)
         {
             if (!ModelState.IsValid)
@@ -59,7 +59,7 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Member")]
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> DeleteReview(string id)
         {
             await _reviewsService.DeletReviews(id);
