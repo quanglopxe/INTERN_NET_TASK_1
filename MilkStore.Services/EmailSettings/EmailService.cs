@@ -53,5 +53,61 @@ namespace MilkStore.Services.EmailSettings
 
         //    await SendEmailAsync(customerEmail, subject, body);
         //}
+
+        // Gửi email mã voucher
+        public async Task SendVoucherEmailAsync(string toEmail, string voucherCode, DateTime expiryDate)
+        {
+            var email = new MimeMessage();
+            email.From.Add(new MailboxAddress("MilkStore", _emailSettings.SenderEmail));
+            email.To.Add(new MailboxAddress("Customer", toEmail));
+            email.Subject = "Your Voucher Code";
+
+            var bodyBuilder = new BodyBuilder
+            {
+                HtmlBody = $"<h1>Your Voucher Code</h1><p>Voucher: {voucherCode}</p><p>Expires on: {expiryDate.ToString("yyyy-MM-dd")}</p>"
+            };
+            email.Body = bodyBuilder.ToMessageBody();
+
+            using var smtp = new SmtpClient();
+            try
+            {
+                await smtp.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, MailKit.Security.SecureSocketOptions.StartTls);
+                await smtp.AuthenticateAsync(_emailSettings.SenderEmail, _emailSettings.SenderPassword);
+                await smtp.SendAsync(email);
+            }
+            finally
+            {
+                await smtp.DisconnectAsync(true);
+                smtp.Dispose();
+            }
+        }
+
+        // Gửi thông tin preorder
+        public async Task SendPreorderConfirmationEmailAsync(string toEmail, string productName, int quantity)
+        {
+            var email = new MimeMessage();
+            email.From.Add(new MailboxAddress("MilkStore", _emailSettings.SenderEmail));
+            email.To.Add(new MailboxAddress("Customer", toEmail));
+            email.Subject = "Preorder Confirmation";
+
+            var bodyBuilder = new BodyBuilder
+            {
+                HtmlBody = $"<h1>Preorder Confirmation</h1><p>Product: {productName}</p><p>Quantity: {quantity}</p><p>Thank you for your preorder!</p>"
+            };
+            email.Body = bodyBuilder.ToMessageBody();
+
+            using var smtp = new SmtpClient();
+            try
+            {
+                await smtp.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, MailKit.Security.SecureSocketOptions.StartTls);
+                await smtp.AuthenticateAsync(_emailSettings.SenderEmail, _emailSettings.SenderPassword);
+                await smtp.SendAsync(email);
+            }
+            finally
+            {
+                await smtp.DisconnectAsync(true);
+                smtp.Dispose();
+            }
+        }
     }
 }
