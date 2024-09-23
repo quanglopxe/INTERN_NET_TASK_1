@@ -20,8 +20,14 @@ namespace MilkStore.Services.Mapping
     {
         public MappingProfile()
         {
+
+            CreateMap<ApplicationUser, LoginGoogleModel>().ReverseMap();
+
+
+
+
             CreateMap<Category, CategoryModel>();
-            CreateMap<CategoryModel,Category>();            
+            CreateMap<CategoryModel, Category>();
 
             #region Post
             CreateMap<PostModelView, Post>();
