@@ -59,6 +59,10 @@ namespace MilkStore.Services.Service
         
         public async Task DeletePost(string id)
         {            
+            if(string.IsNullOrWhiteSpace(id))
+            {
+                throw new KeyNotFoundException("Post ID is required.");
+            }
             Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);            
             if (post == null)
             {
@@ -76,11 +80,11 @@ namespace MilkStore.Services.Service
         public async Task<BasePaginatedList<PostResponseDTO>> GetPosts(string? id, string? name, int pageIndex, int pageSize)
         {            
             var query = _unitOfWork.GetRepository<Post>().Entities.Where(post => post.DeletedTime == null);
-            if (!id.IsNullOrEmpty())
+            if (!string.IsNullOrWhiteSpace(id))
             {
                 query = query.Where(post => post.Id == id);
             }
-            if (!name.IsNullOrEmpty())
+            if (!string.IsNullOrWhiteSpace(name))
             {
                 query = query.Where(post => post.Title.Contains(name));
             }
@@ -88,7 +92,7 @@ namespace MilkStore.Services.Service
 
             if (!paginatedPosts.Items.Any())
             {
-                if (!id.IsNullOrEmpty())
+                if (!string.IsNullOrWhiteSpace(id))
                 {
                     var postById = await _unitOfWork.GetRepository<Post>().Entities
                         .FirstOrDefaultAsync(post => post.Id == id && post.DeletedTime == null);
@@ -99,7 +103,7 @@ namespace MilkStore.Services.Service
                     }
                 }
 
-                if (!name.IsNullOrEmpty())
+                if (!string.IsNullOrWhiteSpace(name))
                 {
                     var postsByName = await _unitOfWork.GetRepository<Post>().Entities
                         .Where(post => post.Title.Contains(name) && post.DeletedTime == null)
@@ -124,8 +128,12 @@ namespace MilkStore.Services.Service
         }
              
         public async Task UpdatePost(string id, PostModelView postModel)
-        {            
-            Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);            
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                throw new KeyNotFoundException("Post ID is required.");
+            }
+            Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);              
             if (post == null)
             {
                 throw new KeyNotFoundException($"Post with ID {id} was not found.");

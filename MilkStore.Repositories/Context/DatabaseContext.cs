@@ -66,6 +66,22 @@ namespace MilkStore.Repositories.Context
                 .HasKey(ur => new { ur.UserId, ur.RoleId });
             modelBuilder.Entity<ApplicationUserTokens>()
             .HasKey(t => new { t.UserId, t.LoginProvider, t.Name });
+
+            modelBuilder.Entity<Review>()
+                .HasOne(r => r.OrderDetails)
+                .WithMany()
+                .HasForeignKey(r => new { r.OrderID, r.ProductsID }) 
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Review>()
+                .HasOne(r => r.Order)
+                .WithMany()
+                .HasForeignKey(r => r.OrderID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OrderDetails>()
+            .HasKey(od => new { od.OrderID, od.ProductID });
+
         }
     }
 }
