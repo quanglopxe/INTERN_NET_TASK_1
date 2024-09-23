@@ -13,6 +13,7 @@ using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using AutoMapper;
+using MilkStore.Core;
 
 namespace MilkStore.Services.Service
 {
@@ -54,27 +55,32 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
         }
 
-        public async Task<IEnumerable<Voucher>> GetVouchers(string? id)
+        public async Task<BasePaginatedList<Voucher>> GetVouchers(string? name, int pageIndex, int pageSize)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                return await _unitOfWork.GetRepository<Voucher>().Entities
-                    .Where(voucher => voucher.DeletedTime == null)
-                    .ToListAsync();
-            }
-            else
-            {
-                Voucher voucher = await _unitOfWork.GetRepository<Voucher>().Entities
-                    .FirstOrDefaultAsync(voucher => voucher.Id == id && voucher.DeletedTime == null);
+            var query = _unitOfWork.GetRepository<Voucher>().Entities
+                .Where(voucher => voucher.DeletedTime == null);
 
-                if (voucher == null)
-                {
-                    throw new KeyNotFoundException($"Voucher with ID: {id} was not found.");
-                }
-
-                return new List<Voucher> { voucher };
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                query = query.Where(voucher => voucher.Name.Contains(name));
             }
+
+            var totalItems = await query.CountAsync();
+
+            var vouchers = await query
+                .OrderByDescending(voucher => voucher.CreatedTime)
+                .Skip(pageIndex * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new BasePaginatedList<Voucher>(
+                vouchers,
+                totalItems,
+                pageIndex,
+                pageSize
+            );
         }
+
 
         public async Task<Voucher> UpdateVoucher(string id, VoucherModelView voucherModel)
         {
