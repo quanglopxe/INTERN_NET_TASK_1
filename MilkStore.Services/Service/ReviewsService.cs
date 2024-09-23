@@ -31,10 +31,10 @@ namespace MilkStore.Services.Service
             {
                 throw new UnauthorizedAccessException("You do not have access to this order.");
             }
-            var productInOrder = order.OrderDetailss.Where(od => od.ProductID.Contains(reviewsModel.ProductID)).FirstOrDefault();
+            var productInOrder = order.OrderDetailss.Where(od => od.ProductID.Contains(reviewsModel.ProductsID)).FirstOrDefault();
             if (productInOrder == null)
             {
-                throw new KeyNotFoundException($"Product with ID {reviewsModel.ProductID} was not found in this order.");
+                throw new KeyNotFoundException($"Product with ID {reviewsModel.ProductsID} was not found in this order.");
             }
             Review newReview = _mapper.Map<Review>(reviewsModel);
             newReview.CreatedTime = DateTime.UtcNow;

@@ -9,8 +9,8 @@ namespace MilkStore.ModelViews.ReviewsModelView
 {
     public class ReviewsModel
     {
-        public required string UserID { get; set; }
-        public required string ProductID { get; set; }
+        public required Guid UserID { get; set; }
+        public required string ProductsID { get; set; }
         public required string OrderID { get; set; }
         [Required(ErrorMessage = "Rating không được để trống")]
         public required int Rating { get; set; }

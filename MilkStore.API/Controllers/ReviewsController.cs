@@ -36,8 +36,8 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            Review Reviews = await _reviewsService.CreateReviews(reviewsModel);
-            return Ok(BaseResponse<Review>.OkResponse(Reviews));
+            await _reviewsService.CreateReviews(reviewsModel);
+            return Ok(new {message = "Thêm thành công!"});
         }
         [HttpPut("{id}")]
         [Authorize(Roles = "Member")]
