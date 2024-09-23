@@ -11,5 +11,6 @@ namespace MilkStore.Contract.Services.Interface
         Task<Products> UpdateProducts(string id,ProductsModel productsModel);
         Task<Products> DeleteProducts(object id);
         Task<BasePaginatedList<Products>> PagingProducts(int page, int pageSize);
+        Task<IEnumerable<ProductsModel>> GetProductsName(string? Name);
     }
 }

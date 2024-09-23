@@ -14,11 +14,15 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> userManager;
     private readonly SignInManager<ApplicationUser> signInManager;
+    private readonly IUnitOfWork unitOfWork;
+    private readonly IMapper mapper;
 
-    public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+    public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IUnitOfWork unitOfWork, IMapper mapper)
     {
         this.userManager = userManager;
         this.signInManager = signInManager;
+        this.unitOfWork = unitOfWork;
+        this.mapper = mapper;
     }
     public async Task<ApplicationUser> ExistingUser(string email)
     {
@@ -125,6 +129,7 @@ public class AuthService : IAuthService
         await userManager.SetAuthenticationTokenAsync(user, "Default", "RefreshToken", refreshToken);
         return refreshToken;
     }
+
     public async Task<string> ForgotPassword(string email)
     {
         ApplicationUser? user = await userManager.FindByEmailAsync(email) ?? throw new BaseException.BadRequestException("BadRequest", "Vui lòng kiểm tra Email của bạn!");

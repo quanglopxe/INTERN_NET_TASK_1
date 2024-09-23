@@ -64,6 +64,7 @@ namespace MilkStore.Services.Service
                 throw new BaseException.ErrorException(500, "InternalServerError", $"Lỗi khi tạo người dùng {result.Errors.FirstOrDefault()?.Description}");
             }
         }
+
         private async Task<string> CreateToken(ApplicationUser user)
         {
             return await userManager.GenerateEmailConfirmationTokenAsync(user);

@@ -9,6 +9,7 @@ namespace MilkStore.ModelViews.OrderModelViews
 {
     public class OrderModelView
     {
+        //public required string Id { get; set; }
         public required Guid UserId { get; set; }
         public required string Status { get; set; }
         [Required(ErrorMessage = "ShippingAddress không được để trống")]
