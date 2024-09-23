@@ -50,22 +50,31 @@ namespace MilkStore.Services.Service
                     throw new Exception("Product not found");
                 }
 
-                // Map từ model sang OrderDetails
-                OrderDetails orderDetails = _mapper.Map<OrderDetails>(model, opts =>
-                {
-                    opts.AfterMap((src, dest) =>
-                    {
-                        dest.UnitPrice = product.Price; // Cập nhật UnitPrice từ Product
-                    });
-                });
+                // Kiểm tra xem OrderDetails đã tồn tại hay chưa dựa trên OrderID và ProductID
+                OrderDetails existingOrderDetail = await _context.OrderDetails
+                    .FirstOrDefaultAsync(od => od.OrderID == model.OrderID && od.ProductID == model.ProductID);
 
-                // Chèn OrderDetails trực tiếp bằng DbContext
-                _context.OrderDetails.Add(orderDetails);
+                if (existingOrderDetail != null)
+                {
+                    // Nếu đã tồn tại, cập nhật số lượng và tính lại tổng tiền
+                    existingOrderDetail.Quantity += model.Quantity;                    
+                }
+                else
+                {
+                    // Nếu chưa tồn tại, tạo OrderDetails mới
+                    OrderDetails orderDetails = _mapper.Map<OrderDetails>(model);
+                    orderDetails.UnitPrice = product.Price;                    
+
+                    // Thêm mới OrderDetails
+                    _context.OrderDetails.Add(orderDetails);
+                    existingOrderDetail = orderDetails;
+                }
+
                 await _context.SaveChangesAsync();
 
                 // Cập nhật tổng giá trị đơn hàng
-                await _orderService.UpdateToTalAmount(orderDetails.OrderID);
-                return orderDetails;
+                await _orderService.UpdateToTalAmount(model.OrderID);
+                return existingOrderDetail;
             }
             catch (Exception ex)
             {
