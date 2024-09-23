@@ -26,6 +26,7 @@ namespace MilkStore.Services.Configs
                 {
                     UserName = emailAdmin,
                     Email = emailAdmin,
+                    EmailConfirmed = true
                 };
                 await userManager.CreateAsync(newAccount, passwordAdmin);
                 await userManager.AddToRoleAsync(newAccount, "Admin");
@@ -44,6 +45,7 @@ namespace MilkStore.Services.Configs
                 {
                     UserName = emailStaff,
                     Email = emailStaff,
+                    EmailConfirmed = true
                 };
                 await userManager.CreateAsync(newAccount, passwordStaff);
                 await userManager.AddToRoleAsync(newAccount, "Staff");

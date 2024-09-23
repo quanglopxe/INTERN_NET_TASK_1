@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Security.Policy;
+using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
@@ -9,9 +10,8 @@ using MilkStore.Core.Utils;
 using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
-using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
-using System.ComponentModel.DataAnnotations;
+
 
 namespace MilkStore.Services.Service
 {
@@ -38,7 +38,7 @@ namespace MilkStore.Services.Service
                 throw new BaseException.ErrorException(400, "BadRequest", "Email đã tồn tại!");
             }
         }
-        public async Task CreateUser(RegisterModelView userModel)
+        public async Task<(string token, string userId)> CreateUser(RegisterModelView userModel)
         {
             ApplicationUser? newUser = new ApplicationUser
             {
@@ -56,10 +56,36 @@ namespace MilkStore.Services.Service
                     await roleManager.CreateAsync(new ApplicationRole { Name = "Member" });
                 }
                 await userManager.AddToRoleAsync(newUser, "Member");
+                string token = await CreateToken(newUser);
+                return (token, newUser.Id.ToString());
             }
             else
             {
                 throw new BaseException.ErrorException(500, "InternalServerError", $"Lỗi khi tạo người dùng {result.Errors.FirstOrDefault()?.Description}");
+            }
+        }
+        private async Task<string> CreateToken(ApplicationUser user)
+        {
+            return await userManager.GenerateEmailConfirmationTokenAsync(user);
+        }
+        public async Task<(ApplicationUser user, string token)> ResendConfirmationEmail(string email)
+        {
+            ApplicationUser? user = await userManager.FindByEmailAsync(email) ??
+                 throw new BaseException.ErrorException(404, "NotFound", "Không tìm thấy người dùng");
+            if (await userManager.IsEmailConfirmedAsync(user))
+            {
+                throw new BaseException.ErrorException(400, "BadRequest", "Email đã được xác nhận");
+            }
+            string token = await CreateToken(user);
+            return (user, token);
+        }
+        public async Task ConfirmEmail(string email, string token)
+        {
+            ApplicationUser? user = await userManager.FindByEmailAsync(email) ?? throw new BaseException.ErrorException(400, "BadRequest", "Người dùng không tồn tại.");
+            IdentityResult? result = await userManager.ConfirmEmailAsync(user, token);
+            if (!result.Succeeded)
+            {
+                throw new BaseException.ErrorException(400, "BadRequest", result.ToString());
             }
         }
         public async Task<ApplicationUser> CreateUserLoginGoogle(LoginGoogleModel loginGoogleModel)
