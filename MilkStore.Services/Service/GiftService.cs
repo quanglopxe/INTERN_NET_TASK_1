@@ -2,6 +2,7 @@
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core;
 using MilkStore.ModelViews.GiftModelViews;
 using MilkStore.Repositories.Context;
 
@@ -70,6 +71,15 @@ namespace MilkStore.Services.Service
                     return new List<GiftModel>();
                 }
             }
+        }
+
+        public async Task<BasePaginatedList<Gift>> PagingGift(int pageIndex, int pageSize)
+        {
+            IQueryable<Gift> query = _unitOfWork.GetRepository<Gift>().Entities;
+            // Sử dụng hàm GetPagging để lấy danh sách phân trang
+            BasePaginatedList<Gift> paginatedList = await _unitOfWork.GetRepository<Gift>().GetPagging(query, pageIndex, pageSize);
+            //return new BasePaginatedList<T>(items, count, index, pageSize);
+            return paginatedList; // Trả về danh sách phân trang
         }
 
         public async Task<Gift> UpdateGift(string id, GiftModel GiftModel)

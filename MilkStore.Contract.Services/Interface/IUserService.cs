@@ -12,7 +12,7 @@ namespace MilkStore.Contract.Services.Interface
     {
         Task GetUserByEmailToRegister(string email);
         Task CreateUser(RegisterModelView userModel);
-        Task<IdentityResult> CreateUserLoginGoogle(LoginGoogleModel loginGoogleModel);
+        Task<ApplicationUser> CreateUserLoginGoogle(LoginGoogleModel loginGoogleModel);
         Task<ApplicationUser> UpdateUser(Guid id, UserModelView userModel, string updatedBy);
         Task<ApplicationUser> DeleteUser(Guid userId, string deleteby);
         Task<IEnumerable<UserResponeseDTO>> GetUser(string? id, int index = 1, int pageSize = 10);

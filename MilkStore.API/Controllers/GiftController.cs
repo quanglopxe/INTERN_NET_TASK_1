@@ -5,6 +5,7 @@ using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
 using MilkStore.Core;
 using MilkStore.ModelViews.GiftModelViews;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MilkStore.API.Controllers
 {
@@ -19,21 +20,19 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpGet]
-        //[Authorize(Roles = "Admin,Member")]
+        [Authorize(Roles = "Admin,Member")]
         public async Task<IActionResult> GetGift(string? id)
         {
             try
             {
-                // Lấy tất cả sản phẩm
                 IEnumerable<GiftModel> Gift = await _GiftService.GetGift(id);
 
-                // Kiểm tra xem có sản phẩm nào không
                 if (Gift == null || !Gift.Any())
                 {
                     return NotFound("Sản phẩm không tồn tại!!!");
                 }
 
-                return Ok(Gift); // Trả về danh sách sản phẩm
+                return Ok(Gift);
             }
             catch (Exception ex)
             {
@@ -41,7 +40,7 @@ namespace MilkStore.API.Controllers
             }
         }
 
-        
+
 
         [HttpGet("GetPagging")]
         //[Authorize(Roles = "Admin,Member")]
@@ -52,7 +51,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpPost()]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateGift(GiftModel GiftModel)
         {
             if (!ModelState.IsValid)

@@ -49,7 +49,21 @@ namespace MilkStore.API.Controllers
                 return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
             }
         }
+        //[HttpGet("SendMail")]
+        //public async Task<IActionResult> SendMail(string ?id)
+        //{
+        //    IEnumerable<OrderModelView> order = new List<OrderModelView>();
+        //    try
+        //    {
+        //        order = await _orderService.GetStatus_Mail(id);
+        //    }
+        //    catch (ArgumentException ex)
+        //    {
+        //        return BadRequest("Lỗi !!!!");
+        //    }
+        //    return Ok(order);
 
+        //}
 
         [HttpPost]
         //[Authorize(Roles = "Guest, Member")]
@@ -110,6 +124,7 @@ namespace MilkStore.API.Controllers
                     return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
                 }
                 await _orderService.UpdateAsync(id, item);
+                await _orderService.GetStatus_Mail(id);
                 return Ok(new { message = "Update Order thành công" });
             }
             catch (ArgumentException ex)

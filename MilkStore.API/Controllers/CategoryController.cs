@@ -4,6 +4,7 @@ using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.CategoryModelViews;
 using MilkStore.Contract.Repositories.Entity;
+using Microsoft.AspNetCore.Authorization;
 namespace MilkStore.API.Controllers
 {
     [Route("api/[controller]")]
@@ -16,21 +17,19 @@ namespace MilkStore.API.Controllers
             _CategoryService = CategoryService;
         }
         [HttpGet]
-        //[Authorize(Roles = "Admin,Member")]
+        [Authorize(Roles = "Admin,Member")]
         public async Task<IActionResult> GetCategory(string? id)
         {
             try
             {
-                // Lấy tất cả sản phẩm
                 var Category = await _CategoryService.GetCategory(id);
 
-                // Kiểm tra xem có sản phẩm nào không
                 if (Category == null || !Category.Any())
                 {
                     return NotFound("Sản phẩm không tồn tại!!!");
                 }
 
-                return Ok(Category); // Trả về danh sách sản phẩm
+                return Ok(Category); // Trả về danh sách 
             }
             catch (Exception ex)
             {
@@ -38,14 +37,14 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpGet("GetPagging")]
-        //[Authorize(Roles = "Admin,Member")]
+        [Authorize(Roles = "Admin,Member")]
         public async Task<IActionResult> Paging(int index, int size)
         {
             var paging = await _CategoryService.PagingCategory(index, size);
             return Ok(paging);
         }
         [HttpPost()]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateCategory(CategoryModel CategoryModel)
         {
             if (!ModelState.IsValid)
@@ -56,7 +55,7 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<Category>.OkResponse(Category));
         }
         [HttpPut("{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateProduct(string id, [FromBody] CategoryModel CategoryModel)
         {
             if (!ModelState.IsValid)
@@ -75,7 +74,7 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(string id)
         {
             try

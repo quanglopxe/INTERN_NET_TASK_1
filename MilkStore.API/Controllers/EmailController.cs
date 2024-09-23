@@ -1,39 +1,32 @@
-﻿using Castle.Core.Smtp;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using MilkStore.Contract.Services.Interface;
-using IEmailSender = MilkStore.Contract.Services.Interface.IEmailSender;
+using MilkStore.Services.EmailSettings;
+
 namespace MilkStore.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class EmailController : ControllerBase
     {
-        public readonly IEmailSender _emailSender;
-        public EmailController(IEmailSender emailSender) 
+        private readonly EmailService _emailService;
+
+        public EmailController(EmailService emailService)
         {
-            this._emailSender = emailSender;
-        }
-        [HttpGet]
-        public async Task<IActionResult> MailSender(string mail, string subject, string message)
-        {
-            if (mail == null || subject == null || message == null)
-            {
-                return BadRequest("Không được để trống!!!!");
-            }
-            else
-            {
-                try
-                {
-                    await _emailSender.SendMailAsync(mail, subject, message);
-                    return Ok("Đã gửi mail thành công!!!");
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(ex.Message);
-                }
-            }
+            _emailService = emailService;
         }
 
+        [HttpPost("send")]
+        public async Task<IActionResult> SendEmail(string toEmail, string subject, string body)
+        {
+            try
+            {
+                await _emailService.SendEmailAsync(toEmail, subject, body);
+                return Ok("Email sent successfully!");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
     }
 }

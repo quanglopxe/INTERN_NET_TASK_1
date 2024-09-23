@@ -6,15 +6,23 @@ using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.Repositories.Entity;
 using Microsoft.AspNetCore.Identity;
 using MilkStore.Core.Base;
+using MilkStore.Contract.Repositories.Entity;
+using MilkStore.Contract.Repositories.Interface;
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> userManager;
     private readonly SignInManager<ApplicationUser> signInManager;
+    private readonly IUnitOfWork unitOfWork;
+    private readonly IMapper mapper;
 
-    public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+    public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IUnitOfWork unitOfWork, IMapper mapper)
     {
         this.userManager = userManager;
         this.signInManager = signInManager;
+        this.unitOfWork = unitOfWork;
+        this.mapper = mapper;
 
     }
     public async Task<ApplicationUser> ExistingUser(string email)
@@ -69,7 +77,21 @@ public class AuthService : IAuthService
             }
         }
     }
+    public async Task<ApplicationUser> CheckRefreshToken(string refreshToken)
+    {
 
+        List<ApplicationUser>? users = await userManager.Users.ToListAsync();
+        foreach (ApplicationUser user in users)
+        {
+            var storedToken = await userManager.GetAuthenticationTokenAsync(user, "Default", "RefreshToken");
+
+            if (storedToken == refreshToken)
+            {
+                return user;
+            }
+        }
+        throw new BaseException.ErrorException(401, "Unauthorized", "Mã xác thực không đúng");
+    }
 
     public (string token, IEnumerable<string> roles) GenerateJwtToken(ApplicationUser user)
     {
@@ -94,5 +116,17 @@ public class AuthService : IAuthService
         JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
         SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
         return (tokenHandler.WriteToken(token), roles);
+    }
+    public async Task<string> GenerateRefreshToken(ApplicationUser user)
+    {
+        string? refreshToken = Guid.NewGuid().ToString();
+
+        string? initToken = await userManager.GetAuthenticationTokenAsync(user, "Default", "RefreshToken");
+        if (initToken is not null)
+        {
+            await userManager.RemoveAuthenticationTokenAsync(user, "Default", "RefreshToken");
+        }
+        await userManager.SetAuthenticationTokenAsync(user, "Default", "RefreshToken", refreshToken);
+        return refreshToken;
     }
 }

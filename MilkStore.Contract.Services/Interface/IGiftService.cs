@@ -1,4 +1,5 @@
 ﻿using MilkStore.Contract.Repositories.Entity;
+using MilkStore.Core;
 using MilkStore.ModelViews.GiftModelViews;
 using System;
 using System.Collections.Generic;
@@ -14,5 +15,6 @@ namespace MilkStore.Contract.Services.Interface
         Task<Gift> CreateGift(GiftModel GiftModel);
         Task<Gift> UpdateGift(string id, GiftModel GiftModel);
         Task<Gift> DeleteGift(object id);
+        Task<BasePaginatedList<Gift>> PagingGift(int page, int pageSize);
     }
 }

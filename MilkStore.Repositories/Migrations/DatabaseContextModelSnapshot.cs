@@ -797,7 +797,7 @@ namespace MilkStore.Repositories.Migrations
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Gift", b =>
                 {
                     b.HasOne("MilkStore.Contract.Repositories.Entity.Products", "Products")
-                        .WithMany("gift")
+                        .WithMany()
                         .HasForeignKey("ProductId");
 
                     b.Navigation("Products");
@@ -912,8 +912,6 @@ namespace MilkStore.Repositories.Migrations
                     b.Navigation("OrderDetail");
 
                     b.Navigation("PostProducts");
-
-                    b.Navigation("gift");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Voucher", b =>

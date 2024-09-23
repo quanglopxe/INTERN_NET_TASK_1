@@ -1,5 +1,6 @@
 ﻿using MilkStore.Contract.Repositories.Entity;
 using MilkStore.ModelViews.OrderModelViews;
+using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.ModelViews.ResponseDTO;
 using System;
 using System.Collections.Generic;
@@ -17,5 +18,6 @@ namespace MilkStore.Contract.Services.Interface
         Task AddVoucher(string id, string voucherId);
         Task UpdateToTalAmount(string id);
         Task DeleteAsync(string id);
+        Task GetStatus_Mail(string? id);
     }
 }

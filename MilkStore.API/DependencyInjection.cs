@@ -11,6 +11,7 @@ using MilkStore.Contract.Services.Interface;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
 using MilkStore.Services;
+using MilkStore.Services.EmailSettings;
 using MilkStore.Services.Mapping;
 using MilkStore.Services.Service;
 
@@ -30,6 +31,7 @@ namespace MilkStore.API
             services.AddAuthenticationGoogle();
             services.AddAuthenticationBearer(configuration);
             services.AddAutoMapperConfig();
+            services.AddEmailConfig(configuration);
         }
         public static void AddAuthenticationBearer(this IServiceCollection services, IConfiguration configuration)
         {
@@ -87,13 +89,18 @@ namespace MilkStore.API
             services.AddScoped<IReviewsService, ReviewsService>();
             services.AddScoped<IPreOrdersService, PreOrdersService>();
             services.AddScoped<ICategoryService, CategoryService>();
-            services.AddTransient<IEmailSender,MailService>();
-            services.AddScoped<IGiftService,GiftService>();
+            services.AddScoped<IGiftService, GiftService>();
+            services.AddScoped<EmailService>();
+
             services.AddHttpContextAccessor();
         }
         public static void AddAutoMapperConfig(this IServiceCollection services)
         {
             services.AddAutoMapper(typeof(MappingProfile));
+        }
+        public static void AddEmailConfig(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));            
         }
 
         public static void AddSwaggerUIAuthentication(this IServiceCollection services)
