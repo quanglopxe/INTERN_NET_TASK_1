@@ -1,47 +1,45 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Utils;
-using MilkStore.ModelViews.PreOrdersModelView;
-using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.ModelViews.ReviewsModelView;
 using MilkStore.Repositories.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace MilkStore.Services.Service
 {
     public class ReviewsService : IReviewsService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly DatabaseContext _context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
-        public ReviewsService(DatabaseContext context, IUnitOfWork unitOfWork, IMapper mapper)
+        public ReviewsService(IHttpContextAccessor httpContextAccessor, IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _context = context;
+            _httpContextAccessor = httpContextAccessor;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
-        public async Task<Review> CreateReviews(ReviewsModel reviewsModel)
+        public async Task CreateReviews(ReviewsModel reviewsModel)
         {
-            //var newReview = new Review
-            //{
-            //    ProductId = reviewsModel.ProductId,
-            //    UserId = reviewsModel.UserId,
-            //    Rating = reviewsModel.Rating,
-            //    Comment = reviewsModel.Comment,
-            //};
+            Order order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(reviewsModel.OrderID);
+            var userID = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (order == null || order.UserId.ToString() != userID)
+            {
+                throw new UnauthorizedAccessException("You do not have access to this order.");
+            }
+            var productInOrder = order.OrderDetailss.Where(od => od.ProductID.Contains(reviewsModel.ProductID)).FirstOrDefault();
+            if (productInOrder == null)
+            {
+                throw new KeyNotFoundException($"Product with ID {reviewsModel.ProductID} was not found in this order.");
+            }
             Review newReview = _mapper.Map<Review>(reviewsModel);
             newReview.CreatedTime = DateTime.UtcNow;
             await _unitOfWork.GetRepository<Review>().InsertAsync(newReview);
-            await _unitOfWork.SaveAsync();
-            return newReview;
+            await _unitOfWork.SaveAsync();            
         }
 
         public async Task DeletReviews(string id)
@@ -63,7 +61,7 @@ namespace MilkStore.Services.Service
                 var query = _unitOfWork.GetRepository<Review>()
                     .Entities
                     .Where(detail => detail.DeletedTime == null)
-                    .OrderBy(detail => detail.ProductID);
+                    .OrderBy(detail => detail.ProductsID);
 
 
                 var paginated = await _unitOfWork.GetRepository<Review>()
