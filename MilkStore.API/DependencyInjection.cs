@@ -22,6 +22,7 @@ namespace MilkStore.API
         public static void AddConfig(this IServiceCollection services, IConfiguration configuration)
         {
             services.ConfigRoute();
+            services.AddConfigTimeToken();
             services.AddCorsConfig();
             services.AddSwaggerUIAuthentication();
             services.AddDatabase(configuration);
@@ -100,7 +101,7 @@ namespace MilkStore.API
         }
         public static void AddEmailConfig(this IServiceCollection services, IConfiguration configuration)
         {
-            services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));            
+            services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
         }
 
         public static void AddSwaggerUIAuthentication(this IServiceCollection services)
@@ -134,7 +135,7 @@ namespace MilkStore.API
             {
                 options.AddPolicy("AllowAllOrigins", builder =>
                 {
-                    builder.WithOrigins("http://localhost:5500")
+                    builder.WithOrigins(Environment.GetEnvironmentVariable("DOMAIN") ?? throw new Exception("DOMAIN is not set"))
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials();
@@ -156,6 +157,11 @@ namespace MilkStore.API
                 option.CallbackPath = "/signin-google";
                 option.SaveTokens = true;
             });
+        }
+        public static void AddConfigTimeToken(this IServiceCollection services)
+        {
+            services.Configure<DataProtectionTokenProviderOptions>(options =>
+                    options.TokenLifespan = TimeSpan.FromMinutes(30));
         }
     }
 }

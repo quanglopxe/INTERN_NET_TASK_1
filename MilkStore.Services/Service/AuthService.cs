@@ -29,10 +29,11 @@ public class AuthService : IAuthService
             {
                 throw new BaseException.ErrorException(400, "BadRequest", "Tài khoản đã bị xóa");
             }
-            else
+            if (!await userManager.IsEmailConfirmedAsync(user))
             {
-                return user;
+                throw new BaseException.ErrorException(400, "BadRequest", "Tài khoản chưa được xác nhận");
             }
+            return user;
         }
         else
         {
@@ -123,5 +124,32 @@ public class AuthService : IAuthService
         }
         await userManager.SetAuthenticationTokenAsync(user, "Default", "RefreshToken", refreshToken);
         return refreshToken;
+    }
+    public async Task<string> ForgotPassword(string email)
+    {
+        ApplicationUser? user = await userManager.FindByEmailAsync(email) ?? throw new BaseException.BadRequestException("BadRequest", "Vui lòng kiểm tra Email của bạn!");
+        if (!await userManager.IsEmailConfirmedAsync(user))
+        {
+            throw new BaseException.BadRequestException("BadRequest", "Vui lòng kiểm tra Email của bạn!");
+        }
+        string? token = await userManager.GeneratePasswordResetTokenAsync(user);
+        return token;
+    }
+    public async Task ResetPassword(string email, string password, string token)
+    {
+        ApplicationUser? user = await userManager.FindByEmailAsync(email);
+        if (user is null)
+        {
+            throw new BaseException.ErrorException(404, "NotFound", "Không tìm thấy người dùng");
+        }
+        if (!await userManager.IsEmailConfirmedAsync(user))
+        {
+            throw new BaseException.ErrorException(400, "BadRequest", "Vui lòng kiểm tra Email của bạn!");
+        }
+        IdentityResult? result = await userManager.ResetPasswordAsync(user, token, password);
+        if (!result.Succeeded)
+        {
+            throw new BaseException.ErrorException(400, "BadRequest", result.Errors.FirstOrDefault()?.Description);
+        }
     }
 }

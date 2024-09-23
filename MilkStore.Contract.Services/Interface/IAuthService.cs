@@ -10,4 +10,6 @@ public interface IAuthService
     Task<SignInResult> CheckPassword(LoginModelView loginModel);
     (string token, IEnumerable<string> roles) GenerateJwtToken(ApplicationUser user);
     Task<string> GenerateRefreshToken(ApplicationUser user);
+    Task<string> ForgotPassword(string email);
+    Task ResetPassword(string email, string password, string token);
 }
