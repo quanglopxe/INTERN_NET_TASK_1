@@ -20,8 +20,14 @@ namespace MilkStore.Services.Mapping
     {
         public MappingProfile()
         {
+
+            CreateMap<ApplicationUser, LoginGoogleModel>().ReverseMap();
+
+
+
+
             CreateMap<Category, CategoryModel>();
-            CreateMap<CategoryModel,Category>();            
+            CreateMap<CategoryModel, Category>();
 
             #region Post
             CreateMap<PostModelView, Post>();
@@ -50,7 +56,7 @@ namespace MilkStore.Services.Mapping
             .ForMember(dest => dest.LastUpdatedTime, opt => opt.Ignore())
             .ForMember(dest => dest.Points, opt => opt.Ignore()); // Nếu không muốn ánh xạ Points
 
-            CreateMap<OrderModelView, Order>();
+            CreateMap<OrderModelView, Order>().ReverseMap();
             CreateMap<Order, OrderResponseDTO>()
                 .ForMember(dest => dest.OrderDetailss, opt => opt.MapFrom(src => src.OrderDetailss));
 

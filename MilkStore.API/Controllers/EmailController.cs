@@ -28,5 +28,35 @@ namespace MilkStore.API.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
+        // Gửi email mã voucher
+        [HttpPost("send-voucher")]
+        public async Task<IActionResult> SendVoucherEmail(string toEmail, string voucherCode, DateTime expiryDate)
+        {
+            try
+            {
+                await _emailService.SendVoucherEmailAsync(toEmail, voucherCode, expiryDate);
+                return Ok("Voucher email sent successfully!");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        // Gửi email xác nhận preorder
+        [HttpPost("send-preorder")]
+        public async Task<IActionResult> SendPreorderConfirmationEmail(string toEmail, string productName, int quantity)
+        {
+            try
+            {
+                await _emailService.SendPreorderConfirmationEmailAsync(toEmail, productName, quantity);
+                return Ok("Preorder confirmation email sent successfully!");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
     }
 }

@@ -19,6 +19,18 @@ namespace MilkStore.Services.Service
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
+        public async Task<IEnumerable<ProductsModel>> GetProductsName(string? name)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new ArgumentNullException(nameof(name), "Tên sản phẩm không được để trống.");
+            }
+            IEnumerable<Products> products = await _unitOfWork.GetRepository<Products>().GetAllAsync();
+
+            products = products.Where(p => p.ProductName.Contains(name, StringComparison.OrdinalIgnoreCase) && p.DeletedTime == null);
+
+            return _mapper.Map<IEnumerable<ProductsModel>>(products);
+        }
         public async Task<BasePaginatedList<Products>> PagingProducts(int pageIndex, int pageSize)
         {
             IQueryable<Products> query = _unitOfWork.GetRepository<Products>().Entities;

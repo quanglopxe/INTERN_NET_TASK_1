@@ -9,6 +9,8 @@ using MilkStore.ModelViews.ResponseDTO;
 using AutoMapper;
 using MilkStore.Repositories.Entity;
 using System.Security.Cryptography;
+using MilkStore.ModelViews.ProductsModelViews;
+using MilkStore.Services.EmailSettings;
 
 namespace MilkStore.Services.Service
 {
@@ -18,20 +20,21 @@ namespace MilkStore.Services.Service
         private readonly DatabaseContext _context;
         protected readonly DbSet<Order> _dbSet;
         private readonly IMapper _mapper;
-
-        public OrderService(IUnitOfWork unitOfWork, DatabaseContext context, IMapper mapper)
+        private readonly EmailService _emailService;
+        public OrderService(IUnitOfWork unitOfWork, DatabaseContext context, IMapper mapper, EmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _context = context;
             _dbSet = _context.Set<Order>();
             _mapper = mapper;
+            _emailService = emailService;
         }
 
         private OrderResponseDTO MapToOrderResponseDto(Order order)
         {
             return _mapper.Map<OrderResponseDTO>(order);
         }
-
+        
         public async Task<IEnumerable<OrderResponseDTO>> GetAsync(string? id)
         {
             try
@@ -255,6 +258,33 @@ namespace MilkStore.Services.Service
                 // Log lỗi không mong muốn và trả về lỗi
                 // Tránh để lộ lỗi chi tiết cho phía client
                 throw new ApplicationException("Đã xảy ra lỗi khi xử lý yêu cầu của bạn.", ex);
+            }
+        }
+
+        public async Task GetStatus_Mail(string? id)
+        {
+            Order order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
+            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(order.UserId);
+            if (order != null && order.DeletedTime == null)
+            {
+                if (order.UserId == user.Id)
+                {
+                    if (order.Status.Equals("successful payment") && order.PaymentMethod.Equals("Online"))
+                    {
+                        _emailService.SendEmailAsync(user.Email, "Đơn hàng " + order.TotalAmount + " thanh toán thành công", "Thời gian giao hàng dự kiến " + order.estimatedDeliveryDate + ". Cảm ơn quý khách đã mua hàng tại MilkStore");
+                        order.Status = "successful payment - DONE";
+                        await _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+                        await _unitOfWork.SaveAsync();
+                    }
+                    if (order.PaymentMethod.Equals("Offline"))
+                    {
+                        _emailService.SendEmailAsync(user.Email, "Đơn hàng " + order.TotalAmount + " thanh toán khi nhận hàng", "Thời gian giao hàng dự kiến " + order.estimatedDeliveryDate + ". Cảm ơn quý khách đã mua hàng tại MilkStore");
+                        order.Status = "successful payment - DONE";
+                        await _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+                        await _unitOfWork.SaveAsync();
+                    }
+                }
+
             }
         }
     }
