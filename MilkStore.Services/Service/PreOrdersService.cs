@@ -28,18 +28,20 @@ namespace MilkStore.Services.Service
 
         public async Task<PreOrders> CreatePreOrders(PreOrdersModelView preOrdersModel)
         {
-            //var newPreOrder = new PreOrders
-            //{
-            //    ProductID = preOrdersModel.ProductID,
-            //    UserID = preOrdersModel.UserID,
-            //    PreoderDate = preOrdersModel.PreoderDate,
-            //    Status = preOrdersModel.Status,
-            //    Quantity = preOrdersModel.Quantity,
-            //};
+            var product = await _unitOfWork.GetRepository<Products>()
+                .Entities
+                .FirstOrDefaultAsync(p => p.Id == preOrdersModel.ProductID);
+
+            if (product == null || product.QuantityInStock > 0)
+            {
+                throw new InvalidOperationException("Không thể tạo Pre-order vì sản phẩm còn tồn kho.");
+            }
+
             PreOrders newPreOrder = _mapper.Map<PreOrders>(preOrdersModel);
             newPreOrder.CreatedTime = DateTime.UtcNow;
             await _unitOfWork.GetRepository<PreOrders>().InsertAsync(newPreOrder);
             await _unitOfWork.SaveAsync();
+
             return newPreOrder;
         }
 
@@ -93,14 +95,8 @@ namespace MilkStore.Services.Service
             {
                 throw new Exception("Pre-order không tồn tại.");
             }
-
-            //preord.ProductID = preOrdersModel.ProductID;
-            //preord.UserID = preOrdersModel.UserID;
-            //preord.PreoderDate = preOrdersModel.PreoderDate;
-            //preord.Status = preOrdersModel.Status;
-            //preord.Quantity = preOrdersModel.Quantity;
             _mapper.Map(preOrdersModel, preord);
-            preord.LastUpdatedTime = DateTime.UtcNow;
+            preord.LastUpdatedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<PreOrders>().UpdateAsync(preord);
             await _unitOfWork.SaveAsync();
             return preord;
