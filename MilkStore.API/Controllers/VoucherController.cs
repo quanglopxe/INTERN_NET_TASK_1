@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.VoucherModelViews;
 using MilkStore.Repositories.Entity;
@@ -20,10 +21,10 @@ namespace MilkStore.API.Controllers
             _voucherService = vouchertService;
         }
         [HttpGet()]
-        public async Task<IActionResult> GetVoucher(string? id, int index = 1, int pageSize = 10)
+        public async Task<IActionResult> GetVouchers(string? name, int pageIndex = 1, int pageSize = 10)
         {
-            IList<Voucher> vouchers = (IList<Voucher>)await _voucherService.GetVouchers(id);
-            return Ok(BaseResponse<IList<Voucher>>.OkResponse(vouchers));
+            var paginatedVouchers = await _voucherService.GetVouchers(name, pageIndex, pageSize);
+            return Ok(BaseResponse<BasePaginatedList<Voucher>>.OkResponse(paginatedVouchers));
         }
         //[Authorize(Roles = "Staff")]
         [HttpPost()]
