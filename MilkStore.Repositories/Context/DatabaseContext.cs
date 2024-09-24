@@ -29,6 +29,54 @@ namespace MilkStore.Repositories.Context
         #endregion
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<ApplicationUser>(entity =>
+            {
+                entity.ToTable("Users");
+            });
+
+            modelBuilder.Entity<ApplicationRole>(entity =>
+            {
+                entity.ToTable("Roles");
+            });
+
+            modelBuilder.Entity<ApplicationUserClaims>(entity =>
+            {
+                entity.ToTable("UserClaims");
+            });
+
+            modelBuilder.Entity<ApplicationUserRoles>(entity =>
+            {
+                entity.HasKey(e => new { e.UserId, e.RoleId });
+                entity.ToTable("UserRoles");
+
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.UserRoles)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Role)
+                      .WithMany(r => r.UserRoles)
+                      .HasForeignKey(e => e.RoleId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<ApplicationUserLogins>(entity =>
+            {
+                entity.ToTable("UserLogins");
+            });
+
+            modelBuilder.Entity<ApplicationRoleClaims>(entity =>
+            {
+                entity.ToTable("RoleClaims");
+            });
+
+            modelBuilder.Entity<ApplicationUserTokens>(entity =>
+            {
+                entity.ToTable("UserTokens");
+            });
+
+
+
             //modelBuilder.Entity<Post>()
             //    .HasMany(p => p.Products)
             //    .WithMany(p => p.Posts)
@@ -70,7 +118,7 @@ namespace MilkStore.Repositories.Context
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.OrderDetails)
                 .WithMany()
-                .HasForeignKey(r => new { r.OrderID, r.ProductsID }) 
+                .HasForeignKey(r => new { r.OrderID, r.ProductsID })
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Review>()

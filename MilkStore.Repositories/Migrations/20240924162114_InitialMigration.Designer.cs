@@ -12,7 +12,7 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20240924024100_InitialMigration")]
+    [Migration("20240924162114_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -63,7 +63,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ApplicationRole");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationRoleClaims", b =>
@@ -103,7 +103,9 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ApplicationRoleClaims");
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("RoleClaims", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserClaims", b =>
@@ -143,7 +145,9 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ApplicationUserClaims");
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserClaims", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserLogins", b =>
@@ -180,7 +184,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("UserId", "LoginProvider", "ProviderKey");
 
-                    b.ToTable("ApplicationUserLogins");
+                    b.ToTable("UserLogins", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserRoles", b =>
@@ -211,7 +215,9 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("UserId", "RoleId");
 
-                    b.ToTable("ApplicationUserRoles");
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("UserRoles", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserTokens", b =>
@@ -248,7 +254,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
-                    b.ToTable("ApplicationUserTokens");
+                    b.ToTable("UserTokens", (string)null);
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Category", b =>
@@ -793,7 +799,70 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ApplicationUser");
+                    b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationRoleClaims", b =>
+                {
+                    b.HasOne("MilkStore.Contract.Repositories.Entity.ApplicationRole", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserClaims", b =>
+                {
+                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserLogins", b =>
+                {
+                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserRoles", b =>
+                {
+                    b.HasOne("MilkStore.Contract.Repositories.Entity.ApplicationRole", "Role")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "User")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserTokens", b =>
+                {
+                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Gift", b =>
@@ -918,6 +987,11 @@ namespace MilkStore.Repositories.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationRole", b =>
+                {
+                    b.Navigation("UserRoles");
+                });
+
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Category", b =>
                 {
                     b.Navigation("Products");
@@ -948,6 +1022,8 @@ namespace MilkStore.Repositories.Migrations
             modelBuilder.Entity("MilkStore.Repositories.Entity.ApplicationUser", b =>
                 {
                     b.Navigation("Orders");
+
+                    b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618
         }
