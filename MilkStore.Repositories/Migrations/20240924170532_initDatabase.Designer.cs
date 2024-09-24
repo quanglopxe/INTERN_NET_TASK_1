@@ -12,8 +12,8 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20240924162114_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20240924170532_initDatabase")]
+    partial class initDatabase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -553,13 +553,14 @@ namespace MilkStore.Repositories.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProductID");
+
+                    b.HasIndex("UserID");
 
                     b.ToTable("PreOrders");
                 });
@@ -827,7 +828,7 @@ namespace MilkStore.Repositories.Migrations
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationUserLogins", b =>
                 {
                     b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "User")
-                        .WithMany()
+                        .WithMany("Logins")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -938,7 +939,15 @@ namespace MilkStore.Repositories.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Products");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Products", b =>
@@ -1021,6 +1030,8 @@ namespace MilkStore.Repositories.Migrations
 
             modelBuilder.Entity("MilkStore.Repositories.Entity.ApplicationUser", b =>
                 {
+                    b.Navigation("Logins");
+
                     b.Navigation("Orders");
 
                     b.Navigation("UserRoles");

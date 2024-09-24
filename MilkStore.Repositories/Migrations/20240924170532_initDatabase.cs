@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MilkStore.Repositories.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class initDatabase : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -393,7 +393,7 @@ namespace MilkStore.Repositories.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UserID = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ProductID = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     PreoderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -412,6 +412,12 @@ namespace MilkStore.Repositories.Migrations
                         name: "FK_PreOrders_Products_ProductID",
                         column: x => x.ProductID,
                         principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PreOrders_Users_UserID",
+                        column: x => x.UserID,
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -528,6 +534,11 @@ namespace MilkStore.Repositories.Migrations
                 name: "IX_PreOrders_ProductID",
                 table: "PreOrders",
                 column: "ProductID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PreOrders_UserID",
+                table: "PreOrders",
+                column: "UserID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_CategoryId",
