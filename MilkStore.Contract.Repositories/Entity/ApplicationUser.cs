@@ -15,6 +15,7 @@ namespace MilkStore.Repositories.Entity
         public DateTimeOffset CreatedTime { get; set; }
         public DateTimeOffset LastUpdatedTime { get; set; }
         public DateTimeOffset? DeletedTime { get; set; }
+        public virtual ICollection<ApplicationUserLogins> Logins { get; set; } = new List<ApplicationUserLogins>();
         public virtual ICollection<ApplicationUserRoles> UserRoles { get; set; } = new List<ApplicationUserRoles>();
         public ApplicationUser()
         {
