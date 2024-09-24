@@ -12,8 +12,8 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20240924170532_initDatabase")]
-    partial class initDatabase
+    [Migration("20240924203035_InitDB")]
+    partial class InitDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -435,6 +435,52 @@ namespace MilkStore.Repositories.Migrations
                     b.HasIndex("ProductID");
 
                     b.ToTable("OrderDetails");
+                });
+
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.OrderGift", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("DeletedTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("GiftId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("LastUpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("LastUpdatedTime")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GiftId");
+
+                    b.HasIndex("UserID");
+
+                    b.ToTable("OrderGifts");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Post", b =>
@@ -869,8 +915,9 @@ namespace MilkStore.Repositories.Migrations
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Gift", b =>
                 {
                     b.HasOne("MilkStore.Contract.Repositories.Entity.Products", "Products")
-                        .WithMany()
-                        .HasForeignKey("ProductId");
+                        .WithMany("Gifts")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Products");
                 });
@@ -910,6 +957,24 @@ namespace MilkStore.Repositories.Migrations
                     b.Navigation("Order");
 
                     b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.OrderGift", b =>
+                {
+                    b.HasOne("MilkStore.Contract.Repositories.Entity.Gift", "Gift")
+                        .WithMany("OrderGifts")
+                        .HasForeignKey("GiftId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "User")
+                        .WithMany("orderGift")
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Gift");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.PostProduct", b =>
@@ -1006,6 +1071,11 @@ namespace MilkStore.Repositories.Migrations
                     b.Navigation("Products");
                 });
 
+            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Gift", b =>
+                {
+                    b.Navigation("OrderGifts");
+                });
+
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Order", b =>
                 {
                     b.Navigation("OrderDetailss");
@@ -1018,6 +1088,8 @@ namespace MilkStore.Repositories.Migrations
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Products", b =>
                 {
+                    b.Navigation("Gifts");
+
                     b.Navigation("OrderDetail");
 
                     b.Navigation("PostProducts");
@@ -1035,6 +1107,8 @@ namespace MilkStore.Repositories.Migrations
                     b.Navigation("Orders");
 
                     b.Navigation("UserRoles");
+
+                    b.Navigation("orderGift");
                 });
 #pragma warning restore 612, 618
         }

@@ -4,32 +4,31 @@ using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
 using MilkStore.Core;
-using MilkStore.ModelViews.GiftModelViews;
-using Microsoft.AspNetCore.Authorization;
+using MilkStore.ModelViews.OrderGiftModelViews;
 
 namespace MilkStore.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class GiftController : ControllerBase
+    public class OrderGiftController : ControllerBase
     {
-        private readonly IGiftService _GiftService;
-        public GiftController(IGiftService GiftService)
+        private readonly IOrderGiftService _OGiftService;
+        public OrderGiftController(IOrderGiftService GiftService)
         {
-            _GiftService = GiftService;
+            _OGiftService = GiftService;
         }
 
         [HttpGet]
         //[Authorize(Roles = "Admin,Member")]
-        public async Task<IActionResult> GetGift(string? id)
+        public async Task<IActionResult> GetOrderGift(string? id)
         {
             try
             {
-                IEnumerable<GiftModel> Gift = await _GiftService.GetGift(id);
+                IEnumerable<OrderGiftModel> Gift = await _OGiftService.GetOrderGift(id);
 
                 if (Gift == null || !Gift.Any())
                 {
-                    return NotFound("Sản phẩm không tồn tại!!!");
+                    return NotFound("Quà tặng không tồn tại!!!");
                 }
 
                 return Ok(Gift);
@@ -42,30 +41,30 @@ namespace MilkStore.API.Controllers
 
 
 
-        [HttpGet("GetPagging")]
-        //[Authorize(Roles = "Admin,Member")]
-        public async Task<IActionResult> Paging(int index, int size)
-        {
-            BasePaginatedList<Gift> paging = await _GiftService.PagingGift(index, size);
-            return Ok(paging);
-        }
+        //[HttpGet("GetPagging")]
+        ////[Authorize(Roles = "Admin,Member")]
+        //public async Task<IActionResult> Paging(int index, int size)
+        //{
+        //    BasePaginatedList<Gift> paging = await _OGiftService.PagingGift(index, size);
+        //    return Ok(paging);
+        //}
 
         [HttpPost()]
         //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateGift(GiftModel GiftModel)
+        public async Task<IActionResult> CreateOrderGift(OrderGiftModel OrderGiftModel)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
 
-            Gift Gift = await _GiftService.CreateGift(GiftModel);
-            return Ok(BaseResponse<Gift>.OkResponse(Gift));
+            OrderGift Gift = await _OGiftService.CreateOrderGift(OrderGiftModel);
+            return Ok(BaseResponse<OrderGift>.OkResponse(Gift));
         }
 
         [HttpPut("{id}")]
         //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateProduct(string id, [FromBody] GiftModel GiftModel)
+        public async Task<IActionResult> UpdateOrderGift(string id, [FromBody] OrderGiftModel OrderGiftModel)
         {
             if (!ModelState.IsValid)
             {
@@ -74,7 +73,8 @@ namespace MilkStore.API.Controllers
 
             try
             {
-                Gift updatedProduct = await _GiftService.UpdateGift(id, GiftModel);
+                OrderGift updatedProduct = await _OGiftService.UpdateOrderGift(id, OrderGiftModel);
+                await _OGiftService.SendMail_OrderGift(id);
                 return Ok(updatedProduct);
             }
             catch (Exception ex)
@@ -85,11 +85,11 @@ namespace MilkStore.API.Controllers
 
         [HttpDelete("{id}")]
         //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeleteProduct(string id)
+        public async Task<IActionResult> DeleteOrderGift(string id)
         {
             try
             {
-                Gift deletedProduct = await _GiftService.DeleteGift(id);
+                OrderGift deletedProduct = await _OGiftService.DeleteOrderGift(id);
                 return Ok(deletedProduct); // Trả về sản phẩm đã bị xóa
             }
             catch (Exception ex)
