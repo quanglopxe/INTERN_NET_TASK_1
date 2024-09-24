@@ -287,5 +287,28 @@ namespace MilkStore.Services.Service
 
             }
         }
+        public async Task GetNewStatus_Mail(string? id)
+        {
+            Order order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
+            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(order.UserId);
+            string originalStatus = "waiting";
+            if (order != null && order.DeletedTime == null)
+            {
+                if (order.UserId == user.Id)
+                {
+                    if (!string.IsNullOrEmpty(order.Status) && !order.Status.Equals(originalStatus))
+                    {
+                        string subject = "Đơn hàng của quý khách: " + order.User.UserName + " vừa được cập nhật";
+                        string message = "Trạng thái đơn hàng: " + order.Id + " đã được thay đổi thành: " + order.Status + ". Cảm ơn quý khách đã mua hàng tại MilkStore.";
+
+                        _emailService.SendEmailAsync(user.Email, subject, message);
+
+                        await _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+                        await _unitOfWork.SaveAsync();
+                    }
+                }
+            }
+        }
+
     }
 }

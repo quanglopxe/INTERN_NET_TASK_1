@@ -19,5 +19,6 @@ namespace MilkStore.Contract.Services.Interface
         Task UpdateToTalAmount(string id);
         Task DeleteAsync(string id);
         Task GetStatus_Mail(string? id);
+        Task GetNewStatus_Mail(string? id);
     }
 }

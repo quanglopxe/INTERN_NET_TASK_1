@@ -125,6 +125,7 @@ namespace MilkStore.API.Controllers
                 }
                 await _orderService.UpdateAsync(id, item);
                 await _orderService.GetStatus_Mail(id);
+                await _orderService.GetNewStatus_Mail(id);
                 return Ok(new { message = "Update Order thành công" });
             }
             catch (ArgumentException ex)
