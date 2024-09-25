@@ -71,7 +71,8 @@ namespace MilkStore.API.Controllers
             return Ok(paging);
         }
         [HttpPost()]
-        [Authorize(Roles = "Admin, Staff")]
+
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateProducts(ProductsModel ProductsModel)
         {
             if (!ModelState.IsValid)
@@ -82,7 +83,7 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<Products>.OkResponse(Products));
         }
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin, Staff")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateProduct(string id, [FromBody] ProductsModel productsModel)
         {
             if (!ModelState.IsValid)
@@ -101,7 +102,7 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin, Staff")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(string id)
         {
             try

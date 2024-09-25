@@ -136,7 +136,7 @@ namespace MilkStore.API
             {
                 options.AddPolicy("AllowAllOrigins", builder =>
                 {
-                    builder.WithOrigins(Environment.GetEnvironmentVariable("DOMAIN") ?? throw new Exception("DOMAIN is not set"))
+                    builder.WithOrigins(Environment.GetEnvironmentVariable("CLIENT_DOMAIN") ?? throw new Exception("CLIENT_DOMAIN is not set"))
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials();

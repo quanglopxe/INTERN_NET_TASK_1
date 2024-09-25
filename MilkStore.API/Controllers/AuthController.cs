@@ -95,7 +95,8 @@ namespace MilkStore.API.Controllers
         }
         private string ConfirmationLink(string action, string email, string token)
         {
-            string? confirmationLink = Url.Action(action, "Auth", new { email, token }, Request.Scheme);
+            string clientDomain = Environment.GetEnvironmentVariable("DOMAIN") ?? throw new Exception("DOMAIN is not set");
+            string confirmationLink = $"{clientDomain}/{action}?email={email}&token={token}";
             return confirmationLink;
         }
 
@@ -121,16 +122,16 @@ namespace MilkStore.API.Controllers
                 return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
             }
         }
-        [HttpGet("ConfirmEmail")]
-        public async Task<IActionResult> ConfirmEmail(string email, string token)
+        [HttpPatch("ConfirmEmail")]
+        public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailModel confirmEmailModel)
         {
-            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Yêu cầu không hợp lệ.");
+                return BadRequest(new BaseException.ErrorException(400, "BadRequest", ModelState.ToString()));
             }
             try
             {
-                await userService.ConfirmEmail(email, token);
+                await userService.ConfirmEmail(confirmEmailModel.Email, confirmEmailModel.Token);
                 return Ok(BaseResponse<string>.OkResponse("Xác nhận email thành công!"));
             }
             catch (BaseException.ErrorException e)
