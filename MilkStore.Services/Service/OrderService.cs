@@ -87,9 +87,9 @@ namespace MilkStore.Services.Service
                 item.TotalAmount = 0;
                 item.DiscountedAmount = 0;
 
-                // Kiểm tra sự tồn tại của User
-                ApplicationUser? user = await _userManager.FindByIdAsync(userId)
-                    ?? throw new KeyNotFoundException($"User với ID {userId} không tồn tại.");
+                //// Kiểm tra sự tồn tại của User
+                //ApplicationUser? user = await _userManager.FindByIdAsync(userId)
+                //    ?? throw new KeyNotFoundException($"User với ID {userId} không tồn tại.");
                 await _unitOfWork.GetRepository<Order>().InsertAsync(item);
                 await _unitOfWork.SaveAsync();
             }
