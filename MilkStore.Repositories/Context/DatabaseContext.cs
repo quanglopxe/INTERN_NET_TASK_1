@@ -26,6 +26,7 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<PreOrders> PreOrders => Set<PreOrders>();
         public virtual DbSet<Category> Category => Set<Category>();
         public virtual DbSet<Gift> Gifts => Set<Gift>();
+        public virtual DbSet<OrderGift> OrderGifts => Set<OrderGift>();
         #endregion
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -69,7 +70,24 @@ namespace MilkStore.Repositories.Context
             //modelBuilder.Entity<Post>()
             //    .HasMany(p => p.Products)
             //    .WithMany(p => p.Posts)
-            //    .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table
+            //    .UsingEntity(j => j.ToTable("PostProducts"));  // Custom join table\
+            modelBuilder.Entity<Gift>()
+                .HasOne(o => o.Products)
+                .WithMany(v => v.Gifts)
+                .HasForeignKey(o => o.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OrderGift>()
+                .HasOne(o => o.Gift)
+                .WithMany(v => v.OrderGifts)
+                .HasForeignKey(o => o.GiftId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OrderGift>()
+                .HasOne(o => o.User)
+                .WithMany(v => v.orderGift)
+                .HasForeignKey(o => o.UserID);
+
             //Add FK_Order_Voucher
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.Voucher)

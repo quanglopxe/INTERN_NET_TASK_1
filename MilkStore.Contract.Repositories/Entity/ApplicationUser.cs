@@ -24,5 +24,6 @@ namespace MilkStore.Repositories.Entity
         }
 
         public virtual ICollection<Order> Orders { get; set; } // Một người dùng có nhiều đơn hàng
+        public virtual ICollection<OrderGift> orderGift { get; set; }
     }
 }
