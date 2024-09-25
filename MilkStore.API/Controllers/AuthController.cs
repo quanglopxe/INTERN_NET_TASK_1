@@ -17,9 +17,9 @@ namespace MilkStore.API.Controllers
     {
         private readonly IAuthService authService;
         private readonly IUserService userService;
-        private readonly EmailService emailService;
+        private readonly IEmailService emailService;
         private readonly SignInManager<ApplicationUser> signInManager;
-        public AuthController(IAuthService authService, IUserService userService, SignInManager<ApplicationUser> signInManager, EmailService emailService)
+        public AuthController(IAuthService authService, IUserService userService, SignInManager<ApplicationUser> signInManager, IEmailService emailService)
         {
             this.authService = authService;
             this.userService = userService;

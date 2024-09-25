@@ -73,7 +73,9 @@ namespace MilkStore.Services.Mapping
             CreateMap<OrderModelView, Order>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null)); // Chỉ ánh xạ khi giá trị mới khác null
 
-            CreateMap<Review, ReviewsModel>().ReverseMap();
+            CreateMap<Review, ReviewsModel>().ReverseMap()
+                .ForMember(dest => dest.UserID, opt => opt.Ignore()); // Bỏ qua UserID khi map từ ReviewsModel sang Review
+
 
             CreateMap<PreOrders, PreOrdersModelView>().ReverseMap();
 
