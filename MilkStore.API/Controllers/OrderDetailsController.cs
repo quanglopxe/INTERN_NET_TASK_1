@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
 using Microsoft.AspNetCore.Authorization;
+using MailKit.Search;
 
 namespace MilkStore.API.Controllers
 {
@@ -31,48 +32,47 @@ namespace MilkStore.API.Controllers
         }
 
         // POST
-        [Authorize(Roles = "Guest, Member")]
+        //[Authorize(Roles = "Guest, Member")]
         [HttpPost]
         public async Task<IActionResult> CreateOrderDetails(OrderDetailsModelView model)
         {
             try
             {
                 await _orderDetailsService.CreateOrderDetails(model);
-                return Ok(new { message = "Thêm thành công" });
+                return StatusCode(200, new { message = "Thêm thành công" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Lỗi máy chủ nội bộ: {ex.Message}");
             }
         }
 
         // PUT
-        [Authorize(Roles = "Guest, Member")]
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateOrderDetails(string id, OrderDetailsModelView model)
+        //[Authorize(Roles = "Guest, Member")]
+        [HttpPut("{orderId}/{productId}")]
+        public async Task<IActionResult> UpdateOrderDetails(string orderId, string productId, OrderDetailsModelView model)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            OrderDetails detail = await _orderDetailsService.UpdateOrderDetails(id, model);
-            
-            return Ok(new { message = "Sửa thành công" });
+            OrderDetails detail = await _orderDetailsService.UpdateOrderDetails(orderId, productId, model);
+            return StatusCode(200, new { message = "Sửa thành công", detail });
         }
 
         // DELETE
-        [Authorize(Roles = "Guest, Member")]
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteOrderDetails(string id)
+        //[Authorize(Roles = "Guest, Member")]
+        [HttpDelete("{orderId}/{productId}")]
+        public async Task<IActionResult> DeleteOrderDetails(string orderId, string productId)
         {
             try
             {
-                await _orderDetailsService.DeleteOrderDetails(id);
-                return Ok(new { message = "Xóa thành công" });
+                await _orderDetailsService.DeleteOrderDetails(orderId, productId);
+                return StatusCode(200, new { message = "Xoá thành công" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Lỗi máy chủ nội bộ: {ex.Message}");
             }
         }
     }

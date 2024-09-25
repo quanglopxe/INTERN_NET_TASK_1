@@ -18,7 +18,7 @@ namespace MilkStore.API.Controllers
             _CategoryService = CategoryService;
         }
         [HttpGet]
-        [Authorize(Roles = "Admin,Member")]
+        //[Authorize(Roles = "Admin,Member")]
         public async Task<IActionResult> GetCategory(string? id)
         {
             try
@@ -39,14 +39,14 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpGet("GetPagging")]
-        [Authorize(Roles = "Admin,Member")]
+        //[Authorize(Roles = "Admin,Member")]
         public async Task<IActionResult> Paging(int index, int size)
         {
             BasePaginatedList<Category>? paging = await _CategoryService.PagingCategory(index, size);
             return Ok(paging);
         }
         [HttpPost()]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateCategory(CategoryModel CategoryModel)
         {
             if (!ModelState.IsValid)
@@ -65,7 +65,7 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateProduct(string id, [FromBody] CategoryModel CategoryModel)
         {
             if (!ModelState.IsValid)
@@ -83,7 +83,7 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(string id)
         {
             try

@@ -21,7 +21,7 @@ namespace MilkStore.API.Controllers
             _ProductsService = ProductsService;
         }
         [HttpGet]
-        [Authorize(Roles = "Admin,Member")]
+        //[Authorize(Roles = "Admin,Member")]
         public async Task<IActionResult> GetProducts(string? id)
         {
             try
@@ -64,14 +64,14 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpGet("GetPagging")]
-        [Authorize(Roles = "Admin,Member")]
+        //[Authorize(Roles = "Admin,Member")]
         public async Task<IActionResult> Paging(int index, int size)
         {
             var paging = await _ProductsService.PagingProducts(index, size);
             return Ok(paging);
         }
         [HttpPost()]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateProducts(ProductsModel ProductsModel)
         {
             if (!ModelState.IsValid)
@@ -82,7 +82,7 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<Products>.OkResponse(Products));
         }
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateProduct(string id, [FromBody] ProductsModel productsModel)
         {
             if (!ModelState.IsValid)
@@ -101,7 +101,7 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(string id)
         {
             try
