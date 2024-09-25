@@ -17,8 +17,8 @@ namespace MilkStore.API.Controllers
 
         public PostController(IPostService postService)
         {
-            _postService = postService;    
-        }        
+            _postService = postService;
+        }
         [HttpGet()]
         public async Task<IActionResult> GetPost(string? id, string? name, int index = 1, int pageSize = 10)
         {
@@ -34,7 +34,7 @@ namespace MilkStore.API.Controllers
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
             await _postService.CreatePost(postModel);
-            return Ok(new {message = "Thêm thành công!"});
+            return Ok(new { message = "Thêm thành công!" });
         }
         [Authorize(Roles = "Staff")]
         [HttpPut("{id}")]
