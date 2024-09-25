@@ -7,6 +7,7 @@ using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.Repositories.Entity;
+using MilkStore.Services.EmailSettings;
 
 namespace MilkStore.API.Controllers
 {
@@ -16,12 +17,14 @@ namespace MilkStore.API.Controllers
     {
         private readonly IAuthService authService;
         private readonly IUserService userService;
+        private readonly EmailService emailService;
         private readonly SignInManager<ApplicationUser> signInManager;
-        public AuthController(IAuthService authService, IUserService userService, SignInManager<ApplicationUser> signInManager)
+        public AuthController(IAuthService authService, IUserService userService, SignInManager<ApplicationUser> signInManager, EmailService emailService)
         {
             this.authService = authService;
             this.userService = userService;
             this.signInManager = signInManager;
+            this.emailService = emailService;
         }
 
         [HttpPost("auth_account")]
@@ -61,7 +64,6 @@ namespace MilkStore.API.Controllers
                 }
             }
         }
-
         [HttpPost("new_account")]
         public async Task<IActionResult> Register(RegisterModelView model)
         {
@@ -74,14 +76,67 @@ namespace MilkStore.API.Controllers
                 try
                 {
                     await userService.GetUserByEmailToRegister(model.Email);
-                    await userService.CreateUser(model);
-                    return Ok(BaseResponse<string>.OkResponse("Tạo thành công"));
+
+                    (string token, string userId) = await userService.CreateUser(model);
+
+                    string? confirmationLink = this.ConfirmationLink("ConfirmEmail", model.Email, token);
+
+                    await emailService.SendEmailAsync(model.Email, "Xác nhận tài khoản",
+                        $"Vui lòng xác nhận tài khoản của bạn bằng cách nhấp vào liên kết này: <a href='{confirmationLink}'>Xác nhận</a>");
+
+                    return Ok(BaseResponse<string>.OkResponse("Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản."));
                 }
                 catch (BaseException.ErrorException e)
                 {
 
                     return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
                 }
+            }
+        }
+        private string ConfirmationLink(string action, string email, string token)
+        {
+            string? confirmationLink = Url.Action(action, "Auth", new { email, token }, Request.Scheme);
+            return confirmationLink;
+        }
+
+        [HttpPost("resend-confirmation-email")]
+        public async Task<IActionResult> ResendConfirmationEmail(EmailModelView model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+            }
+            try
+            {
+                (ApplicationUser user, string token) = await userService.ResendConfirmationEmail(model.Email);
+                string? confirmationLink = this.ConfirmationLink("ConfirmEmail", model.Email, token);
+                await emailService.SendEmailAsync(model.Email, "Xác nhận tài khoản",
+                     $"Vui lòng xác nhận tài khoản của bạn bằng cách nhấp vào liên kết này: <a href='{confirmationLink}'>Xác nhận</a>");
+
+                return Ok(BaseResponse<string>.OkResponse("Email đã được gửi lại!"));
+            }
+            catch (BaseException.ErrorException e)
+            {
+
+                return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
+            }
+        }
+        [HttpGet("ConfirmEmail")]
+        public async Task<IActionResult> ConfirmEmail(string email, string token)
+        {
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+            {
+                return BadRequest("Yêu cầu không hợp lệ.");
+            }
+            try
+            {
+                await userService.ConfirmEmail(email, token);
+                return Ok(BaseResponse<string>.OkResponse("Xác nhận email thành công!"));
+            }
+            catch (BaseException.ErrorException e)
+            {
+
+                return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
             }
         }
         [Authorize(Roles = "Admin")]
@@ -107,6 +162,11 @@ namespace MilkStore.API.Controllers
                 }
             }
         }
+        /// <summary>
+        ///  Client gửi token để đăng nhập bằng Google
+        /// </summary>
+        /// <param name="tokenGoogle"></param>
+        /// <returns></returns>
         [HttpPost("signin-google")]
         public async Task<IActionResult> LoginGoogle([FromBody] TokenGoogleModel tokenGoogle)
         {
@@ -185,6 +245,43 @@ namespace MilkStore.API.Controllers
                 }
             }
         }
+        [HttpPost("ForgotPassword")]
+        public async Task<IActionResult> ForgotPassword(EmailModelView model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+            }
+            try
+            {
+                string token = await authService.ForgotPassword(model.Email);
+                await emailService.SendEmailAsync(model.Email, "Đặt lại mật khẩu",
+                     $"Vui lòng xác nhận tài khoản của bạn bằng cách nhấp vào liên kết này: <a href='{Environment.GetEnvironmentVariable("DOMAIN")}/ForgotPassword?token={token}&email={model.Email}'>Đặt lại mật khẩu</a>");
+                return Ok(BaseResponse<string>.OkResponse("Vui lòng kiểm tra email để đặt lại mật khẩu."));
+            }
+            catch (BaseException.ErrorException e)
+            {
 
+                return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
+            }
+        }
+        [HttpPatch("ResetPassword")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+            }
+            try
+            {
+                await authService.ResetPassword(model.Email, model.Password, model.Token);
+                return Ok(BaseResponse<string>.OkResponse("Đặt lại mật khẩu thành công!"));
+            }
+            catch (BaseException.ErrorException e)
+            {
+
+                return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
+            }
+        }
     }
 }

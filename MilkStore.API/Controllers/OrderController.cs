@@ -10,6 +10,8 @@ using MilkStore.Core.Base;
 using Microsoft.Extensions.Hosting;
 using MilkStore.Core;
 using MilkStore.Repositories.Entity;
+using MilkStore.Core.Utils;
+using System.Security.Claims;
 
 namespace MilkStore.API.Controllers
 {
@@ -25,7 +27,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpGet()]
-        
+
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAll(string? id, int index = 1, int pageSize = 10)
         {
@@ -49,10 +51,24 @@ namespace MilkStore.API.Controllers
                 return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
             }
         }
+        //[HttpGet("SendMail")]
+        //public async Task<IActionResult> SendMail(string ?id)
+        //{
+        //    IEnumerable<OrderModelView> order = new List<OrderModelView>();
+        //    try
+        //    {
+        //        order = await _orderService.GetStatus_Mail(id);
+        //    }
+        //    catch (ArgumentException ex)
+        //    {
+        //        return BadRequest("Lỗi !!!!");
+        //    }
+        //    return Ok(order);
 
+        //}
 
         [HttpPost]
-        //[Authorize(Roles = "Guest, Member")]
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> Add(OrderModelView item)
         {
             try
@@ -61,9 +77,9 @@ namespace MilkStore.API.Controllers
                 {
                     return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
                 }
-
-                await _orderService.AddAsync(item);
-                return Ok(new { message = "Add Order thành công" });
+                string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                await _orderService.AddAsync(item, userId);
+                return Ok(BaseResponse<string>.OkResponse("Thêm thành công"));
             }
             catch (ArgumentException ex)
             {
@@ -86,7 +102,7 @@ namespace MilkStore.API.Controllers
                     return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
                 }
                 await _orderService.AddVoucher(id, item);
-                return Ok(new { message = "Add voucher thành công" });
+                return Ok(BaseResponse<string>.OkResponse("Add voucher thành công"));
             }
             catch (ArgumentException ex)
             {
@@ -110,7 +126,9 @@ namespace MilkStore.API.Controllers
                     return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
                 }
                 await _orderService.UpdateAsync(id, item);
-                return Ok(new { message = "Update Order thành công" });
+                await _orderService.GetStatus_Mail(id);
+                await _orderService.GetNewStatus_Mail(id);
+                return Ok(BaseResponse<string>.OkResponse("Update Order thành công"));
             }
             catch (ArgumentException ex)
             {

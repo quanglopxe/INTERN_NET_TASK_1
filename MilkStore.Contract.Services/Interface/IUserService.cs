@@ -11,7 +11,9 @@ namespace MilkStore.Contract.Services.Interface
     public interface IUserService
     {
         Task GetUserByEmailToRegister(string email);
-        Task CreateUser(RegisterModelView userModel);
+        Task<(string token, string userId)> CreateUser(RegisterModelView userModel);
+        Task ConfirmEmail(string userId, string token);
+        Task<(ApplicationUser user, string token)> ResendConfirmationEmail(string email);
         Task<ApplicationUser> CreateUserLoginGoogle(LoginGoogleModel loginGoogleModel);
         Task<ApplicationUser> UpdateUser(Guid id, UserModelView userModel, string updatedBy);
         Task<ApplicationUser> DeleteUser(Guid userId, string deleteby);
