@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MilkStore.Repositories.Migrations
 {
     /// <inheritdoc />
-    public partial class test : Migration
+    public partial class initDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -426,6 +426,7 @@ namespace MilkStore.Repositories.Migrations
                 name: "OrderDetails",
                 columns: table => new
                 {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     OrderID = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ProductID = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
@@ -439,7 +440,7 @@ namespace MilkStore.Repositories.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OrderDetails", x => new { x.OrderID, x.ProductID });
+                    table.PrimaryKey("PK_OrderDetails", x => x.Id);
                     table.ForeignKey(
                         name: "FK_OrderDetails_Orders_OrderID",
                         column: x => x.OrderID,
@@ -493,8 +494,9 @@ namespace MilkStore.Repositories.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProductsID = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    OrderID = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    OrderDetailID = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProductsID = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    OrderID = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Rating = table.Column<int>(type: "int", nullable: false),
                     Comment = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -508,35 +510,27 @@ namespace MilkStore.Repositories.Migrations
                 {
                     table.PrimaryKey("PK_Reviews", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Reviews_OrderDetails_OrderID_ProductsID",
-                        columns: x => new { x.OrderID, x.ProductsID },
+                        name: "FK_Reviews_OrderDetails_OrderDetailID",
+                        column: x => x.OrderDetailID,
                         principalTable: "OrderDetails",
-                        principalColumns: new[] { "OrderID", "ProductID" },
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Reviews_Orders_OrderID",
-                        column: x => x.OrderID,
-                        principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Reviews_Products_ProductsID",
-                        column: x => x.ProductsID,
-                        principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Reviews_Users_UserID",
                         column: x => x.UserID,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Gifts_ProductId",
                 table: "Gifts",
                 column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderDetails_OrderID",
+                table: "OrderDetails",
+                column: "OrderID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderDetails_ProductID",
@@ -589,14 +583,9 @@ namespace MilkStore.Repositories.Migrations
                 column: "CategoryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Reviews_OrderID_ProductsID",
+                name: "IX_Reviews_OrderDetailID",
                 table: "Reviews",
-                columns: new[] { "OrderID", "ProductsID" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Reviews_ProductsID",
-                table: "Reviews",
-                column: "ProductsID");
+                column: "OrderDetailID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Reviews_UserID",

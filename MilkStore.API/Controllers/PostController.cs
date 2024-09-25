@@ -45,6 +45,7 @@ namespace MilkStore.API.Controllers
             }
             try
             {
+                //HttpContext
                 string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if(string.IsNullOrWhiteSpace(userId))
                 {

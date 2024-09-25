@@ -12,8 +12,8 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20240925072602_test")]
-    partial class test
+    [Migration("20240925170241_initDB")]
+    partial class initDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -400,10 +400,7 @@ namespace MilkStore.Repositories.Migrations
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.OrderDetails", b =>
                 {
-                    b.Property<string>("OrderID")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ProductID")
+                    b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("CreatedBy")
@@ -424,13 +421,23 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<DateTimeOffset>("LastUpdatedTime")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("OrderID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProductID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
                     b.Property<double>("UnitPrice")
                         .HasColumnType("float");
 
-                    b.HasKey("OrderID", "ProductID");
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderID");
 
                     b.HasIndex("ProductID");
 
@@ -689,13 +696,17 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<DateTimeOffset>("LastUpdatedTime")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("OrderID")
+                    b.Property<string>("OrderDetailID")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("OrderID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ProductsID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Rating")
                         .HasColumnType("int");
@@ -705,11 +716,9 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductsID");
+                    b.HasIndex("OrderDetailID");
 
                     b.HasIndex("UserID");
-
-                    b.HasIndex("OrderID", "ProductsID");
 
                     b.ToTable("Reviews");
                 });
@@ -1024,35 +1033,19 @@ namespace MilkStore.Repositories.Migrations
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Review", b =>
                 {
-                    b.HasOne("MilkStore.Contract.Repositories.Entity.Order", "Order")
+                    b.HasOne("MilkStore.Contract.Repositories.Entity.OrderDetails", "OrderDetails")
                         .WithMany()
-                        .HasForeignKey("OrderID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MilkStore.Contract.Repositories.Entity.Products", "Products")
-                        .WithMany()
-                        .HasForeignKey("ProductsID")
+                        .HasForeignKey("OrderDetailID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
-
-                    b.HasOne("MilkStore.Contract.Repositories.Entity.OrderDetails", "OrderDetails")
-                        .WithMany()
-                        .HasForeignKey("OrderID", "ProductsID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Order");
 
                     b.Navigation("OrderDetails");
-
-                    b.Navigation("Products");
 
                     b.Navigation("User");
                 });

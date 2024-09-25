@@ -108,7 +108,7 @@ namespace MilkStore.Services.Service
             {
                 OrderDetails? od = await _unitOfWork.GetRepository<OrderDetails>()
                     .Entities
-                    .FirstOrDefaultAsync(or => or.OrderID == id && or.DeletedTime == null);
+                    .FirstOrDefaultAsync(or => or.Id == id && or.DeletedTime == null);
                 if (od == null)
                 {
                     throw new BaseException.ErrorException(404, "NotFound", $"Không tìm thấy đơn theo ID: {od} .");
@@ -118,7 +118,7 @@ namespace MilkStore.Services.Service
         }
 
         // Update OrderDetails
-        public async Task<OrderDetails> UpdateOrderDetails(string orderId, string productId, OrderDetailsModelView model)
+        public async Task<OrderDetails> UpdateOrderDetails(string id, OrderDetailsModelView model)
         {
             // Kiểm tra số lượng từ model
             if (model.Quantity <= 0 || model.Quantity % 1 != 0)
@@ -126,18 +126,19 @@ namespace MilkStore.Services.Service
                 throw new BaseException.ErrorException(400, "BadRequest", "Số lượng phải lớn hơn 0 và là số nguyên.");
             }
 
-            OrderDetails orderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetAllAsync()
-                .ContinueWith(task => task.Result.FirstOrDefault(od => od.OrderID == orderId && od.ProductID == productId));
+            //OrderDetails orderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetAllAsync()
+            //    .ContinueWith(task => task.Result.FirstOrDefault(od => od.OrderID == orderId && od.ProductID == productId));
+            OrderDetails? orderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id);
             if (orderDetails == null)
             {
-                throw new BaseException.ErrorException(404, "NotFound", $"Order Details không tồn tại cho OrderID: {orderId} và ProductID: {productId}.");
+                throw new BaseException.ErrorException(404, "NotFound", $"Order Details không tồn tại cho Id: {id}.");
             }
-
-            // Cập nhật thông tin
-            Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(productId);
+            
+            string productID = orderDetails.ProductID;
+            Products? product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(productID);
             if (product == null)
             {
-                throw new BaseException.ErrorException(404, "NotFound", $"Sản phẩm không tồn tại với ID: {productId}.");
+                throw new BaseException.ErrorException(404, "NotFound", $"Sản phẩm không tồn tại với ID: {productID}.");
             }
 
             orderDetails.Quantity = model.Quantity;
@@ -151,13 +152,14 @@ namespace MilkStore.Services.Service
         }   
 
         // Delete OrderDetails by OrderID and ProductID
-        public async Task DeleteOrderDetails(string orderId, string productId)
+        public async Task DeleteOrderDetails(string id)
         {
-            OrderDetails od = await _unitOfWork.GetRepository<OrderDetails>().GetAllAsync()
-                .ContinueWith(task => task.Result.FirstOrDefault(od => od.OrderID == orderId && od.ProductID == productId));
+            //OrderDetails od = await _unitOfWork.GetRepository<OrderDetails>().GetAllAsync()
+            //    .ContinueWith(task => task.Result.FirstOrDefault(od => od.OrderID == orderId && od.ProductID == productId));
+            OrderDetails? od = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id);
             if (od == null)
             {
-                throw new BaseException.ErrorException(404, "NotFound", $"Order Details không tồn tại cho OrderID: {orderId} và ProductID: {productId}.");
+                throw new BaseException.ErrorException(404, "NotFound", $"Order Details không tồn tại cho ID: {id}.");
             }
 
             od.DeletedTime = CoreHelper.SystemTimeNow;

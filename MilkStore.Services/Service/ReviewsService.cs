@@ -18,27 +18,44 @@ namespace MilkStore.Services.Service
         private readonly IUnitOfWork _unitOfWork;        
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
-        public ReviewsService(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public ReviewsService(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService, IHttpContextAccessor httpContextAccessor)
         {            
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _emailService = emailService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task CreateReviews(ReviewsModel reviewsModel, string userID, string userEmail)
+        public async Task CreateReviews(ReviewsModel reviewsModel)
         {            
-            Order order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(reviewsModel.OrderID);            
+            OrderDetails? orderDetail = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(reviewsModel.OrderDetailID);
+            if (orderDetail == null)
+            {
+                throw new KeyNotFoundException($"Order detail with ID {reviewsModel.OrderDetailID} was not found.");
+            }
+                        
+            Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(orderDetail.OrderID);
+            string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            string userEmail = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Email).Value;
+
+            if(string.IsNullOrWhiteSpace(userID) || string.IsNullOrWhiteSpace(userEmail))
+            {
+                throw new UnauthorizedAccessException("Vui lòng đăng nhập với tài khoản đã xác thực email");
+            }
             if (order == null || order.UserId.ToString() != userID)
             {
-                throw new UnauthorizedAccessException("You do not have access to this order.");
+                throw new UnauthorizedAccessException("Bạn không có quyền review đơn hàng này");
             }
-            var productInOrder = order.OrderDetailss.Where(od => od.ProductID.Contains(reviewsModel.ProductsID)).FirstOrDefault();
+            var productInOrder = order.OrderDetailss.Where(od => od.ProductID.Contains(orderDetail.ProductID)).FirstOrDefault();
             if (productInOrder == null)
             {
-                throw new KeyNotFoundException($"Product with ID {reviewsModel.ProductsID} was not found in this order.");
+                throw new KeyNotFoundException($"Product with ID {orderDetail.ProductID} was not found in this order.");
             }
             Review newReview = _mapper.Map<Review>(reviewsModel);
             newReview.UserID = Guid.Parse(userID);
+            newReview.ProductsID = orderDetail.ProductID;
+            newReview.OrderID = orderDetail.OrderID;
             newReview.CreatedTime = DateTime.UtcNow;
             newReview.CreatedBy = userID;
             await _unitOfWork.GetRepository<Review>().InsertAsync(newReview);
@@ -106,7 +123,7 @@ namespace MilkStore.Services.Service
 
         }
 
-        public async Task<Review> UpdateReviews(string id, ReviewsModel reviewsModel, string userID)
+        public async Task<Review> UpdateReviews(string id, ReviewsModel reviewsModel)
         {
 
             Review? review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);            
@@ -114,7 +131,11 @@ namespace MilkStore.Services.Service
             {
                 throw new Exception($"Review have ID: {id} was not found.");
             }
-
+            string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            if (string.IsNullOrWhiteSpace(userID))
+            {
+                throw new UnauthorizedAccessException("Vui lòng đăng nhập với tài khoản đã xác thực email");
+            }
             _mapper.Map(reviewsModel, review);            
             review.LastUpdatedTime = DateTime.UtcNow;            
             review.LastUpdatedBy = userID;

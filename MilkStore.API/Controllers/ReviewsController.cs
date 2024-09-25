@@ -36,14 +36,8 @@ namespace MilkStore.API.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
-            }
-            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);            
-            string? userEmail = User.FindFirstValue(ClaimTypes.Email);
-            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(userEmail))
-            {
-                return BadRequest(new BaseException.BadRequestException("BadRequest", "Vui lòng đăng nhập để review!"));
-            }
-            await _reviewsService.CreateReviews(reviewsModel, userId, userEmail);
+            }            
+            await _reviewsService.CreateReviews(reviewsModel);
             return Ok(BaseResponse<string>.OkResponse("Thêm đánh giá thành công!"));
         }
         [HttpPut("{id}")]
@@ -56,13 +50,8 @@ namespace MilkStore.API.Controllers
             }
 
             try
-            {
-                string userID = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if(string.IsNullOrWhiteSpace(userID))
-                {
-                    return BadRequest(new BaseException.BadRequestException("BadRequest", "Vui lòng đăng nhập để cập nhật review!"));
-                }
-                Review Reviews = await _reviewsService.UpdateReviews(id, reviewsModel, userID);
+            {                                
+                Review Reviews = await _reviewsService.UpdateReviews(id, reviewsModel);
                 return Ok(BaseResponse<Review>.OkResponse(Reviews));
             }
             catch (Exception ex)
