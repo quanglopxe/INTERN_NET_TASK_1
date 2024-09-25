@@ -19,8 +19,8 @@ public class PaymentService
         string partnerCode = "MOMOBKUN20180529";
         string accessKey = "klm05TvNBzhg7h7j";
         string endpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
-        string redirectUrl = Environment.GetEnvironmentVariable("DOMAIN") ?? throw new Exception("DOMAIN is not set");
-        string ipnUrl = "https://localhost:5055/api/payment/MomoIPN";
+        string redirectUrl = Environment.GetEnvironmentVariable("CLIENT_DOMAIN") ?? throw new Exception("CLIENT_DOMAIN is not set");
+        string ipnUrl = $"{Environment.GetEnvironmentVariable("SERVER_DOMAIN") ?? throw new Exception("SERVER_DOMAIN is not set")}/api/payment/MomoIPN";
         string? requestId = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
         string? orderInfo = "Thanh toán qua MoMo";
         string? requestType = "payWithATM";
