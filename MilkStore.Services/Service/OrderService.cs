@@ -257,5 +257,97 @@ namespace MilkStore.Services.Service
                 throw new ApplicationException("Đã xảy ra lỗi khi xử lý yêu cầu của bạn.", ex);
             }
         }
+<<<<<<< Updated upstream
+=======
+
+        public async Task GetStatus_Mail(string? id)
+        {
+            Order order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
+            ApplicationUser? user = await _userManager.FindByNameAsync(order.UserId.ToString());
+            if (order != null && order.DeletedTime == null)
+            {
+                if (order.UserId == user.Id)
+                {
+                    if (order.Status.Equals("successful payment") && order.PaymentMethod.Equals("Online"))
+                    {
+                        _emailService.SendEmailAsync(user.Email, "Đơn hàng " + order.TotalAmount + " thanh toán thành công", "Thời gian giao hàng dự kiến " + order.estimatedDeliveryDate + ". Cảm ơn quý khách đã mua hàng tại MilkStore");
+                        order.Status = "successful payment - DONE";
+                        await _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+                        await _unitOfWork.SaveAsync();
+                    }
+                    if (order.PaymentMethod.Equals("Offline"))
+                    {
+                        _emailService.SendEmailAsync(user.Email, "Đơn hàng " + order.TotalAmount + " thanh toán khi nhận hàng", "Thời gian giao hàng dự kiến " + order.estimatedDeliveryDate + ". Cảm ơn quý khách đã mua hàng tại MilkStore");
+                        order.Status = "successful payment - DONE";
+                        await _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+                        await _unitOfWork.SaveAsync();
+                    }
+                }
+            }
+        }
+        public async Task GetNewStatus_Mail(string? id)
+        {
+            Order order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
+            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(order.UserId);
+            string originalStatus = "waiting";
+            if (order != null && order.DeletedTime == null)
+            {
+                if (order.UserId == user.Id)
+                {
+                    if (!string.IsNullOrEmpty(order.Status) && !order.Status.Equals(originalStatus))
+                    {
+                        string subject = "Đơn hàng của quý khách: " + order.User.UserName + " vừa được cập nhật";
+                        string message = "Trạng thái đơn hàng: " + order.Id + " đã được thay đổi thành: " + order.Status + ". Cảm ơn quý khách đã mua hàng tại MilkStore.";
+
+                        _emailService.SendEmailAsync(user.Email, subject, message);
+
+                        await _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+                        await _unitOfWork.SaveAsync();
+                    }
+                }
+            }
+        }
+
+        public async Task DeductStockOnDelivery(string orderId)
+        {
+            try
+            {
+                // Retrieve the order and its details
+                Order order = await _unitOfWork.GetRepository<Order>().Entities
+                    .FirstOrDefaultAsync(o => o.Id == orderId && !o.DeletedTime.HasValue)
+                    ?? throw new KeyNotFoundException($"Order with ID {orderId} not found or deleted.");
+
+                if (order.Status == "In Delivery")
+                {
+                    // Retrieve the order details
+                    List<OrderDetails> orderDetailsList = await _unitOfWork.GetRepository<OrderDetails>().Entities
+                        .Where(od => od.OrderID == order.Id).ToListAsync();
+
+                    // Loop through the order details to deduct stock
+                    foreach (var orderDetail in orderDetailsList)
+                    {
+                        Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(orderDetail.ProductID);
+                        if (product != null && product.QuantityInStock >= orderDetail.Quantity)
+                        {
+                            product.QuantityInStock -= orderDetail.Quantity; // Deduct quantity
+                            await _unitOfWork.GetRepository<Products>().UpdateAsync(product);
+                        }
+                        else
+                        {
+                            throw new Exception($"Product with ID {orderDetail.ProductID} does not have enough stock.");
+                        }
+                    }
+
+                    // Save changes
+                    await _unitOfWork.SaveAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Error while deducting stock on delivery.", ex);
+            }
+        }
+
+>>>>>>> Stashed changes
     }
 }

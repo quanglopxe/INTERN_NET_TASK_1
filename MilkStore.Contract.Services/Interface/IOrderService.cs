@@ -17,5 +17,12 @@ namespace MilkStore.Contract.Services.Interface
         Task AddVoucher(string id, string voucherId);
         Task UpdateToTalAmount(string id);
         Task DeleteAsync(string id);
+<<<<<<< Updated upstream
+=======
+        Task GetStatus_Mail(string? id);
+        Task GetNewStatus_Mail(string? id);
+
+        Task DeductStockOnDelivery(string orderId);
+>>>>>>> Stashed changes
     }
 }

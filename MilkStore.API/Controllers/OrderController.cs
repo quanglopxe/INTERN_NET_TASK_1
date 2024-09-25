@@ -140,5 +140,38 @@ namespace MilkStore.API.Controllers
                 return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
             }
         }
+
+        [HttpPut("UpdateQuantity{id}")]
+        //[Authorize(Roles = "Guest, Member")]
+        public async Task<IActionResult> UpdateQuantity(string id, OrderModelView item)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+                }
+
+                // Call the regular update method
+                await _orderService.UpdateAsync(id, item);
+
+                // If status is "In Delivery", deduct stock
+                if (item.Status == "In Delivery")
+                {
+                    await _orderService.DeductStockOnDelivery(id);
+                }
+
+                return Ok(new { message = "Update Order thành công" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);  // Trả về 400 BadRequest nếu có lỗi do dữ liệu
+            }
+            catch (ApplicationException ex)
+            {
+                return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
+            }
+        }
+
     }
 }
