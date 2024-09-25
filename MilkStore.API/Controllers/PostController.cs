@@ -5,6 +5,7 @@ using MilkStore.Core;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.ResponseDTO;
+using System.Security.Claims;
 
 
 namespace MilkStore.API.Controllers
@@ -53,6 +54,9 @@ namespace MilkStore.API.Controllers
 
                 return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
             }
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _postService.CreatePost(postModel, userId);
+            return Ok(BaseResponse<string>.OkResponse("Thêm bài viết thành công!"));
         }
         [Authorize(Roles = "Staff")]
         [HttpPut("{id}")]
@@ -72,6 +76,9 @@ namespace MilkStore.API.Controllers
 
                 return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
             }
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _postService.UpdatePost(id, postModel, userId);
+            return Ok(BaseResponse<string>.OkResponse("Sửa bài viết thành công!"));
         }
         [Authorize(Roles = "Staff")]
         [HttpDelete("{id}")]
@@ -88,6 +95,8 @@ namespace MilkStore.API.Controllers
                 return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
 
             }
+            await _postService.DeletePost(id);
+            return Ok(BaseResponse<string>.OkResponse("Xóa bài viết thành công!"));
         }
     }
 }
