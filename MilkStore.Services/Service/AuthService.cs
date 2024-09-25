@@ -9,6 +9,7 @@ using MilkStore.Core.Base;
 using MilkStore.Contract.Repositories.Interface;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using MilkStore.Core.Constants;
 public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> userManager;
@@ -30,17 +31,17 @@ public class AuthService : IAuthService
         {
             if (user.DeletedTime.HasValue)
             {
-                throw new BaseException.ErrorException(400, "BadRequest", "Tài khoản đã bị xóa");
+                throw new BaseException.ErrorException(StatusCodes.BadRequest, "BadRequest", "Tài khoản đã bị xóa");
             }
             if (!await userManager.IsEmailConfirmedAsync(user))
             {
-                throw new BaseException.ErrorException(400, "BadRequest", "Tài khoản chưa được xác nhận");
+                throw new BaseException.ErrorException(StatusCodes.BadRequest, "BadRequest", "Tài khoản chưa được xác nhận");
             }
             return user;
         }
         else
         {
-            throw new BaseException.ErrorException(404, "NotFound", "Không tìm thấy người dùng");
+            throw new BaseException.ErrorException(StatusCodes.NotFound, "NotFound", "Không tìm thấy người dùng");
         }
     }
     public async Task<SignInResult> CheckPassword(LoginModelView loginModel)
@@ -48,7 +49,7 @@ public class AuthService : IAuthService
         SignInResult result = await signInManager.PasswordSignInAsync(loginModel.Email, loginModel.Password, false, false);
         if (!result.Succeeded)
         {
-            throw new BaseException.ErrorException(401, "Unauthorized", "Không đúng mật khẩu");
+            throw new BaseException.ErrorException(StatusCodes.Unauthorized, "Unauthorized", "Không đúng mật khẩu");
         }
         return result;
     }
@@ -58,20 +59,20 @@ public class AuthService : IAuthService
         ApplicationUser? admin = await userManager.FindByIdAsync(id);
         if (admin is null)
         {
-            throw new BaseException.ErrorException(404, "NotFound", "Không tìm thấy người dùng");
+            throw new BaseException.ErrorException(StatusCodes.NotFound, "NotFound", "Không tìm thấy người dùng");
         }
         else
         {
             if (admin.DeletedTime.HasValue)
             {
-                throw new BaseException.ErrorException(400, "BadRequest", "Tài khoản đã bị xóa");
+                throw new BaseException.ErrorException(StatusCodes.BadRequest, "BadRequest", "Tài khoản đã bị xóa");
             }
             else
             {
                 IdentityResult result = await userManager.ChangePasswordAsync(admin, model.OldPassword, model.NewPassword);
                 if (!result.Succeeded)
                 {
-                    throw new BaseException.ErrorException(500, " InternalServerError", result.Errors.FirstOrDefault()?.Description);
+                    throw new BaseException.ErrorException(StatusCodes.ServerError, " InternalServerError", result.Errors.FirstOrDefault()?.Description);
                 }
             }
         }
@@ -89,7 +90,7 @@ public class AuthService : IAuthService
                 return user;
             }
         }
-        throw new BaseException.ErrorException(401, "Unauthorized", "Mã xác thực không đúng");
+        throw new BaseException.ErrorException(StatusCodes.Unauthorized, "Unauthorized", "Mã xác thực không đúng");
     }
 
     public (string token, IEnumerable<string> roles) GenerateJwtToken(ApplicationUser user)
@@ -131,10 +132,10 @@ public class AuthService : IAuthService
 
     public async Task<string> ForgotPassword(string email)
     {
-        ApplicationUser? user = await userManager.FindByEmailAsync(email) ?? throw new BaseException.BadRequestException("BadRequest", "Vui lòng kiểm tra Email của bạn!");
+        ApplicationUser? user = await userManager.FindByEmailAsync(email) ?? throw new BaseException.ErrorException(StatusCodes.BadRequest, "BadRequest", "Vui lòng kiểm tra Email của bạn!");
         if (!await userManager.IsEmailConfirmedAsync(user))
         {
-            throw new BaseException.BadRequestException("BadRequest", "Vui lòng kiểm tra Email của bạn!");
+            throw new BaseException.ErrorException(StatusCodes.BadRequest, "BadRequest", "Vui lòng kiểm tra Email của bạn!");
         }
         string? token = await userManager.GeneratePasswordResetTokenAsync(user);
         return token;
@@ -144,16 +145,16 @@ public class AuthService : IAuthService
         ApplicationUser? user = await userManager.FindByEmailAsync(email);
         if (user is null)
         {
-            throw new BaseException.ErrorException(404, "NotFound", "Không tìm thấy người dùng");
+            throw new BaseException.ErrorException(StatusCodes.NotFound, "NotFound", "Không tìm thấy người dùng");
         }
         if (!await userManager.IsEmailConfirmedAsync(user))
         {
-            throw new BaseException.ErrorException(400, "BadRequest", "Vui lòng kiểm tra Email của bạn!");
+            throw new BaseException.ErrorException(StatusCodes.BadRequest, "BadRequest", "Vui lòng kiểm tra Email của bạn!");
         }
         IdentityResult? result = await userManager.ResetPasswordAsync(user, token, password);
         if (!result.Succeeded)
         {
-            throw new BaseException.ErrorException(400, "BadRequest", result.Errors.FirstOrDefault()?.Description);
+            throw new BaseException.ErrorException(StatusCodes.BadRequest, "BadRequest", result.Errors.FirstOrDefault()?.Description);
         }
     }
 }

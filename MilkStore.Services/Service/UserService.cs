@@ -36,7 +36,7 @@ namespace MilkStore.Services.Service
             ApplicationUser? user = await userManager.FindByNameAsync(email);
             if (user != null)
             {
-                throw new BaseException.ErrorException(400, "BadRequest", "Email đã tồn tại!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "Email đã tồn tại!");
             }
         }
         public async Task<(string token, string userId)> CreateUser(RegisterModelView userModel)
@@ -62,7 +62,7 @@ namespace MilkStore.Services.Service
             }
             else
             {
-                throw new BaseException.ErrorException(500, "InternalServerError", $"Lỗi khi tạo người dùng {result.Errors.FirstOrDefault()?.Description}");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.ServerError, "InternalServerError", $"Lỗi khi tạo người dùng {result.Errors.FirstOrDefault()?.Description}");
             }
         }
 
@@ -73,21 +73,21 @@ namespace MilkStore.Services.Service
         public async Task<(ApplicationUser user, string token)> ResendConfirmationEmail(string email)
         {
             ApplicationUser? user = await userManager.FindByEmailAsync(email) ??
-                 throw new BaseException.ErrorException(404, "NotFound", "Không tìm thấy người dùng");
+                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, "NotFound", "Không tìm thấy người dùng");
             if (await userManager.IsEmailConfirmedAsync(user))
             {
-                throw new BaseException.ErrorException(400, "BadRequest", "Email đã được xác nhận");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "Email đã được xác nhận");
             }
             string token = await CreateToken(user);
             return (user, token);
         }
         public async Task ConfirmEmail(string email, string token)
         {
-            ApplicationUser? user = await userManager.FindByEmailAsync(email) ?? throw new BaseException.ErrorException(400, "BadRequest", "Người dùng không tồn tại.");
+            ApplicationUser? user = await userManager.FindByEmailAsync(email) ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "Người dùng không tồn tại.");
             IdentityResult? result = await userManager.ConfirmEmailAsync(user, token);
             if (!result.Succeeded)
             {
-                throw new BaseException.ErrorException(400, "BadRequest", result.ToString());
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", result.ToString());
             }
         }
         public async Task<ApplicationUser> CreateUserLoginGoogle(LoginGoogleModel loginGoogleModel)
@@ -97,7 +97,7 @@ namespace MilkStore.Services.Service
             {
                 if (user.DeletedTime.HasValue)
                 {
-                    throw new BaseException.ErrorException(400, "BadRequest", "Tài khoản đã bị xóa");
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "Tài khoản đã bị xóa");
                 }
                 else
                 {
@@ -122,12 +122,12 @@ namespace MilkStore.Services.Service
                     IdentityResult loginResult = await userManager.AddLoginAsync(newUser, userInfoLogin);
                     if (!loginResult.Succeeded)
                     {
-                        throw new BaseException.ErrorException(500, "InternalServerError", $"Lỗi khi tạo người dùng {loginResult.Errors.FirstOrDefault()?.Description}");
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.ServerError, "InternalServerError", $"Lỗi khi tạo người dùng {loginResult.Errors.FirstOrDefault()?.Description}");
                     }
                 }
                 else
                 {
-                    throw new BaseException.ErrorException(505, "InternalServerError", $"Lỗi khi tạo người dùng {result.Errors.FirstOrDefault()?.Description}");
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.ServerError, "InternalServerError", $"Lỗi khi tạo người dùng {result.Errors.FirstOrDefault()?.Description}");
                 }
                 return newUser;
             }
@@ -137,11 +137,11 @@ namespace MilkStore.Services.Service
         {
             if (string.IsNullOrWhiteSpace(id.ToString()))
             {
-                throw new BaseException.ErrorException(400, "BadRequest", "ID không hợp lệ");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "ID không hợp lệ");
             }
 
             ApplicationUser? user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(id)
-              ?? throw new BaseException.ErrorException(404, "NotFound", $"User with ID {id} was not found.");
+              ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, "NotFound", $"User with ID {id} was not found.");
 
             _mapper.Map(userModel, user);
 
@@ -164,14 +164,14 @@ namespace MilkStore.Services.Service
         {
             if (string.IsNullOrWhiteSpace(userId.ToString()))
             {
-                throw new BaseException.ErrorException(400, "BadRequest", "User ID cannot be null, empty, or contain only whitespace.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "User ID cannot be null, empty, or contain only whitespace.");
             }
             var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId)
-                ?? throw new BaseException.ErrorException(400, "BadRequest", "User does not exist or has already been deleted.");
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "User does not exist or has already been deleted.");
 
             if (user.DeletedTime.HasValue)
             {
-                throw new BaseException.ErrorException(400, "BadRequest", "User does not exist or has already been deleted.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "User does not exist or has already been deleted.");
             }
 
 
@@ -233,7 +233,7 @@ namespace MilkStore.Services.Service
 
             if (emailExists)
             {
-                throw new BaseException.ErrorException(400, "BadRequest", "Email already exists");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "Email already exists");
             }
 
             bool userNameExists = await _unitOfWork.GetRepository<ApplicationUser>().Entities
@@ -241,7 +241,7 @@ namespace MilkStore.Services.Service
 
             if (userNameExists)
             {
-                throw new BaseException.ErrorException(400, "BadRequest", "UserName already exists");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "UserName already exists");
             }
             ApplicationUser newUser = _mapper.Map<ApplicationUser>(userModel);
             newUser.CreatedBy = createdBy;
@@ -263,7 +263,7 @@ namespace MilkStore.Services.Service
             ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId);
             if (user == null)
             {
-                throw new BaseException.ErrorException(404, "NotFound", "User not found");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, "NotFound", "User not found");
             }
 
             // Tính điểm thưởng: 10 điểm cho mỗi 10.000 VND
