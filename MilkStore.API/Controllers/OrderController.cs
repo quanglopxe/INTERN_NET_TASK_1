@@ -68,7 +68,7 @@ namespace MilkStore.API.Controllers
         //}
 
         [HttpPost]
-        [Authorize(Roles = "Member")]
+        //[Authorize(Roles = "Member")]
         public async Task<IActionResult> Add(OrderModelView item)
         {
             try
