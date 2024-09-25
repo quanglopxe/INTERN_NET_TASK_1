@@ -5,6 +5,7 @@ using MilkStore.Core;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.ResponseDTO;
+using System.Security.Claims;
 
 
 namespace MilkStore.API.Controllers
@@ -33,8 +34,9 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            await _postService.CreatePost(postModel);
-            return Ok(new { message = "Thêm thành công!" });
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _postService.CreatePost(postModel, userId);
+            return Ok(BaseResponse<string>.OkResponse("Thêm bài viết thành công!"));
         }
         [Authorize(Roles = "Staff")]
         [HttpPut("{id}")]
@@ -44,15 +46,16 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            await _postService.UpdatePost(id, postModel);
-            return Ok(new { message = "Sửa thành công!" });
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _postService.UpdatePost(id, postModel, userId);
+            return Ok(BaseResponse<string>.OkResponse("Sửa bài viết thành công!"));
         }
         [Authorize(Roles = "Staff")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePost(string id)
         {
             await _postService.DeletePost(id);
-            return Ok(new { message = "Xóa thành công!" });
+            return Ok(BaseResponse<string>.OkResponse("Xóa bài viết thành công!"));
         }
     }
 }

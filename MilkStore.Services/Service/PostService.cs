@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MilkStore.Contract.Repositories.Entity;
@@ -9,24 +10,27 @@ using MilkStore.Core.Utils;
 using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.Repositories.Context;
+using System.Security.Claims;
 
 namespace MilkStore.Services.Service
 {
     public class PostService : IPostService
     {
         private readonly IUnitOfWork _unitOfWork;        
-        private readonly IMapper _mapper;
+        private readonly IMapper _mapper;        
+        
         public PostService(IUnitOfWork unitOfWork, IMapper mapper)
         {            
             _unitOfWork = unitOfWork;
-            _mapper = mapper;
-        }
-
-        public async Task CreatePost(PostModelView postModel)
-        {
+            _mapper = mapper;            
+        }        
+        public async Task CreatePost(PostModelView postModel, string userID)
+        {            
             Post newPost = _mapper.Map<Post>(postModel);
             newPost.CreatedTime = CoreHelper.SystemTimeNow;
             newPost.DeletedTime = null;
+            newPost.CreatedBy = userID;
+
             // Thêm sản phẩm vào bài đăng bằng PostProduct
             if (postModel.ProductIDs != null && postModel.ProductIDs.Any())
             {
@@ -127,7 +131,7 @@ namespace MilkStore.Services.Service
             );            
         }
              
-        public async Task UpdatePost(string id, PostModelView postModel)
+        public async Task UpdatePost(string id, PostModelView postModel, string userID)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -137,12 +141,12 @@ namespace MilkStore.Services.Service
             if (post == null)
             {
                 throw new KeyNotFoundException($"Post with ID {id} was not found.");
-            }
-
+            }            
             //map từ PostModelView sang Post (chỉ cập nhật các trường thay đổi)
             _mapper.Map(postModel, post);
             
             post.LastUpdatedTime = CoreHelper.SystemTimeNow;
+            post.LastUpdatedBy = userID;
 
             // Kiểm tra xem sản phẩm có bị xóa chưa, thêm sản phẩm nếu cần
             if (postModel.ProductIDs != null && postModel.ProductIDs.Any())
