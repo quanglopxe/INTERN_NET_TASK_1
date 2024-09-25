@@ -52,7 +52,6 @@
 //             else
 //             {
 //                 IEnumerable<ProductsModel> product = await _ProductsService.GetProductsName(name);
-
 //                 if (product == null || !product.Any())
 //                 {
 //                     return BadRequest("Không tìm thấy sản phẩm!!!");
@@ -89,7 +88,6 @@
 //             {
 //                 return NotFound("Sản phẩm không tồn tại!!!");
 //             }
-
 //             try
 //             {
 //                 var updatedProduct = await _ProductsService.UpdateProducts(id, productsModel);

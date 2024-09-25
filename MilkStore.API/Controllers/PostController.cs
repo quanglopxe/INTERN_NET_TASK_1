@@ -33,7 +33,6 @@
 
 //                 return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
 //             }
-
 //         }
 //         [Authorize(Roles = "Staff")]
 //         [HttpPost()]
@@ -91,12 +90,11 @@
 //             }
 //             catch (BaseException.ErrorException e)
 //             {
-
 //                 return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
-
 //             }
 //             await _postService.DeletePost(id);
 //             return Ok(BaseResponse<string>.OkResponse("Xóa bài viết thành công!"));
 //         }
 //     }
 // }
+
