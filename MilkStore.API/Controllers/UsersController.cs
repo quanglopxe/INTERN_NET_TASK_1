@@ -1,14 +1,11 @@
-﻿using Azure;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Services.Interface;
-using MilkStore.Core;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
-using MilkStore.Services.Service;
 using System.Security.Claims;
 namespace MilkStore.API.Controllers
 {
@@ -33,13 +30,9 @@ namespace MilkStore.API.Controllers
                 IEnumerable<UserResponeseDTO> users = await _userService.GetUser(id, index, pageSize);
                 return Ok(BaseResponse<IEnumerable<UserResponeseDTO>>.OkResponse(users));
             }
-            catch (KeyNotFoundException ex)
+            catch (BaseException.ErrorException e)
             {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while Get the user", details = ex.Message });
+                return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
             }
         }
         [HttpPost("add")]
@@ -56,13 +49,9 @@ namespace MilkStore.API.Controllers
                 }
                 return Ok(new { message = "Successfully created user" });
             }
-            catch (ArgumentException ex)
+            catch (BaseException.ErrorException e)
             {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while creating the user.", error = ex.Message });
+                return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
             }
         }
 
@@ -87,15 +76,10 @@ namespace MilkStore.API.Controllers
                 ApplicationUser updatedUser = await _userService.UpdateUser(id, userModel, updatedBy);
                 return Ok(new { message = "Successfully update user" });
             }
-            catch (KeyNotFoundException ex)
+            catch (BaseException.ErrorException e)
             {
-                return NotFound(new { message = ex.Message });
+                return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while Update the user", details = ex.Message });
-            }
-
         }
 
         [HttpDelete("delete/{userId}")]
@@ -109,13 +93,9 @@ namespace MilkStore.API.Controllers
                 ApplicationUser deletedUser = await _userService.DeleteUser(userId, deleteby);
                 return Ok(new { message = "Successfully deleted user" });
             }
-            catch (KeyNotFoundException ex)
+            catch (BaseException.ErrorException e)
             {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while deleting the user", details = ex.Message });
+                return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
             }
         }
     }

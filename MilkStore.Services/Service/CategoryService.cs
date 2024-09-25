@@ -51,6 +51,8 @@ namespace MilkStore.Services.Service
 
             return Category;
         }
+
+
         public async Task<IEnumerable<CategoryModel>> GetCategory(string? id)
         {
             if (id == null)
@@ -88,6 +90,7 @@ namespace MilkStore.Services.Service
             {
                 throw new Exception("Sản phẩm không tồn tại.");
             }
+
             // Cập nhật thông tin sản phẩm bằng cách ánh xạ từ DTO
             _mapper.Map(CategoryModel, existingCategory);
             existingCategory.LastUpdatedTime = DateTime.UtcNow;
@@ -97,7 +100,5 @@ namespace MilkStore.Services.Service
 
             return existingCategory;
         }
-
-
     }
 }

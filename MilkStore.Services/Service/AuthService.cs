@@ -6,7 +6,6 @@ using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.Repositories.Entity;
 using Microsoft.AspNetCore.Identity;
 using MilkStore.Core.Base;
-using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;

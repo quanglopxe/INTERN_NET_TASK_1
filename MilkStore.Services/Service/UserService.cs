@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core;
 using MilkStore.Core.Base;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.AuthModelViews;
@@ -136,11 +137,11 @@ namespace MilkStore.Services.Service
         {
             if (string.IsNullOrWhiteSpace(id.ToString()))
             {
-                throw new KeyNotFoundException("User ID cannot be null, empty, or contain only whitespace.");
+                throw new BaseException.ErrorException(400, "BadRequest", "ID không hợp lệ");
             }
 
-            var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(id)
-              ?? throw new KeyNotFoundException($"User with ID {id} was not found.");
+            ApplicationUser? user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(id)
+              ?? throw new BaseException.ErrorException(404, "NotFound", $"User with ID {id} was not found.");
 
             _mapper.Map(userModel, user);
 
@@ -163,14 +164,14 @@ namespace MilkStore.Services.Service
         {
             if (string.IsNullOrWhiteSpace(userId.ToString()))
             {
-                throw new KeyNotFoundException("User ID cannot be null, empty, or contain only whitespace.");
+                throw new BaseException.ErrorException(400, "BadRequest", "User ID cannot be null, empty, or contain only whitespace.");
             }
             var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId)
-                ?? throw new KeyNotFoundException("User does not exist or has already been deleted.");
+                ?? throw new BaseException.ErrorException(400, "BadRequest", "User does not exist or has already been deleted.");
 
             if (user.DeletedTime.HasValue)
             {
-                throw new KeyNotFoundException("User does not exist or has already been deleted.");
+                throw new BaseException.ErrorException(400, "BadRequest", "User does not exist or has already been deleted.");
             }
 
 
@@ -191,7 +192,7 @@ namespace MilkStore.Services.Service
                 IQueryable<ApplicationUser> usersQuery = _unitOfWork.GetRepository<ApplicationUser>().Entities
                     .Where(u => u.DeletedTime == null);
 
-                var paginatedUsers = await _unitOfWork.GetRepository<ApplicationUser>().GetPagging(usersQuery, index, pageSize);
+                BasePaginatedList<ApplicationUser>? paginatedUsers = await _unitOfWork.GetRepository<ApplicationUser>().GetPagging(usersQuery, index, pageSize);
 
                 List<UserResponeseDTO> userResponseDtos = paginatedUsers.Items
                     .Select(MapToUserResponseDto)
@@ -232,7 +233,7 @@ namespace MilkStore.Services.Service
 
             if (emailExists)
             {
-                throw new ArgumentException("Email already exists");
+                throw new BaseException.ErrorException(400, "BadRequest", "Email already exists");
             }
 
             bool userNameExists = await _unitOfWork.GetRepository<ApplicationUser>().Entities
@@ -240,7 +241,7 @@ namespace MilkStore.Services.Service
 
             if (userNameExists)
             {
-                throw new ArgumentException("UserName already exists");
+                throw new BaseException.ErrorException(400, "BadRequest", "UserName already exists");
             }
             ApplicationUser newUser = _mapper.Map<ApplicationUser>(userModel);
             newUser.CreatedBy = createdBy;
@@ -262,7 +263,7 @@ namespace MilkStore.Services.Service
             ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId);
             if (user == null)
             {
-                throw new KeyNotFoundException("User not found");
+                throw new BaseException.ErrorException(404, "NotFound", "User not found");
             }
 
             // Tính điểm thưởng: 10 điểm cho mỗi 10.000 VND
