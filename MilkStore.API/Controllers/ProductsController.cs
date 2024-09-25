@@ -71,6 +71,7 @@ namespace MilkStore.API.Controllers
             return Ok(paging);
         }
         [HttpPost()]
+
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateProducts(ProductsModel ProductsModel)
         {

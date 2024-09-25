@@ -36,8 +36,26 @@ namespace MilkStore.Services.Configs
             {
                 await roleManager.CreateAsync(new ApplicationRole { Name = "Member" });
             }
-            string emailStaff = "Member@gmail.com";
-            string passwordStaff = "Member123*";
+            string emailMember = "Member@gmail.com";
+            string passwordMember = "Member123*";
+            ApplicationUser? memberAccount = await userManager.FindByEmailAsync(emailMember);
+            if (memberAccount is null)
+            {
+                ApplicationUser? newAccount = new ApplicationUser
+                {
+                    UserName = emailMember,
+                    Email = emailMember,
+                    EmailConfirmed = true
+                };
+                await userManager.CreateAsync(newAccount, passwordMember);
+                await userManager.AddToRoleAsync(newAccount, "Member");
+            }
+            if (!await roleManager.RoleExistsAsync("Staff"))
+            {
+                await roleManager.CreateAsync(new ApplicationRole { Name = "Staff" });
+            }
+            string emailStaff = "Staff@gmail.com";
+            string passwordStaff = "Staff123*";
             ApplicationUser? staffAccount = await userManager.FindByEmailAsync(emailStaff);
             if (staffAccount is null)
             {
@@ -48,7 +66,7 @@ namespace MilkStore.Services.Configs
                     EmailConfirmed = true
                 };
                 await userManager.CreateAsync(newAccount, passwordStaff);
-                await userManager.AddToRoleAsync(newAccount, "Member");
+                await userManager.AddToRoleAsync(newAccount, "Staff");
             }
         }
     }

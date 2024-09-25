@@ -46,6 +46,7 @@ namespace MilkStore.API.Controllers
             return Ok(paging);
         }
         [HttpPost()]
+
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateCategory(CategoryModel CategoryModel)
         {
@@ -65,6 +66,7 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpPut("{id}")]
+
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateProduct(string id, [FromBody] CategoryModel CategoryModel)
         {
@@ -83,6 +85,7 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpDelete("{id}")]
+
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(string id)
         {

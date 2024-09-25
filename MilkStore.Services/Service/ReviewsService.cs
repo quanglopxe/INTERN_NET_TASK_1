@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
@@ -16,15 +17,16 @@ namespace MilkStore.Services.Service
     {
         private readonly IUnitOfWork _unitOfWork;        
         private readonly IMapper _mapper;
-        private readonly EmailService _emailService;
-        public ReviewsService(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IEmailService _emailService;
+        public ReviewsService(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService)
         {            
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _emailService = emailService;
         }
 
         public async Task CreateReviews(ReviewsModel reviewsModel, string userID, string userEmail)
-        {
+        {            
             Order order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(reviewsModel.OrderID);            
             if (order == null || order.UserId.ToString() != userID)
             {
@@ -36,6 +38,7 @@ namespace MilkStore.Services.Service
                 throw new KeyNotFoundException($"Product with ID {reviewsModel.ProductsID} was not found in this order.");
             }
             Review newReview = _mapper.Map<Review>(reviewsModel);
+            newReview.UserID = Guid.Parse(userID);
             newReview.CreatedTime = DateTime.UtcNow;
             newReview.CreatedBy = userID;
             await _unitOfWork.GetRepository<Review>().InsertAsync(newReview);
@@ -68,6 +71,7 @@ namespace MilkStore.Services.Service
                 throw new KeyNotFoundException($"Review with ID {id} was not found.");
             }
             review.DeletedTime = CoreHelper.SystemTimeNow;
+            review.DeletedBy = "Admin";
             await _unitOfWork.GetRepository<Review>().UpdateAsync(review);
             await _unitOfWork.SaveAsync();
         }
@@ -105,14 +109,14 @@ namespace MilkStore.Services.Service
         public async Task<Review> UpdateReviews(string id, ReviewsModel reviewsModel, string userID)
         {
 
-            Review review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);            
+            Review? review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);            
             if (review == null)
             {
                 throw new Exception($"Review have ID: {id} was not found.");
             }
 
-            _mapper.Map(reviewsModel, review);
-            review.LastUpdatedTime = DateTime.UtcNow;
+            _mapper.Map(reviewsModel, review);            
+            review.LastUpdatedTime = DateTime.UtcNow;            
             review.LastUpdatedBy = userID;
             await _unitOfWork.GetRepository<Review>().UpdateAsync(review);
             await _unitOfWork.SaveAsync();

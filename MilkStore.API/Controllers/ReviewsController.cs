@@ -23,22 +23,22 @@ namespace MilkStore.API.Controllers
             _reviewsService = reviewsService;
         }
         [HttpGet]
-        [Authorize(Roles = "Member")]
+        //[Authorize(Roles = "Member")]
         public async Task<IActionResult> GetReviews(string? id, int page = 1, int pageSize = 10)
         {
             IList<Review> reviews = (IList<Review>)await _reviewsService.GetReviews(id, page, pageSize);
             return Ok(BaseResponse<IList<Review>>.OkResponse(reviews));
         }
         [HttpPost()]
-        [Authorize(Roles = "Member")]
+        //[Authorize(Roles = "Member")]
         public async Task<IActionResult> CreateReviews(ReviewsModel reviewsModel)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);            
-            string userEmail = User.FindFirstValue(ClaimTypes.Email);
+            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);            
+            string? userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(userEmail))
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", "Vui lòng đăng nhập để review!"));
@@ -47,7 +47,7 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<string>.OkResponse("Thêm đánh giá thành công!"));
         }
         [HttpPut("{id}")]
-        [Authorize(Roles = "Member")]
+        //[Authorize(Roles = "Member")]
         public async Task<IActionResult> UpdateReview(string id, [FromBody] ReviewsModel reviewsModel)
         {
             if (!ModelState.IsValid)
@@ -71,7 +71,7 @@ namespace MilkStore.API.Controllers
             }
         }
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Member")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteReview(string id)
         {
             await _reviewsService.DeletReviews(id);

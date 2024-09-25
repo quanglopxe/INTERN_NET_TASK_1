@@ -20,8 +20,8 @@ namespace MilkStore.Services.Service
         private readonly UserManager<ApplicationUser> _userManager;
         protected readonly DbSet<Order> _dbSet;
         private readonly IMapper _mapper;
-        private readonly EmailService _emailService;
-        public OrderService(IUnitOfWork unitOfWork, DatabaseContext context, IMapper mapper, EmailService emailService, UserManager<ApplicationUser> userManager)
+        private readonly IEmailService _emailService;
+        public OrderService(IUnitOfWork unitOfWork, DatabaseContext context, IMapper mapper, IEmailService emailService, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _context = context;
@@ -87,9 +87,9 @@ namespace MilkStore.Services.Service
                 item.TotalAmount = 0;
                 item.DiscountedAmount = 0;
 
-                // Kiểm tra sự tồn tại của User
-                ApplicationUser? user = await _userManager.FindByIdAsync(userId)
-                    ?? throw new KeyNotFoundException($"User với ID {userId} không tồn tại.");
+                //// Kiểm tra sự tồn tại của User
+                //ApplicationUser? user = await _userManager.FindByIdAsync(userId)
+                //    ?? throw new KeyNotFoundException($"User với ID {userId} không tồn tại.");
                 await _unitOfWork.GetRepository<Order>().InsertAsync(item);
                 await _unitOfWork.SaveAsync();
             }
@@ -163,7 +163,7 @@ namespace MilkStore.Services.Service
 
                 double discountAmount = 0;
                 //Tính thành tiền áp dụng ưu đãi
-                Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
+                Voucher? vch = await _unitOfWork.GetRepository<Voucher>().Entities
                     .FirstOrDefaultAsync(v => v.Id == ord.VoucherId && !v.DeletedTime.HasValue);
                 if (vch is
                     {

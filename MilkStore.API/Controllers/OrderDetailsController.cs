@@ -49,6 +49,7 @@ namespace MilkStore.API.Controllers
 
         // PUT
         //[Authorize(Roles = "Guest, Member")]
+
         [HttpPut("{orderId}/{productId}")]
         public async Task<IActionResult> UpdateOrderDetails(string orderId, string productId, OrderDetailsModelView model)
         {
@@ -62,6 +63,7 @@ namespace MilkStore.API.Controllers
 
         // DELETE
         //[Authorize(Roles = "Guest, Member")]
+
         [HttpDelete("{orderId}/{productId}")]
         public async Task<IActionResult> DeleteOrderDetails(string orderId, string productId)
         {

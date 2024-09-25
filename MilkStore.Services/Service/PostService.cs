@@ -30,7 +30,7 @@ namespace MilkStore.Services.Service
             Post newPost = _mapper.Map<Post>(postModel);
             newPost.CreatedTime = CoreHelper.SystemTimeNow;
             newPost.DeletedTime = null;
-            newPost.CreatedBy = userID;
+            newPost.CreatedBy = userID;            
 
             // Thêm sản phẩm vào bài đăng bằng PostProduct
             if (postModel.ProductIDs != null && postModel.ProductIDs.Any())
