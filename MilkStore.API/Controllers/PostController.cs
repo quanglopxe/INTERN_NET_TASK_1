@@ -18,8 +18,8 @@ namespace MilkStore.API.Controllers
 
         public PostController(IPostService postService)
         {
-            _postService = postService;    
-        }        
+            _postService = postService;
+        }
         [HttpGet()]
         public async Task<IActionResult> GetPost(string? id, string? name, int index = 1, int pageSize = 10)
         {

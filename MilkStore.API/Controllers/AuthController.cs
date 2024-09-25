@@ -82,7 +82,7 @@ namespace MilkStore.API.Controllers
                     string? confirmationLink = this.ConfirmationLink("ConfirmEmail", model.Email, token);
 
                     await emailService.SendEmailAsync(model.Email, "Xác nhận tài khoản",
-                         $"Vui lòng xác nhận tài khoản của bạn bằng cách nhấp vào liên kết này: <a href='{confirmationLink}'>Xác nhận</a>");
+                        $"Vui lòng xác nhận tài khoản của bạn bằng cách nhấp vào liên kết này: <a href='{confirmationLink}'>Xác nhận</a>");
 
                     return Ok(BaseResponse<string>.OkResponse("Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản."));
                 }
@@ -162,6 +162,11 @@ namespace MilkStore.API.Controllers
                 }
             }
         }
+        /// <summary>
+        ///  Client gửi token để đăng nhập bằng Google
+        /// </summary>
+        /// <param name="tokenGoogle"></param>
+        /// <returns></returns>
         [HttpPost("signin-google")]
         public async Task<IActionResult> LoginGoogle([FromBody] TokenGoogleModel tokenGoogle)
         {
@@ -278,6 +283,5 @@ namespace MilkStore.API.Controllers
                 return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
             }
         }
-
     }
 }
