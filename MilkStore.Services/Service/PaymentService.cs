@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Core.Base;
+using MilkStore.Core.Constants;
 using Newtonsoft.Json;
 
 public class PaymentService
@@ -60,7 +61,7 @@ public class PaymentService
             return jsonResult.payUrl.toString();
         }
 
-        throw new BaseException.ErrorException(400, "BadRequest", "Error Payment");
+        throw new BaseException.ErrorException(StatusCodes.BadRequest, "BadRequest", "Error Payment");
 
     }
     private string CreateSignature(string rawData, string secretKey)
@@ -79,7 +80,7 @@ public class PaymentService
         string? signature = CreateSignature(rawHash, secretKey);
         if (signature != request.Signature)
         {
-            throw new BaseException.ErrorException(400, "BadRequest", "Invalid signature");
+            throw new BaseException.ErrorException(StatusCodes.BadRequest, "BadRequest", "Invalid signature");
 
         }
         // xử lý nghiệp vụ tại đây
