@@ -46,7 +46,6 @@
 //             {
 //                 // await _postService.CreatePost(postModel);
 //                 return Ok(BaseResponse<string>.OkResponse("Thêm thành công!"));
-
 //             }
 //             catch (BaseException.ErrorException e)
 //             {

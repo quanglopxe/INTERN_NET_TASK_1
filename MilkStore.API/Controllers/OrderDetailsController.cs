@@ -49,25 +49,27 @@
 
 //         // PUT
 //         //[Authorize(Roles = "Guest, Member")]
-//         [HttpPut("{orderId}/{productId}")]
-//         public async Task<IActionResult> UpdateOrderDetails(string orderId, string productId, OrderDetailsModelView model)
+
+//         [HttpPut("{id}")]
+//         public async Task<IActionResult> UpdateOrderDetails(string id, OrderDetailsModelView model)
 //         {
 //             if (!ModelState.IsValid)
 //             {
 //                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
 //             }
-//             OrderDetails detail = await _orderDetailsService.UpdateOrderDetails(orderId, productId, model);
+//             OrderDetails detail = await _orderDetailsService.UpdateOrderDetails(id, model);
 //             return StatusCode(200, new { message = "Sửa thành công", detail });
 //         }
 
 //         // DELETE
 //         //[Authorize(Roles = "Guest, Member")]
+
 //         [HttpDelete("{orderId}/{productId}")]
-//         public async Task<IActionResult> DeleteOrderDetails(string orderId, string productId)
+//         public async Task<IActionResult> DeleteOrderDetails(string id)
 //         {
 //             try
 //             {
-//                 await _orderDetailsService.DeleteOrderDetails(orderId, productId);
+//                 await _orderDetailsService.DeleteOrderDetails(id);
 //                 return StatusCode(200, new { message = "Xoá thành công" });
 //             }
 //             catch (Exception ex)

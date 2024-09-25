@@ -124,18 +124,16 @@ namespace MilkStore.Repositories.Context
 
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.OrderDetails)
-                .WithMany()
-                .HasForeignKey(r => new { r.OrderID, r.ProductsID })
-                .OnDelete(DeleteBehavior.Restrict);
+                .WithMany() 
+                .HasForeignKey(r => r.OrderDetailID)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Review>()
-                .HasOne(r => r.Order)
-                .WithMany()
-                .HasForeignKey(r => r.OrderID)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasOne(r => r.User)
+                .WithMany() 
+                .HasForeignKey(r => r.UserID)
+                .OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<OrderDetails>()
-            .HasKey(od => new { od.OrderID, od.ProductID });
 
         }
     }
