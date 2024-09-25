@@ -10,8 +10,7 @@ namespace MilkStore.Contract.Services.Interface
 {
     public interface IUserService
     {
-        Task GetUserByEmailToRegister(string email);
-        Task CreateUser(RegisterModelView userModel);
+        Task GetUserByEmailToRegister(string email);        
         Task<(string token, string userId)> CreateUser(RegisterModelView userModel);
         Task ConfirmEmail(string userId, string token);
         Task<(ApplicationUser user, string token)> ResendConfirmationEmail(string email);

@@ -9,6 +9,7 @@ using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.PreOrdersModelView;
 using MilkStore.ModelViews.ReviewsModelView;
 using MilkStore.Services.Service;
+using System.Security.Claims;
 
 namespace MilkStore.API.Controllers
 {
@@ -36,8 +37,14 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            await _reviewsService.CreateReviews(reviewsModel);
-            return Ok(new {message = "Thêm thành công!"});
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);            
+            string userEmail = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(userEmail))
+            {
+                return BadRequest(new BaseException.BadRequestException("BadRequest", "Vui lòng đăng nhập để review!"));
+            }
+            await _reviewsService.CreateReviews(reviewsModel, userId, userEmail);
+            return Ok(BaseResponse<string>.OkResponse("Thêm đánh giá thành công!"));
         }
         [HttpPut("{id}")]
         [Authorize(Roles = "Member")]
@@ -50,7 +57,12 @@ namespace MilkStore.API.Controllers
 
             try
             {
-                Review Reviews = await _reviewsService.UpdateReviews(id, reviewsModel);
+                string userID = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if(string.IsNullOrWhiteSpace(userID))
+                {
+                    return BadRequest(new BaseException.BadRequestException("BadRequest", "Vui lòng đăng nhập để cập nhật review!"));
+                }
+                Review Reviews = await _reviewsService.UpdateReviews(id, reviewsModel, userID);
                 return Ok(BaseResponse<Review>.OkResponse(Reviews));
             }
             catch (Exception ex)
@@ -63,7 +75,7 @@ namespace MilkStore.API.Controllers
         public async Task<IActionResult> DeleteReview(string id)
         {
             await _reviewsService.DeletReviews(id);
-            return Ok();
+            return Ok(BaseResponse<string>.OkResponse("Xóa đánh giá thành công!"));
         }
     }
 }
