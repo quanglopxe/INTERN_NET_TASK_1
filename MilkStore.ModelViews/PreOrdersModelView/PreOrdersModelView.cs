@@ -8,7 +8,7 @@ namespace MilkStore.ModelViews.PreOrdersModelView
 {
     public class PreOrdersModelView
     {
-        public string UserID { get; set; }
+        public required Guid UserID { get; set; }
         public string ProductID { get; set; }
         public DateTime PreoderDate { get; set; }
         public required string Status { get; set; }

@@ -5,6 +5,7 @@ using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.PreOrdersModelView;
+using MilkStore.Services.Service;
 
 namespace MilkStore.API.Controllers
 {
@@ -32,8 +33,20 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            PreOrders PreOrder = await _preOrdersService.CreatePreOrders(preOrdersModel);
-            return Ok(BaseResponse<PreOrders>.OkResponse(PreOrder));
+
+            try
+            {
+                PreOrders preOrder = await _preOrdersService.CreatePreOrders(preOrdersModel);
+                return Ok(BaseResponse<PreOrders>.OkResponse(preOrder));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi hệ thống: " + ex.Message });
+            }
         }
         [HttpPut("{id}")]
         [Authorize(Roles = "Member")]
@@ -41,7 +54,7 @@ namespace MilkStore.API.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return NotFound($"Pre-order have ID: {id} was not found.");
+                return NotFound($"Pre-order có ID: {id} không tồn tại.");
             }
 
             try

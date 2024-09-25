@@ -8,9 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using MilkStore.ModelViews.ResponseDTO;
 using AutoMapper;
 using MilkStore.Repositories.Entity;
-using System.Security.Cryptography;
-using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.Services.EmailSettings;
+using Microsoft.AspNetCore.Identity;
 
 namespace MilkStore.Services.Service
 {
@@ -18,23 +17,25 @@ namespace MilkStore.Services.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly DatabaseContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
         protected readonly DbSet<Order> _dbSet;
         private readonly IMapper _mapper;
         private readonly EmailService _emailService;
-        public OrderService(IUnitOfWork unitOfWork, DatabaseContext context, IMapper mapper, EmailService emailService)
+        public OrderService(IUnitOfWork unitOfWork, DatabaseContext context, IMapper mapper, EmailService emailService, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _context = context;
             _dbSet = _context.Set<Order>();
             _mapper = mapper;
             _emailService = emailService;
+            _userManager = userManager;
         }
 
         private OrderResponseDTO MapToOrderResponseDto(Order order)
         {
             return _mapper.Map<OrderResponseDTO>(order);
         }
-        
+
         public async Task<IEnumerable<OrderResponseDTO>> GetAsync(string? id)
         {
             try
@@ -68,12 +69,15 @@ namespace MilkStore.Services.Service
             }
         }
 
-        public async Task AddAsync(OrderModelView ord)
+        public async Task AddAsync(OrderModelView ord, string userId)
         {
             try
             {
                 // Sử dụng mapper để ánh xạ từ OrderModelView sang Order
                 Order item = _mapper.Map<Order>(ord);
+                item.UserId = Guid.Parse(userId);
+                item.CreatedBy = userId;
+                item.LastUpdatedBy = userId;
                 item.OrderDate = CoreHelper.SystemTimeNow;
                 DateTimeOffset d1 = item.OrderDate.AddDays(3);
                 DateTimeOffset d2 = item.OrderDate.AddDays(5);
@@ -84,16 +88,12 @@ namespace MilkStore.Services.Service
                 item.DiscountedAmount = 0;
 
                 // Kiểm tra sự tồn tại của User
-                if (await _unitOfWork.GetRepository<ApplicationUser>().Entities
-                        .AnyAsync(u => u.Id == ord.UserId) == false)
-                {
-                    throw new KeyNotFoundException($"User với ID {ord.UserId} không tồn tại.");
-                }
-
+                ApplicationUser? user = await _userManager.FindByIdAsync(userId)
+                    ?? throw new KeyNotFoundException($"User với ID {userId} không tồn tại.");
                 await _unitOfWork.GetRepository<Order>().InsertAsync(item);
                 await _unitOfWork.SaveAsync();
             }
-            catch (KeyNotFoundException ex) 
+            catch (KeyNotFoundException ex)
             {
                 // Log lỗi chi tiết và trả về BadRequest
                 // Bạn có thể log lỗi tại đây nếu cần
@@ -119,11 +119,13 @@ namespace MilkStore.Services.Service
                 // Sử dụng AutoMapper để ánh xạ những thay đổi
                 _mapper.Map(ord, orderss);  // Chỉ ánh xạ những thuộc tính có giá trị khác biệt
 
-                if (await _unitOfWork.GetRepository<ApplicationUser>().Entities
-                        .AnyAsync(u => u.Id == ord.UserId) == false)
-                {
-                    throw new KeyNotFoundException($"User với ID {ord.UserId} không tồn tại.");
-                }
+
+                // Không cần thiết
+                // if (await _unitOfWork.GetRepository<ApplicationUser>().Entities
+                //         .AnyAsync(u => u.Id == ord.UserId) == false)
+                // {
+                //     throw new KeyNotFoundException($"User với ID {ord.UserId} không tồn tại.");
+                // }
 
                 // Cập nhật thời gian cập nhật
                 orderss.LastUpdatedTime = CoreHelper.SystemTimeNow;
@@ -147,7 +149,7 @@ namespace MilkStore.Services.Service
         }
 
         //Cập nhật TotalAmount
-        public async Task UpdateToTalAmount (string id)
+        public async Task UpdateToTalAmount(string id)
         {
 
             try
@@ -165,11 +167,11 @@ namespace MilkStore.Services.Service
                     .FirstOrDefaultAsync(v => v.Id == ord.VoucherId && !v.DeletedTime.HasValue);
                 if (vch is
                     {
-                        ExpiryDate: var expiryDate,
-                        LimitSalePrice: var limitSalePrice,
-                        SalePercent: var salePercent,
-                        UsedCount: var usedCount,
-                        UsingLimit: var usingLimit
+                        ExpiryDate: DateTime expiryDate,
+                        LimitSalePrice: int limitSalePrice,
+                        SalePercent: int salePercent,
+                        UsedCount: int usedCount,
+                        UsingLimit: int usingLimit
                     })
                 {
                     if (expiryDate > ord.OrderDate
@@ -210,7 +212,7 @@ namespace MilkStore.Services.Service
                         .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
                         ?? throw new KeyNotFoundException($"Voucher với ID {voucherId} không tồn tại.");
 
-                if (vch.ExpiryDate < orderss.OrderDate) 
+                if (vch.ExpiryDate < orderss.OrderDate)
                 {
                     throw new KeyNotFoundException($"Voucher đã hết thời hạn áp dụng.");
                 }
@@ -264,7 +266,7 @@ namespace MilkStore.Services.Service
         public async Task GetStatus_Mail(string? id)
         {
             Order order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
-            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(order.UserId);
+            ApplicationUser? user = await _userManager.FindByNameAsync(order.UserId.ToString());
             if (order != null && order.DeletedTime == null)
             {
                 if (order.UserId == user.Id)
@@ -284,8 +286,30 @@ namespace MilkStore.Services.Service
                         await _unitOfWork.SaveAsync();
                     }
                 }
-
             }
         }
+        public async Task GetNewStatus_Mail(string? id)
+        {
+            Order order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
+            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(order.UserId);
+            string originalStatus = "waiting";
+            if (order != null && order.DeletedTime == null)
+            {
+                if (order.UserId == user.Id)
+                {
+                    if (!string.IsNullOrEmpty(order.Status) && !order.Status.Equals(originalStatus))
+                    {
+                        string subject = "Đơn hàng của quý khách: " + order.User.UserName + " vừa được cập nhật";
+                        string message = "Trạng thái đơn hàng: " + order.Id + " đã được thay đổi thành: " + order.Status + ". Cảm ơn quý khách đã mua hàng tại MilkStore.";
+
+                        _emailService.SendEmailAsync(user.Email, subject, message);
+
+                        await _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+                        await _unitOfWork.SaveAsync();
+                    }
+                }
+            }
+        }
+
     }
 }

@@ -45,14 +45,14 @@ namespace MilkStore.Services.EmailSettings
 
         //    await SendEmailAsync(customerEmail, subject, body);
         //}
-        //public async Task SendFeedbackResponseEmail(string customerEmail, string feedback)
-        //{
-        //    var subject = "Phản hồi ý kiến của quý khách hàng";
-        //    var body = $"MilkStore chào quý khách hàng, chúng tôi đã nhận được ý kiến đóng góp của quý khách như sau: {feedback}. Cảm ơn quý khách đã góp ý giúp MilkStore phát triển hơn!" +
-        //        $" Chúng tôi sẽ xem xét và cải thiện! Cảm ơn quý khách đã sử dụng sản phẩm của chúng tôi!";
+        public async Task SendFeedbackResponseEmail(string customerEmail, string feedback)
+        {
+            var subject = "Phản hồi ý kiến của quý khách hàng";
+            var body = $"MilkStore chào quý khách hàng, chúng tôi đã nhận được ý kiến đóng góp của quý khách như sau: {feedback}. Cảm ơn quý khách đã góp ý giúp MilkStore phát triển hơn!" +
+                $" Chúng tôi sẽ xem xét và cải thiện! Cảm ơn quý khách đã sử dụng sản phẩm của chúng tôi!";
 
-        //    await SendEmailAsync(customerEmail, subject, body);
-        //}
+            await SendEmailAsync(customerEmail, subject, body);
+        }
 
         // Gửi email mã voucher
         public async Task SendVoucherEmailAsync(string toEmail, string voucherCode, DateTime expiryDate)

@@ -21,7 +21,12 @@ namespace MilkStore.Services.Service
         }
         public async Task<Gift> CreateGift(GiftModel GiftModel)
         {
+
             Gift newGift = _mapper.Map<Gift>(GiftModel);
+            if (newGift.Id == "")
+            {
+                newGift.Id = Guid.NewGuid().ToString("N");
+            }
             newGift.CreatedTime = DateTime.UtcNow;
 
             await _unitOfWork.GetRepository<Gift>().InsertAsync(newGift);

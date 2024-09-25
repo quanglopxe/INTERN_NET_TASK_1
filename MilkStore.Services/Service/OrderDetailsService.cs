@@ -101,7 +101,7 @@ namespace MilkStore.Services.Service
             {
                 OrderDetails? od = await _unitOfWork.GetRepository<OrderDetails>()
                     .Entities
-                    .FirstOrDefaultAsync(or => or.Id == id && or.DeletedTime == null);
+                    .FirstOrDefaultAsync(or => or.OrderID == id && or.DeletedTime == null);
                 if (od == null)
                 {
                     return Enumerable.Empty<OrderDetails>();

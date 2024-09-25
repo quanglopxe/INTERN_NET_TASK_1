@@ -11,6 +11,8 @@ using MilkStore.ModelViews.ReviewsModelView;
 using MilkStore.ModelViews.PreOrdersModelView;
 using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.VoucherModelViews;
+using MilkStore.ModelViews.GiftModelViews;
+using MilkStore.ModelViews.OrderGiftModelViews;
 
 
 namespace MilkStore.Services.Mapping
@@ -24,7 +26,8 @@ namespace MilkStore.Services.Mapping
             CreateMap<ApplicationUser, LoginGoogleModel>().ReverseMap();
 
 
-
+            CreateMap<Gift, GiftModel>().ReverseMap();
+            CreateMap<OrderGift, OrderGiftModel>().ReverseMap();
 
             CreateMap<Category, CategoryModel>();
             CreateMap<CategoryModel, Category>();
@@ -71,6 +74,7 @@ namespace MilkStore.Services.Mapping
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null)); // Chỉ ánh xạ khi giá trị mới khác null
 
             CreateMap<Review, ReviewsModel>().ReverseMap();
+
             CreateMap<PreOrders, PreOrdersModelView>().ReverseMap();
 
             CreateMap<Voucher, VoucherModelView>().ReverseMap();

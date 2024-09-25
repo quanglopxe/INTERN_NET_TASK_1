@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MilkStore.Contract.Repositories.Entity;
@@ -9,24 +10,27 @@ using MilkStore.Core.Utils;
 using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.Repositories.Context;
+using System.Security.Claims;
 
 namespace MilkStore.Services.Service
 {
     public class PostService : IPostService
     {
         private readonly IUnitOfWork _unitOfWork;        
-        private readonly IMapper _mapper;
+        private readonly IMapper _mapper;        
+        
         public PostService(IUnitOfWork unitOfWork, IMapper mapper)
         {            
             _unitOfWork = unitOfWork;
-            _mapper = mapper;
-        }
-
-        public async Task CreatePost(PostModelView postModel)
-        {
+            _mapper = mapper;            
+        }        
+        public async Task CreatePost(PostModelView postModel, string userID)
+        {            
             Post newPost = _mapper.Map<Post>(postModel);
             newPost.CreatedTime = CoreHelper.SystemTimeNow;
             newPost.DeletedTime = null;
+            newPost.CreatedBy = userID;
+
             // Thêm sản phẩm vào bài đăng bằng PostProduct
             if (postModel.ProductIDs != null && postModel.ProductIDs.Any())
             {
@@ -59,6 +63,10 @@ namespace MilkStore.Services.Service
         
         public async Task DeletePost(string id)
         {            
+            if(string.IsNullOrWhiteSpace(id))
+            {
+                throw new KeyNotFoundException("Post ID is required.");
+            }
             Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);            
             if (post == null)
             {
@@ -76,11 +84,11 @@ namespace MilkStore.Services.Service
         public async Task<BasePaginatedList<PostResponseDTO>> GetPosts(string? id, string? name, int pageIndex, int pageSize)
         {            
             var query = _unitOfWork.GetRepository<Post>().Entities.Where(post => post.DeletedTime == null);
-            if (!id.IsNullOrEmpty())
+            if (!string.IsNullOrWhiteSpace(id))
             {
                 query = query.Where(post => post.Id == id);
             }
-            if (!name.IsNullOrEmpty())
+            if (!string.IsNullOrWhiteSpace(name))
             {
                 query = query.Where(post => post.Title.Contains(name));
             }
@@ -88,7 +96,7 @@ namespace MilkStore.Services.Service
 
             if (!paginatedPosts.Items.Any())
             {
-                if (!id.IsNullOrEmpty())
+                if (!string.IsNullOrWhiteSpace(id))
                 {
                     var postById = await _unitOfWork.GetRepository<Post>().Entities
                         .FirstOrDefaultAsync(post => post.Id == id && post.DeletedTime == null);
@@ -99,7 +107,7 @@ namespace MilkStore.Services.Service
                     }
                 }
 
-                if (!name.IsNullOrEmpty())
+                if (!string.IsNullOrWhiteSpace(name))
                 {
                     var postsByName = await _unitOfWork.GetRepository<Post>().Entities
                         .Where(post => post.Title.Contains(name) && post.DeletedTime == null)
@@ -123,18 +131,22 @@ namespace MilkStore.Services.Service
             );            
         }
              
-        public async Task UpdatePost(string id, PostModelView postModel)
-        {            
-            Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);            
+        public async Task UpdatePost(string id, PostModelView postModel, string userID)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                throw new KeyNotFoundException("Post ID is required.");
+            }
+            Post post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id);              
             if (post == null)
             {
                 throw new KeyNotFoundException($"Post with ID {id} was not found.");
-            }
-
+            }            
             //map từ PostModelView sang Post (chỉ cập nhật các trường thay đổi)
             _mapper.Map(postModel, post);
             
             post.LastUpdatedTime = CoreHelper.SystemTimeNow;
+            post.LastUpdatedBy = userID;
 
             // Kiểm tra xem sản phẩm có bị xóa chưa, thêm sản phẩm nếu cần
             if (postModel.ProductIDs != null && postModel.ProductIDs.Any())

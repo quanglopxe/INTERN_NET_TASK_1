@@ -13,11 +13,12 @@ namespace MilkStore.Contract.Services.Interface
     public interface IOrderService
     {
         Task<IEnumerable<OrderResponseDTO>> GetAsync(string? id);
-        Task AddAsync(OrderModelView item);
+        Task AddAsync(OrderModelView ord, string userId);
         Task UpdateAsync(string id, OrderModelView item);
         Task AddVoucher(string id, string voucherId);
         Task UpdateToTalAmount(string id);
         Task DeleteAsync(string id);
         Task GetStatus_Mail(string? id);
+        Task GetNewStatus_Mail(string? id);
     }
 }
