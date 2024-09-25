@@ -10,8 +10,8 @@ namespace MilkStore.Contract.Services.Interface
     public interface IPostService
     {
         Task<BasePaginatedList<PostResponseDTO>> GetPosts(string? id, string? name, int index, int pageSize);
-        Task CreatePost(PostModelView postModel);        
-        Task UpdatePost(string id, PostModelView postModel);
+        Task CreatePost(PostModelView postModel, string userID);        
+        Task UpdatePost(string id, PostModelView postModel, string userID);
         Task DeletePost(string id);
     }
 }

@@ -13,8 +13,8 @@ namespace MilkStore.Contract.Services.Interface
     public interface IReviewsService
     {
         Task<IEnumerable<Review>> GetReviews(string? id, int page, int pageSize);
-        Task CreateReviews(ReviewsModel reviewsModel);
-        Task<Review> UpdateReviews(string id, ReviewsModel reviewsModel);
+        Task CreateReviews(ReviewsModel reviewsModel, string userID, string userEmail);
+        Task<Review> UpdateReviews(string id, ReviewsModel reviewsModel, string userID);
         Task DeletReviews(string id);
     }
 }

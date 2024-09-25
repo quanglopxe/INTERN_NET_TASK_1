@@ -263,6 +263,7 @@ namespace MilkStore.Services.Service
             }
         }
 
+
         public async Task GetStatus_Mail(string? id)
         {
             Order order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
@@ -311,5 +312,45 @@ namespace MilkStore.Services.Service
             }
         }
 
+
+        public async Task DeductStockOnDelivery(string orderId)
+        {
+            try
+            {
+                // Retrieve the order and its details
+                Order order = await _unitOfWork.GetRepository<Order>().Entities
+                    .FirstOrDefaultAsync(o => o.Id == orderId && !o.DeletedTime.HasValue)
+                    ?? throw new KeyNotFoundException($"Order with ID {orderId} not found or deleted.");
+
+                if (order.Status == "In Delivery")
+                {
+                    // Retrieve the order details
+                    List<OrderDetails> orderDetailsList = await _unitOfWork.GetRepository<OrderDetails>().Entities
+                        .Where(od => od.OrderID == order.Id).ToListAsync();
+
+                    // Loop through the order details to deduct stock
+                    foreach (var orderDetail in orderDetailsList)
+                    {
+                        Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(orderDetail.ProductID);
+                        if (product != null && product.QuantityInStock >= orderDetail.Quantity)
+                        {
+                            product.QuantityInStock -= orderDetail.Quantity; // Deduct quantity
+                            await _unitOfWork.GetRepository<Products>().UpdateAsync(product);
+                        }
+                        else
+                        {
+                            throw new Exception($"Product with ID {orderDetail.ProductID} does not have enough stock.");
+                        }
+                    }
+
+                    // Save changes
+                    await _unitOfWork.SaveAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Error while deducting stock on delivery.", ex);
+            }
+        }
     }
 }

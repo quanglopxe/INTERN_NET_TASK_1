@@ -7,26 +7,25 @@ using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.ReviewsModelView;
 using MilkStore.Repositories.Context;
+using MilkStore.Services.EmailSettings;
 using System.Security.Claims;
 
 namespace MilkStore.Services.Service
 {
     public class ReviewsService : IReviewsService
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IUnitOfWork _unitOfWork;        
         private readonly IMapper _mapper;
-        public ReviewsService(IHttpContextAccessor httpContextAccessor, IUnitOfWork unitOfWork, IMapper mapper)
-        {
-            _httpContextAccessor = httpContextAccessor;
+        private readonly EmailService _emailService;
+        public ReviewsService(IUnitOfWork unitOfWork, IMapper mapper)
+        {            
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
-        public async Task CreateReviews(ReviewsModel reviewsModel)
+        public async Task CreateReviews(ReviewsModel reviewsModel, string userID, string userEmail)
         {
-            Order order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(reviewsModel.OrderID);
-            var userID = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            Order order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(reviewsModel.OrderID);            
             if (order == null || order.UserId.ToString() != userID)
             {
                 throw new UnauthorizedAccessException("You do not have access to this order.");
@@ -38,8 +37,27 @@ namespace MilkStore.Services.Service
             }
             Review newReview = _mapper.Map<Review>(reviewsModel);
             newReview.CreatedTime = DateTime.UtcNow;
+            newReview.CreatedBy = userID;
             await _unitOfWork.GetRepository<Review>().InsertAsync(newReview);
-            await _unitOfWork.SaveAsync();            
+            await _unitOfWork.SaveAsync();
+
+            // Gửi email phản hồi
+            if (!string.IsNullOrEmpty(userEmail))
+            {
+                var subject = "Cảm ơn bạn đã đánh giá sản phẩm!";
+                var body = $@"
+            <p>Xin chào,</p>
+            <p>Cảm ơn bạn đã đánh giá sản phẩm {productInOrder.Products.ProductName}. Đánh giá của bạn giúp chúng tôi cải thiện dịch vụ.</p>
+            <p>Thông tin đánh giá:</p>
+            <ul>
+                <li>Sản phẩm: {productInOrder.Products.ProductName}</li>
+                <li>Đánh giá: {reviewsModel.Rating} sao</li>
+                <li>Nhận xét: {reviewsModel.Comment}</li>
+            </ul>
+            <p>Trân trọng,<br>MilkStore</p>
+        ";
+                await _emailService.SendEmailAsync(userEmail, subject, body);
+            }
         }
 
         public async Task DeletReviews(string id)
@@ -84,22 +102,18 @@ namespace MilkStore.Services.Service
 
         }
 
-        public async Task<Review> UpdateReviews(string id, ReviewsModel reviewsModel)
+        public async Task<Review> UpdateReviews(string id, ReviewsModel reviewsModel, string userID)
         {
 
-            Review review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);
-
+            Review review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);            
             if (review == null)
             {
                 throw new Exception($"Review have ID: {id} was not found.");
             }
 
-            //review.ProductId = reviewsModel.ProductId;
-            //review.UserId = reviewsModel.UserId;
-            //review.Rating = reviewsModel.Rating;
-            //review.Comment = reviewsModel.Comment;
             _mapper.Map(reviewsModel, review);
             review.LastUpdatedTime = DateTime.UtcNow;
+            review.LastUpdatedBy = userID;
             await _unitOfWork.GetRepository<Review>().UpdateAsync(review);
             await _unitOfWork.SaveAsync();
             return review;
