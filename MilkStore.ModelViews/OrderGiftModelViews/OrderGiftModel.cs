@@ -14,8 +14,6 @@ namespace MilkStore.ModelViews.OrderGiftModelViews
         public required string Address { get; set; }
         [Required(ErrorMessage = "Id user không được để trống")]
         public required Guid UserId { get; set; }
-        [Required(ErrorMessage = "Id quà tặng không được để trống")]
-        public required string GiftId { get; set; }
         [Required(ErrorMessage = "Trạng thái không được để trống")]
         public required string Status { get; set; }
     }

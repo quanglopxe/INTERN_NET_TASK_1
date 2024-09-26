@@ -14,6 +14,7 @@ using MilkStore.ModelViews.VoucherModelViews;
 using MilkStore.ModelViews.GiftModelViews;
 using MilkStore.ModelViews.OrderGiftModelViews;
 using MilkStore.ModelViews.AuthModelViews;
+using MilkStore.ModelViews.OrderDetailGiftModelView;
 
 
 namespace MilkStore.Services.Mapping
@@ -26,6 +27,7 @@ namespace MilkStore.Services.Mapping
 
             CreateMap<ApplicationUser, RegisterModelView>().ReverseMap();
 
+            CreateMap<OrderDetailGift, OrderDetailGiftModel>().ReverseMap();
 
             CreateMap<Gift, GiftModel>().ReverseMap();
             CreateMap<OrderGift, OrderGiftModel>().ReverseMap();
