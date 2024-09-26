@@ -16,6 +16,9 @@ using AutoMapper;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.Core.Base;
 using MailKit.Search;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using MilkStore.ModelViews.PreOrdersModelView;
 
 namespace MilkStore.Services.Service
 {
@@ -25,14 +28,17 @@ namespace MilkStore.Services.Service
         private readonly IOrderService _orderService;
         private readonly DatabaseContext _context;
         private readonly IMapper _mapper;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IPreOrdersService _preOrdersService;
 
-
-        public OrderDetailsService(IUnitOfWork unitOfWork, DatabaseContext context, IOrderService orderService, IMapper mapper)
+        public OrderDetailsService(IUnitOfWork unitOfWork, DatabaseContext context, IOrderService orderService, IMapper mapper, IHttpContextAccessor httpContextAccessor, IPreOrdersService preOrdersService)
         {
             _unitOfWork = unitOfWork;
             _context = context;
             _orderService = orderService;
             _mapper = mapper;
+            _httpContextAccessor = httpContextAccessor;
+            _preOrdersService = preOrdersService;
         }
 
         private OrderDetailResponseDTO MapToOrderDetailResponseDTO(OrderDetails details)
@@ -45,6 +51,7 @@ namespace MilkStore.Services.Service
         {
             try
             {
+                string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
                 // Kiểm tra xem số lượng có hợp lệ không
                 if (model.Quantity <= 0 || model.Quantity % 1 != 0)
                 {
@@ -57,7 +64,18 @@ namespace MilkStore.Services.Service
                 {
                     throw new BaseException.ErrorException(404, "NotFound", $"Sản phẩm với ID: {product} không tồn tại.");
                 }
-
+                //PreOrder
+                if(product.QuantityInStock < model.Quantity)
+                {
+                    PreOrdersModelView preOrdersModelView = new PreOrdersModelView
+                    {
+                        ProductID = model.ProductID,
+                        Quantity = model.Quantity,
+                        Status = "Đang chờ",
+                        UserID = Guid.Parse(userID)                        
+                    };
+                    await _preOrdersService.CreatePreOrders(preOrdersModelView);                    
+                }
                 // Kiểm tra xem OrderDetails đã tồn tại hay chưa dựa trên OrderID và ProductID
                 OrderDetails existingOrderDetail = await _context.OrderDetails
                     .FirstOrDefaultAsync(od => od.OrderID == model.OrderID && od .ProductID == model.ProductID);
@@ -65,7 +83,10 @@ namespace MilkStore.Services.Service
                 if (existingOrderDetail != null)
                 {
                     // Nếu đã tồn tại, cập nhật số lượng và tính lại tổng tiền
-                    existingOrderDetail.Quantity += model.Quantity;                    
+                    existingOrderDetail.Quantity += model.Quantity;
+                    existingOrderDetail.UnitPrice = product.Price;
+                    existingOrderDetail.CreatedBy = userID;
+                    product.QuantityInStock -= model.Quantity;                    
                 }
                 else
                 {

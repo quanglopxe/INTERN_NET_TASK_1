@@ -16,17 +16,23 @@ namespace MilkStore.Services.Service
 {
     public class PostService : IPostService
     {
-
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public PostService(IUnitOfWork unitOfWork, IMapper mapper)
+        public PostService(IUnitOfWork unitOfWork, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;            
+            _httpContextAccessor = httpContextAccessor;
         }        
-        public async Task CreatePost(PostModelView postModel, string userID)
+        public async Task CreatePost(PostModelView postModel)
         {            
+            string? userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            if (string.IsNullOrWhiteSpace(userID))
+            {
+                throw new BaseException.ErrorException(401, "Unauthorized", "You are not authorized to perform this action.");
+            }
             Post newPost = _mapper.Map<Post>(postModel);
             newPost.CreatedTime = CoreHelper.SystemTimeNow;
             newPost.DeletedTime = null;
@@ -129,8 +135,13 @@ namespace MilkStore.Services.Service
             );
         }
              
-        public async Task UpdatePost(string id, PostModelView postModel, string userID)
+        public async Task UpdatePost(string id, PostModelView postModel)
         {
+            string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            if (!string.IsNullOrWhiteSpace(userID))
+            {
+                throw new BaseException.ErrorException(401, "Unauthorized", "You are not authorized to perform this action.");
+            }
             if (string.IsNullOrWhiteSpace(id))
             {
                 throw new BaseException.ErrorException(400, "BadRequest", "Post ID is required.");

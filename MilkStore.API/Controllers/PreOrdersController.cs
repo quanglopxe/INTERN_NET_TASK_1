@@ -36,8 +36,8 @@ namespace MilkStore.API.Controllers
 
             try
             {
-                PreOrders preOrder = await _preOrdersService.CreatePreOrders(preOrdersModel);
-                return Ok(BaseResponse<PreOrders>.OkResponse(preOrder));
+                await _preOrdersService.CreatePreOrders(preOrdersModel);
+                return Ok(BaseResponse<string>.OkResponse("Đặt trước đơn hàng thành công!"));
             }
             catch (InvalidOperationException ex)
             {

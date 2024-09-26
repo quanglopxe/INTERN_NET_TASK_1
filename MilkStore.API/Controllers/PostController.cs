@@ -23,17 +23,8 @@ namespace MilkStore.API.Controllers
         [HttpGet()]
         public async Task<IActionResult> GetPost(string? id, string? name, int index = 1, int pageSize = 10)
         {
-            try
-            {
-                BasePaginatedList<PostResponseDTO>? paginatedPosts = await _postService.GetPosts(id, name, index, pageSize);
-                return Ok(BaseResponse<BasePaginatedList<PostResponseDTO>>.OkResponse(paginatedPosts));
-            }
-            catch (BaseException.ErrorException e)
-            {
-
-                return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
-            }
-
+            BasePaginatedList<PostResponseDTO>? paginatedPosts = await _postService.GetPosts(id, name, index, pageSize);
+            return Ok(BaseResponse<BasePaginatedList<PostResponseDTO>>.OkResponse(paginatedPosts));
         }
         [Authorize(Roles = "Staff")]
         [HttpPost()]
@@ -42,24 +33,9 @@ namespace MilkStore.API.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
-            }
-            try
-            {
-                //HttpContext
-                string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if(string.IsNullOrWhiteSpace(userId))
-                {
-                    return BadRequest(new BaseException.BadRequestException("BadRequest", "Vui lòng đăng nhập!"));
-                }
-                await _postService.CreatePost(postModel, userId);
-                return Ok(BaseResponse<string>.OkResponse("Thêm bài viết thành công!"));
-            }
-            catch (BaseException.ErrorException e)
-            {
-
-                return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
-            }
-            
+            }              
+            await _postService.CreatePost(postModel);
+            return Ok(BaseResponse<string>.OkResponse("Thêm bài viết thành công!"));
         }
         [Authorize(Roles = "Staff")]
         [HttpPut("{id}")]
@@ -69,34 +45,15 @@ namespace MilkStore.API.Controllers
             {
                 return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
             }
-            try
-            {
-                string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                await _postService.UpdatePost(id, postModel, userId);
-                return Ok(BaseResponse<string>.OkResponse("Sửa bài viết thành công!"));                
-            }
-            catch (BaseException.ErrorException e)
-            {
-
-                return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
-            }
-            
+            await _postService.UpdatePost(id, postModel);
+            return Ok(BaseResponse<string>.OkResponse("Sửa bài viết thành công!"));                
         }
         [Authorize(Roles = "Staff")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePost(string id)
         {
-            try
-            {
-                await _postService.DeletePost(id);
-                return Ok(BaseResponse<string>.OkResponse("Xóa thành công!"));
-            }
-            catch (BaseException.ErrorException e)
-            {
-
-                return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
-
-            }            
+            await _postService.DeletePost(id);
+            return Ok(BaseResponse<string>.OkResponse("Xóa thành công!"));        
         }
     }
 }
