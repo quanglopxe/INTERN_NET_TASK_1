@@ -76,6 +76,7 @@
 //                        UserID = Guid.Parse(userID)
 //                    };
 //                    await _preOrdersService.CreatePreOrders(preOrdersModelView);
+//                    throw new BaseException.ErrorException(400, "BadRequest", $"Sản phẩm {product.ProductName} không đủ số lượng. Vui lòng kiểm tra email để biết thêm thông tin!");
 //                }
 //                // Kiểm tra xem OrderDetails đã tồn tại hay chưa dựa trên OrderID và ProductID
 //                OrderDetails existingOrderDetail = await _context.OrderDetails
