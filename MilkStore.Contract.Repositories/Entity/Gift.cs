@@ -9,6 +9,6 @@ namespace MilkStore.Contract.Repositories.Entity
         public string GiftName { get; set; }
         public string? ProductId { get; set; }
         public virtual Products Products { get; set; }
-        public virtual ICollection<OrderGift> OrderGifts { get; set; }
+        public virtual ICollection<OrderDetailGift> OrderDetailGifts { get; set; }
     }
 }

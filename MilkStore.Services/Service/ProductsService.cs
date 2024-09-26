@@ -21,25 +21,27 @@ namespace MilkStore.Services.Service
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        public async Task<IEnumerable<ProductsModel>> GetProductsName(string? name)
+        public async Task<IEnumerable<ProductsModel>> GetProductsName(string? ProductdName, string? CategoryName)
         {
-            if (string.IsNullOrEmpty(name))
-            {
-                throw new ArgumentNullException(nameof(name), "Tên sản phẩm không được để trống.");
-            }
             IEnumerable<Products> products = await _unitOfWork.GetRepository<Products>().GetAllAsync();
-
-            products = products.Where(p => p.ProductName.Contains(name, StringComparison.OrdinalIgnoreCase) && p.DeletedTime == null);
-
+            if (CategoryName == null)
+            {
+                products = products.Where(p => p.ProductName.Contains(ProductdName, StringComparison.OrdinalIgnoreCase) && p.DeletedTime == null);
+            }
+            if (ProductdName == null)
+            {
+                string temp = "";
+                IEnumerable<Category> cte = await _unitOfWork.GetRepository<Category>().GetAllAsync();
+                foreach (Category c in cte)
+                {
+                    if (c.CategoryName == CategoryName)
+                    {
+                        temp = c.Id;
+                    }
+                }
+                products = products.Where(p => p.CategoryId.Contains(temp, StringComparison.OrdinalIgnoreCase) && p.DeletedTime == null);
+            }
             return _mapper.Map<IEnumerable<ProductsModel>>(products);
-        }
-        public async Task<BasePaginatedList<Products>> PagingProducts(int pageIndex, int pageSize)
-        {
-            IQueryable<Products> query = _unitOfWork.GetRepository<Products>().Entities;
-            // Sử dụng hàm GetPagging để lấy danh sách phân trang
-            BasePaginatedList<Products> paginatedList = await _unitOfWork.GetRepository<Products>().GetPagging(query, pageIndex, pageSize);
-            //return new BasePaginatedList<T>(items, count, index, pageSize);
-            return paginatedList; // Trả về danh sách phân trang
         }
         public async Task<Products> CreateProducts(ProductsModel productsModel)
         {
@@ -67,32 +69,38 @@ namespace MilkStore.Services.Service
         }
 
 
-        public async Task<IEnumerable<ProductsModel>> GetProducts(string? id)
+        public async Task<BasePaginatedList<ProductsModel>> GetProducts(string? id, int pageIndex, int pageSize)
         {
-            if (id == null)
+            IQueryable<Products> query = _unitOfWork.GetRepository<Products>().Entities;
+
+            // Kiểm tra xem có truyền id hay không
+            if (!string.IsNullOrEmpty(id))
             {
-                // Lấy tất cả sản phẩm
-                IEnumerable<Products> products = await _unitOfWork.GetRepository<Products>().GetAllAsync();
+                // Lấy sản phẩm theo id
+                query = query.Where(p => p.Id == id && p.DeletedTime == null);
 
-                // Lọc sản phẩm có DeleteTime == null
-                products = products.Where(p => p.DeletedTime == null);
-
-                return _mapper.Map<IEnumerable<ProductsModel>>(products);
-            }
-            else
-            {
-                // Lấy sản phẩm theo ID
-                Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id);
-
-                if (product != null && product.DeletedTime == null) // Kiểm tra DeleteTime
+                // Nếu chỉ cần tìm kiếm theo id thì không cần phân trang, trả về 1 kết quả hoặc rỗng
+                var product = await query.FirstOrDefaultAsync();
+                if (product != null)
                 {
-                    return new List<ProductsModel> { _mapper.Map<ProductsModel>(product) };
+                    var productModel = _mapper.Map<ProductsModel>(product);
+                    return new BasePaginatedList<ProductsModel>(new List<ProductsModel> { productModel }, 1, 1, 1); // Chỉ trả về 1 sản phẩm
                 }
                 else
                 {
-                    return new List<ProductsModel>();
+                    return new BasePaginatedList<ProductsModel>(new List<ProductsModel>(), 0, pageIndex, pageSize); // Trả về rỗng
                 }
             }
+
+            // Nếu không có id thì lấy tất cả sản phẩm và áp dụng phân trang
+            query = query.Where(p => p.DeletedTime == null);
+
+            // Lấy danh sách phân trang
+            BasePaginatedList<Products> paginatedList = await _unitOfWork.GetRepository<Products>().GetPagging(query, pageIndex, pageSize);
+
+            // Ánh xạ sang ProductsModel và trả về kết quả phân trang
+            var productsModel = _mapper.Map<IEnumerable<ProductsModel>>(paginatedList.Items);
+            return new BasePaginatedList<ProductsModel>(productsModel.ToList(), paginatedList.TotalPages, pageIndex, pageSize);
         }
 
 
