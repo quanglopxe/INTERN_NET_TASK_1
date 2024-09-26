@@ -15,14 +15,13 @@ namespace MilkStore.Contract.Repositories.Entity
     public class Review : BaseEntity
     {
         public required Guid UserID { get; set; }
+        public required string OrderDetailID { get; set; }
         public required string ProductsID { get; set; }
         public required string OrderID { get; set; }        
         [Range(1, 5, ErrorMessage = "Đánh giá từ 1 đến 5 sao")]
         public required int Rating { get; set; }
-        public string? Comment { get; set; }        
-        public virtual Order Order { get; set; }
-        public virtual OrderDetails OrderDetails { get; set; }
-        public virtual Products Products { get; set; }
+        public string? Comment { get; set; }                
+        public virtual OrderDetails OrderDetails { get; set; }        
         public virtual ApplicationUser User { get; set; }
     }
 }
