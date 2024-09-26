@@ -1,14 +1,18 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.PreOrdersModelView;
 using MilkStore.Repositories.Context;
+using MilkStore.Repositories.Entity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,32 +21,58 @@ namespace MilkStore.Services.Service
     public class PreOrdersService : IPreOrdersService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly DatabaseContext _context;
+        private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
-        public PreOrdersService(DatabaseContext context, IUnitOfWork unitOfWork, IMapper mapper)
-        {
-            _context = context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IUserService _userService;
+        public PreOrdersService(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService, IHttpContextAccessor httpContextAccessor, IUserService userService)
+        {            
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _emailService = emailService;
+            _httpContextAccessor = httpContextAccessor;
+            _userService = userService;
         }
 
-        public async Task<PreOrders> CreatePreOrders(PreOrdersModelView preOrdersModel)
+        public async Task CreatePreOrders(PreOrdersModelView preOrdersModel)
         {
             var product = await _unitOfWork.GetRepository<Products>()
                 .Entities
                 .FirstOrDefaultAsync(p => p.Id == preOrdersModel.ProductID);
 
-            if (product == null || product.QuantityInStock > 0)
+            if (product == null)
             {
-                throw new InvalidOperationException("Không thể tạo Pre-order vì sản phẩm còn tồn kho.");
+                throw new KeyNotFoundException($"Product with ID {preOrdersModel.ProductID} was not found.");                
             }
 
             PreOrders newPreOrder = _mapper.Map<PreOrders>(preOrdersModel);
             newPreOrder.CreatedTime = DateTime.UtcNow;
             await _unitOfWork.GetRepository<PreOrders>().InsertAsync(newPreOrder);
             await _unitOfWork.SaveAsync();
+            
+            string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;              
+            var user = await _userService.GetUser(userID);
+            if (!user.Any())
+            {
+                   throw new KeyNotFoundException($"User with ID {userID} was not found.");
+            }
+            string toEmail = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Email).Value;
+            string subject = "Xác nhận đặt hàng trước";
+            string body = $@"
+                Xin chào {user.FirstOrDefault().UserName},
 
-            return newPreOrder;
+                Cảm ơn bạn đã đặt hàng sản phẩm {product.ProductName}. 
+                Sản phẩm bạn đặt hàng hiện đang hết hàng. Chúng tôi sẽ thông báo cho bạn ngay khi sản phẩm có sẵn trong kho.                
+
+                Thông tin đơn hàng:
+                - Mã sản phẩm: {product.Id}
+                - Tên sản phẩm: {product.ProductName}
+                - Số lượng đặt trước: {preOrdersModel.Quantity}
+    
+                Trân trọng,
+                Đội ngũ MilkStore";
+
+            await _emailService.SendEmailAsync(toEmail, subject, body);
         }
 
         public async Task DeletePreOrders(string id)
