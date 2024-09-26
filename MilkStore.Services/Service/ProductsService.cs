@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core;
+using MilkStore.Core.Utils;
 using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.Repositories.Context;
 
@@ -94,25 +96,43 @@ namespace MilkStore.Services.Service
         }
 
 
+        private async Task UpdatePreOrdersDeletedTime(string productId)
+        {
+            var preOrders = await _unitOfWork.GetRepository<PreOrders>()
+                .Entities
+                .Where(p => p.ProductID == productId && p.DeletedTime == null)
+                .ToListAsync();
 
+            foreach (var preOrder in preOrders)
+            {
+                preOrder.DeletedTime = CoreHelper.SystemTimeNow;
+                await _unitOfWork.GetRepository<PreOrders>().UpdateAsync(preOrder);
+            }
+
+            await _unitOfWork.SaveAsync();
+        }
 
         public async Task<Products> UpdateProducts(string id, ProductsModel productsModel)
         {
-            Products existingProduct = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id);
-
-            if (existingProduct == null)
+            Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id);
+            if (product == null)
             {
-                throw new Exception("Sản phẩm không tồn tại.");
+                throw new KeyNotFoundException($"Sản phẩm với ID {id} không tồn tại.");
             }
+            var oldQuantityInStock = product.QuantityInStock;
 
-            // Cập nhật thông tin sản phẩm bằng cách ánh xạ từ DTO
-            _mapper.Map(productsModel, existingProduct);
-            existingProduct.LastUpdatedTime = DateTime.UtcNow;
+            _mapper.Map(productsModel, product);
+            product.LastUpdatedTime = CoreHelper.SystemTimeNow;
 
-            await _unitOfWork.GetRepository<Products>().UpdateAsync(existingProduct);
+            await _unitOfWork.GetRepository<Products>().UpdateAsync(product);
             await _unitOfWork.SaveAsync();
 
-            return existingProduct;
+            if (product.QuantityInStock > 0 && oldQuantityInStock <= 0)
+            {
+                //Tự động xóa Pre-order khi số lượng sản phẩm > 0
+                await UpdatePreOrdersDeletedTime(product.Id);
+            }
+            return product;
         }
     }
 }
