@@ -13,6 +13,7 @@ using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.VoucherModelViews;
 using MilkStore.ModelViews.GiftModelViews;
 using MilkStore.ModelViews.OrderGiftModelViews;
+using MilkStore.ModelViews.AuthModelViews;
 
 
 namespace MilkStore.Services.Mapping
@@ -23,7 +24,7 @@ namespace MilkStore.Services.Mapping
         public MappingProfile()
         {
 
-            CreateMap<ApplicationUser, LoginGoogleModel>().ReverseMap();
+            CreateMap<ApplicationUser, RegisterModelView>().ReverseMap();
 
 
             CreateMap<Gift, GiftModel>().ReverseMap();

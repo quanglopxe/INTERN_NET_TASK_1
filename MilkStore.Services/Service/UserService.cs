@@ -7,6 +7,7 @@ using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core;
 using MilkStore.Core.Base;
+using MilkStore.Core.Constants;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.ModelViews.ResponseDTO;
@@ -31,107 +32,7 @@ namespace MilkStore.Services.Service
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        public async Task GetUserByEmailToRegister(string email)
-        {
-            ApplicationUser? user = await userManager.FindByNameAsync(email);
-            if (user != null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "Email đã tồn tại!");
-            }
-        }
-        public async Task<(string token, string userId)> CreateUser(RegisterModelView userModel)
-        {
-            ApplicationUser? newUser = new ApplicationUser
-            {
-                UserName = userModel.Email,
-                Email = userModel.Email,
-                PhoneNumber = userModel.PhoneNumber
-            };
 
-            IdentityResult? result = await userManager.CreateAsync(newUser, userModel.Password);
-            if (result.Succeeded)
-            {
-                bool roleExist = await roleManager.RoleExistsAsync("Member");
-                if (!roleExist)
-                {
-                    await roleManager.CreateAsync(new ApplicationRole { Name = "Member" });
-                }
-                await userManager.AddToRoleAsync(newUser, "Member");
-                string token = await CreateToken(newUser);
-                return (token, newUser.Id.ToString());
-            }
-            else
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.ServerError, "InternalServerError", $"Lỗi khi tạo người dùng {result.Errors.FirstOrDefault()?.Description}");
-            }
-        }
-
-        private async Task<string> CreateToken(ApplicationUser user)
-        {
-            return await userManager.GenerateEmailConfirmationTokenAsync(user);
-        }
-        public async Task<(ApplicationUser user, string token)> ResendConfirmationEmail(string email)
-        {
-            ApplicationUser? user = await userManager.FindByEmailAsync(email) ??
-                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, "NotFound", "Không tìm thấy người dùng");
-            if (await userManager.IsEmailConfirmedAsync(user))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "Email đã được xác nhận");
-            }
-            string token = await CreateToken(user);
-            return (user, token);
-        }
-        public async Task ConfirmEmail(string email, string token)
-        {
-            ApplicationUser? user = await userManager.FindByEmailAsync(email) ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "Người dùng không tồn tại.");
-            IdentityResult? result = await userManager.ConfirmEmailAsync(user, token);
-            if (!result.Succeeded)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", result.ToString());
-            }
-        }
-        public async Task<ApplicationUser> CreateUserLoginGoogle(LoginGoogleModel loginGoogleModel)
-        {
-            ApplicationUser? user = await userManager.FindByEmailAsync(loginGoogleModel.Gmail);
-            if (user is not null)
-            {
-                if (user.DeletedTime.HasValue)
-                {
-                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "Tài khoản đã bị xóa");
-                }
-                else
-                {
-                    return user;
-                }
-            }
-            else
-            {
-                ApplicationUser? newUser = _mapper.Map<ApplicationUser>(loginGoogleModel);
-                newUser.UserName = loginGoogleModel.Gmail;
-                IdentityResult? result = await userManager.CreateAsync(newUser);
-                if (result.Succeeded)
-                {
-                    string roleName = "Member";
-                    bool roleExist = await roleManager.RoleExistsAsync(roleName);
-                    if (!roleExist)
-                    {
-                        await roleManager.CreateAsync(new ApplicationRole { Name = roleName });
-                    }
-                    await userManager.AddToRoleAsync(newUser, roleName);
-                    UserLoginInfo? userInfoLogin = new("Google", loginGoogleModel.ProviderKey, "Google");
-                    IdentityResult loginResult = await userManager.AddLoginAsync(newUser, userInfoLogin);
-                    if (!loginResult.Succeeded)
-                    {
-                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.ServerError, "InternalServerError", $"Lỗi khi tạo người dùng {loginResult.Errors.FirstOrDefault()?.Description}");
-                    }
-                }
-                else
-                {
-                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.ServerError, "InternalServerError", $"Lỗi khi tạo người dùng {result.Errors.FirstOrDefault()?.Description}");
-                }
-                return newUser;
-            }
-        }
         // Cập nhật thông tin người dùng
         public async Task<ApplicationUser> UpdateUser(Guid id, UserModelView userModel, string updatedBy)
         {
@@ -164,14 +65,14 @@ namespace MilkStore.Services.Service
         {
             if (string.IsNullOrWhiteSpace(userId.ToString()))
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "User ID cannot be null, empty, or contain only whitespace.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "User ID cannot be null, empty, or contain only whitespace.");
             }
             var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "User does not exist or has already been deleted.");
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "User does not exist or has already been deleted.");
 
             if (user.DeletedTime.HasValue)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "User does not exist or has already been deleted.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "User does not exist or has already been deleted.");
             }
 
 
