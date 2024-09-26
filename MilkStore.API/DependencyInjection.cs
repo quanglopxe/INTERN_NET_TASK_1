@@ -7,13 +7,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MilkStore.Contract.Repositories.Entity;
-using MilkStore.Contract.Services.Interface;
+using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
 using MilkStore.Services;
 using MilkStore.Services.EmailSettings;
 using MilkStore.Services.Mapping;
-using MilkStore.Services.Service;
 
 namespace MilkStore.API
 {
@@ -25,6 +24,7 @@ namespace MilkStore.API
             services.AddConfigTimeToken();
             services.AddCorsConfig();
             services.AddSwaggerUIAuthentication();
+            services.AddMemoryCache();
             services.AddDatabase(configuration);
             services.AddIdentity();
             services.AddInfrastructure(configuration);
@@ -80,8 +80,7 @@ namespace MilkStore.API
         }
         public static void AddServices(this IServiceCollection services)
         {
-            services.AddScoped<TestService>();
-            // services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IAuthService, AuthService>();
             // services.AddScoped<IUserService, UserService>();
             // services.AddScoped<IPostService, PostService>();
             // services.AddScoped<IOrderService, OrderService>();
@@ -93,7 +92,7 @@ namespace MilkStore.API
             // services.AddScoped<ICategoryService, CategoryService>();
             // services.AddScoped<IGiftService, GiftService>();
             // services.AddScoped<IOrderGiftService, OrderGiftService>();
-            // services.AddScoped<EmailService>();
+            services.AddScoped<EmailService>();
 
             services.AddHttpContextAccessor();
         }
