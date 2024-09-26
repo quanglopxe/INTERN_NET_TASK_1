@@ -95,7 +95,7 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
         }
 
-        public async Task<IEnumerable<Review>> GetReviews(string? id, int page, int pageSize)
+        public async Task<IEnumerable<ReviewsModel>> GetReviews(string? id, int page, int pageSize)
         {
             if (id == null)
             {
@@ -108,8 +108,7 @@ namespace MilkStore.Services.Service
                 var paginated = await _unitOfWork.GetRepository<Review>()
                 .GetPagging(query, page, pageSize);
 
-                return paginated.Items;
-
+                return _mapper.Map<IEnumerable<ReviewsModel>>(paginated.Items);
             }
             else
             {
@@ -120,9 +119,8 @@ namespace MilkStore.Services.Service
                 {
                     throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"No reviews found for {id}!!");
                 }
-                return _mapper.Map<List<Review>>(review);
+                return _mapper.Map<List<ReviewsModel>>(new List<Review> { review});
             }
-
         }
 
         public async Task<Review> UpdateReviews(string id, ReviewsModel reviewsModel)

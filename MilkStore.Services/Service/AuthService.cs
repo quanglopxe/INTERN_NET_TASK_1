@@ -15,19 +15,20 @@ using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Services.EmailSettings;
 using Microsoft.Extensions.Caching.Memory;
 using Google.Apis.Auth;
+using MilkStore.Contract.Services.Interface;
 public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> userManager;
     private readonly SignInManager<ApplicationUser> signInManager;
     private readonly RoleManager<ApplicationRole> roleManager;
-    private readonly EmailService emailService;
+    private readonly IEmailService emailService;
     private readonly IMapper mapper;
     private readonly IMemoryCache memoryCache;
     private readonly IHttpContextAccessor httpContextAccessor;
 
     public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
           IMapper mapper, IHttpContextAccessor httpContextAccessor,
-          RoleManager<ApplicationRole> roleManager, EmailService emailService, IMemoryCache memoryCache)
+          RoleManager<ApplicationRole> roleManager, IEmailService emailService, IMemoryCache memoryCache)
     {
         this.userManager = userManager;
         this.signInManager = signInManager;
