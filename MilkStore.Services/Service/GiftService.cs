@@ -3,6 +3,8 @@ using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core;
+using MilkStore.Core.Base;
+using MilkStore.Core.Constants;
 using MilkStore.ModelViews.GiftModelViews;
 using MilkStore.Repositories.Context;
 
@@ -19,9 +21,12 @@ namespace MilkStore.Services.Service
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        public async Task<Gift> CreateGift(GiftModel GiftModel)
+        public async Task CreateGift(GiftModel GiftModel)
         {
-
+            if(GiftModel.Id.Contains(" "))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
+            }    
             Gift newGift = _mapper.Map<Gift>(GiftModel);
             if (newGift.Id == "")
             {
@@ -31,23 +36,23 @@ namespace MilkStore.Services.Service
 
             await _unitOfWork.GetRepository<Gift>().InsertAsync(newGift);
             await _unitOfWork.SaveAsync();
-
-            return newGift;
         }
 
-        public async Task<Gift> DeleteGift(object id)
+        public async Task DeleteGift(string id)
         {
+            if(string.IsNullOrWhiteSpace(id))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
+            }    
             Gift Gift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(id);
 
             if (Gift.DeletedTime != null)
             {
-                throw new Exception($"Mã quà tặng đã được xóa:{id}");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
             }
             Gift.DeletedTime = DateTime.UtcNow;
             await _unitOfWork.GetRepository<Gift>().UpdateAsync(Gift);
             await _unitOfWork.SaveAsync();
-
-            return Gift;
         }
 
         public async Task<IEnumerable<GiftModel>> GetGift(string? id)
@@ -87,13 +92,17 @@ namespace MilkStore.Services.Service
             return paginatedList; // Trả về danh sách phân trang
         }
 
-        public async Task<Gift> UpdateGift(string id, GiftModel GiftModel)
+        public async Task UpdateGift(string id, GiftModel GiftModel)
         {
+            if(string.IsNullOrWhiteSpace(id))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
+            }    
             Gift existingGift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(id);
 
             if (existingGift == null)
             {
-                throw new Exception("Sản phẩm không tồn tại.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
             }
 
             // Cập nhật thông tin sản phẩm bằng cách ánh xạ từ DTO
@@ -102,8 +111,6 @@ namespace MilkStore.Services.Service
 
             await _unitOfWork.GetRepository<Gift>().UpdateAsync(existingGift);
             await _unitOfWork.SaveAsync();
-
-            return existingGift;
         }
     }
 }

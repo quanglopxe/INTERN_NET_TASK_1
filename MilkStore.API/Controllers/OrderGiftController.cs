@@ -39,63 +39,31 @@ namespace MilkStore.API.Controllers
             }
         }
 
-
-
-        //[HttpGet("GetPagging")]
-        ////[Authorize(Roles = "Admin,Member")]
-        //public async Task<IActionResult> Paging(int index, int size)
-        //{
-        //    BasePaginatedList<Gift> paging = await _OGiftService.PagingGift(index, size);
-        //    return Ok(paging);
-        //}
-
         [HttpPost()]
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateOrderGift(OrderGiftModel OrderGiftModel)
         {
-            //if (!ModelState.IsValid)
-            //{
-            //    return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
-            //}
 
-            OrderGift Gift = await _OGiftService.CreateOrderGift(OrderGiftModel);
-            return Ok(BaseResponse<OrderGift>.OkResponse(Gift));
+            await _OGiftService.CreateOrderGift(OrderGiftModel);
+            return Ok(BaseResponse<string>.OkResponse("Added successfully"));
         }
 
         [HttpPut("{id}")]
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateOrderGift(string id, [FromBody] OrderGiftModel OrderGiftModel)
         {
-            if (!ModelState.IsValid)
-            {
-                return NotFound("Sản phẩm không tồn tại!!!");
-            }
-
-            try
-            {
-                OrderGift updatedProduct = await _OGiftService.UpdateOrderGift(id, OrderGiftModel);
-                await _OGiftService.SendMail_OrderGift(id);
-                return Ok(updatedProduct);
-            }
-            catch (Exception ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
+            await _OGiftService.UpdateOrderGift(id, OrderGiftModel);
+            return Ok(BaseResponse<string>.OkResponse("Updated successfully"));
+            
         }
 
         [HttpDelete("{id}")]
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteOrderGift(string id)
         {
-            try
-            {
-                OrderGift deletedProduct = await _OGiftService.DeleteOrderGift(id);
-                return Ok(deletedProduct); // Trả về sản phẩm đã bị xóa
-            }
-            catch (Exception ex)
-            {
-                return NotFound("Sản phẩm không tồn tại!!!"); // Trả về 404 nếu sản phẩm không tồn tại
-            }
+            await _OGiftService.DeleteOrderGift(id);
+            return Ok(BaseResponse<string>.OkResponse("Deleted successfully"));
         }
+
     }
 }

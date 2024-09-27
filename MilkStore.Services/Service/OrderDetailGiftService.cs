@@ -5,6 +5,7 @@ using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
+using MilkStore.Core.Constants;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.GiftModelViews;
 using MilkStore.ModelViews.OrderDetailGiftModelView;
@@ -31,8 +32,11 @@ namespace MilkStore.Services.Service
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        public async Task<OrderDetailGift> CreateOrderDetailGift(OrderDetailGiftModel orderDetailGiftModel)
+        public async Task CreateOrderDetailGift(OrderDetailGiftModel orderDetailGiftModel)
         {
+            if (orderDetailGiftModel.id.Contains(" ")) {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
+            }
             OrderDetailGift newOrderDetailGift = _mapper.Map<OrderDetailGift>(orderDetailGiftModel);
             IEnumerable<OrderDetailGift> newODG = await _unitOfWork.GetRepository<OrderDetailGift>().GetAllAsync();
             //Gift gift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(newOrderDetailGift.GiftId);
@@ -52,7 +56,6 @@ namespace MilkStore.Services.Service
                         newOrderDetailGift1.LastUpdatedTime = DateTime.UtcNow;
                         await _unitOfWork.GetRepository<OrderDetailGift>().UpdateAsync(newOrderDetailGift1);
                         await _unitOfWork.SaveAsync();
-                        return newOrderDetailGift1;
                     }
 
                 }
@@ -69,7 +72,6 @@ namespace MilkStore.Services.Service
             // Thêm mới vào cơ sở dữ liệu
             await _unitOfWork.GetRepository<OrderDetailGift>().InsertAsync(newOrderDetailGift);
             await _unitOfWork.SaveAsync();
-            return newOrderDetailGift;
         }
 
         //public async Task<OrderDetailGift> Check_PointGift(OrderDetailGiftModel orderDetailGiftModel)
@@ -86,27 +88,24 @@ namespace MilkStore.Services.Service
         //    }
         //    return og;
         //}
-        public async Task<OrderDetailGift> DeleteOrderDetailGift(object id)
+        public async Task DeleteOrderDetailGift(string id)
         {
-            try
+            if(string.IsNullOrWhiteSpace(id))
             {
-                // Lấy OrderDetailGift hiện tại từ cơ sở dữ liệu
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
+            }    
                 OrderDetailGift existingOrderDetailGift = await _unitOfWork.GetRepository<OrderDetailGift>().GetByIdAsync(id);
-                if (existingOrderDetailGift == null)
-                    //throw new BaseException.ErrorException(400, "Bad Request", "Không tồn tại id!!!");
+            if (existingOrderDetailGift == null)
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
+            }    
+                //throw new BaseException.ErrorException(400, "Bad Request", "Không tồn tại id!!!");
 
                 // Đánh dấu là đã xóa
                 existingOrderDetailGift.DeletedTime = DateTime.UtcNow;
 
-                await _unitOfWork.GetRepository<OrderDetailGift>().UpdateAsync(existingOrderDetailGift);
-                await _unitOfWork.SaveAsync();
-
-                return existingOrderDetailGift;
-            }
-            catch (BaseException.ErrorException e)
-            {
-                throw new Exception($"Error");
-            }
+            await _unitOfWork.GetRepository<OrderDetailGift>().UpdateAsync(existingOrderDetailGift);
+            await _unitOfWork.SaveAsync();
         }
 
         public async Task<IEnumerable<OrderDetailGiftModel>> GetOrderDetailGift(string? id)
@@ -138,13 +137,17 @@ namespace MilkStore.Services.Service
         }
 
 
-        public async Task<OrderDetailGift> UpdateOrderDetailGift(string id, OrderDetailGiftModel OrderDetailGiftModel)
+        public async Task UpdateOrderDetailGift(string id, OrderDetailGiftModel OrderDetailGiftModel)
         {
+            if(OrderDetailGiftModel.id.Contains(" "))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
+            }    
             OrderDetailGift existingGift = await _unitOfWork.GetRepository<OrderDetailGift>().GetByIdAsync(id);
 
             if (existingGift == null)
             {
-                throw new Exception("Sản phẩm không tồn tại.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
             }
 
             // Cập nhật thông tin sản phẩm bằng cách ánh xạ từ DTO
@@ -153,8 +156,6 @@ namespace MilkStore.Services.Service
 
             await _unitOfWork.GetRepository<OrderDetailGift>().UpdateAsync(existingGift);
             await _unitOfWork.SaveAsync();
-
-            return existingGift;
         }
     }
 }

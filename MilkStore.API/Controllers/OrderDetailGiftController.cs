@@ -35,56 +35,25 @@ namespace MilkStore.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateOrderDetailGift([FromBody] OrderDetailGiftModel orderDetailGiftModel)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                var createdGift = await _orderDetailGiftService.CreateOrderDetailGift(orderDetailGiftModel);
-
-                return CreatedAtAction(nameof(GetOrderDetailGift), new { id = createdGift.Id }, createdGift);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            await _orderDetailGiftService.CreateOrderDetailGift(orderDetailGiftModel);
+            return Ok(BaseResponse<string>.OkResponse("Added successfully"));
+            
         }
 
         // PUT: api/OrderDetailGift/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateOrderDetailGift(string id, [FromBody] OrderDetailGiftModel orderDetailGiftModel)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                var updatedGift = await _orderDetailGiftService.UpdateOrderDetailGift(id, orderDetailGiftModel);
-                return Ok(updatedGift);
-            }
-            catch (Exception ex)
-            {
-                return NotFound(ex.Message);
-            }
+            await _orderDetailGiftService.UpdateOrderDetailGift(id, orderDetailGiftModel);
+            return Ok(BaseResponse<string>.OkResponse("Updated successfully"));
         }
 
         // DELETE: api/OrderDetailGift/{id}
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteOrderDetailGift(object id)
+        public async Task<IActionResult> DeleteOrderDetailGift(string id)
         {
-            try
-            {
-                var deletedGift = await _orderDetailGiftService.DeleteOrderDetailGift(id);
-                return Ok(deletedGift);
-            }
-            catch (Exception ex)
-            {
-                return NotFound(ex.Message);
-            }
+            await _orderDetailGiftService.DeleteOrderDetailGift(id);
+            return Ok(BaseResponse<string>.OkResponse("Deleted successfully"));
         }
     }
 
