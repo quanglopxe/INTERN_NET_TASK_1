@@ -51,7 +51,7 @@ namespace MilkStore.Services.Service
                 {
                     Order ord = await _unitOfWork.GetRepository<Order>().Entities
                         .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
-                        ?? throw new KeyNotFoundException($"Order với ID {id} không tìm thấy hoặc đã bị xóa.");
+                        ?? throw new KeyNotFoundException($"Order with ID  {id}  not found or has already been deleted.");
                     return new List<OrderResponseDTO> { MapToOrderResponseDto(ord) };
                 }
             }
@@ -65,7 +65,7 @@ namespace MilkStore.Services.Service
             {
                 // Log lỗi không mong muốn và trả về lỗi
                 // Tránh để lộ lỗi chi tiết cho phía client
-                throw new ApplicationException("Đã xảy ra lỗi khi xử lý yêu cầu của bạn.", ex);
+                throw new ApplicationException("An error occurred while processing your request.", ex);
             }
         }
 
@@ -103,7 +103,7 @@ namespace MilkStore.Services.Service
             {
                 // Log lỗi không mong muốn và trả về lỗi
                 // Tránh để lộ lỗi chi tiết cho phía client
-                throw new ApplicationException("Đã xảy ra lỗi khi xử lý yêu cầu của bạn.", ex);
+                throw new ApplicationException("An error occurred while processing your request.", ex);
             }
         }
 
@@ -114,7 +114,7 @@ namespace MilkStore.Services.Service
                 // Lấy đối tượng hiện tại từ cơ sở dữ liệu
                 Order orderss = await _unitOfWork.GetRepository<Order>().Entities
                     .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
-                    ?? throw new KeyNotFoundException($"Order với ID {id} không tìm thấy hoặc đã bị xóa.");
+                    ?? throw new KeyNotFoundException($"Order with ID  {id}  not found or has already been deleted.");
 
                 // Sử dụng AutoMapper để ánh xạ những thay đổi
                 _mapper.Map(ord, orderss);  // Chỉ ánh xạ những thuộc tính có giá trị khác biệt
@@ -144,7 +144,7 @@ namespace MilkStore.Services.Service
             {
                 // Log lỗi không mong muốn và trả về lỗi
                 // Tránh để lộ lỗi chi tiết cho phía client
-                throw new ApplicationException("Đã xảy ra lỗi khi xử lý yêu cầu của bạn.", ex);
+                throw new ApplicationException("An error occurred while processing your request.", ex);
             }
         }
 
@@ -156,7 +156,7 @@ namespace MilkStore.Services.Service
             {
                 Order ord = await _unitOfWork.GetRepository<Order>().Entities
                 .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
-                ?? throw new KeyNotFoundException($"Order với ID {id} không tìm thấy hoặc đã bị xóa.");
+                ?? throw new KeyNotFoundException($"Order with ID {id} not found or has already been deleted.");
                 List<OrderDetails> lstOrd = await _unitOfWork.GetRepository<OrderDetails>().Entities
                     .Where(ordt => ordt.OrderID == id && !ordt.DeletedTime.HasValue).ToListAsync();
                 ord.TotalAmount = lstOrd.Sum(o => o.TotalAmount);
@@ -195,7 +195,7 @@ namespace MilkStore.Services.Service
             {
                 // Log lỗi không mong muốn và trả về lỗi
                 // Tránh để lộ lỗi chi tiết cho phía client
-                throw new ApplicationException("Đã xảy ra lỗi khi xử lý yêu cầu của bạn.", ex);
+                throw new ApplicationException("An error occurred while processing your request.", ex);
             }
         }
 
@@ -205,16 +205,16 @@ namespace MilkStore.Services.Service
             {
                 Order orderss = await _unitOfWork.GetRepository<Order>().Entities
                     .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
-                    ?? throw new KeyNotFoundException($"Order với ID {id} không tìm thấy hoặc đã bị xóa");
+                    ?? throw new KeyNotFoundException($"Order with ID {id} not found or has already been deleted.");
 
                 // Kiểm tra sự tồn tại của Voucher
                 Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
                         .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
-                        ?? throw new KeyNotFoundException($"Voucher với ID {voucherId} không tồn tại.");
+                        ?? throw new KeyNotFoundException($"Voucher with ID {voucherId} not found.");
 
                 if (vch.ExpiryDate < orderss.OrderDate)
                 {
-                    throw new KeyNotFoundException($"Voucher đã hết thời hạn áp dụng.");
+                    throw new KeyNotFoundException($"The voucher has expired.");
                 }
                 vch.UsedCount++;
                 await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
@@ -234,7 +234,7 @@ namespace MilkStore.Services.Service
             {
                 // Log lỗi không mong muốn và trả về lỗi
                 // Tránh để lộ lỗi chi tiết cho phía client
-                throw new ApplicationException("Đã xảy ra lỗi khi xử lý yêu cầu của bạn.", ex);
+                throw new ApplicationException("An error occurred while processing your request.", ex);
             }
         }
 
@@ -244,7 +244,18 @@ namespace MilkStore.Services.Service
             {
                 Order orderss = await _unitOfWork.GetRepository<Order>().Entities
                     .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
-                    ?? throw new KeyNotFoundException($"Order với ID {id} không tìm thấy hoặc đã bị xóa");
+                    ?? throw new KeyNotFoundException($"Order with ID  {id}  not found or has already been deleted.");
+
+                // Kiểm tra xem Order này có bất kỳ OrderDetails nào liên kết không
+                bool hasOrderDetails = await _unitOfWork.GetRepository<OrderDetails>().Entities
+                    .AnyAsync(od => od.OrderID == id);
+
+                if (hasOrderDetails)
+                {
+                    // Trả về thông báo lỗi nếu tồn tại OrderDetails
+                    throw new InvalidOperationException($"Order with ID {id} is linked to OrderDetails and cannot be deleted.");
+                }
+
                 orderss.DeletedTime = CoreHelper.SystemTimeNow;
                 await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
                 await _unitOfWork.SaveAsync();
@@ -259,7 +270,7 @@ namespace MilkStore.Services.Service
             {
                 // Log lỗi không mong muốn và trả về lỗi
                 // Tránh để lộ lỗi chi tiết cho phía client
-                throw new ApplicationException("Đã xảy ra lỗi khi xử lý yêu cầu của bạn.", ex);
+                throw new ApplicationException("An error occurred while processing your request.", ex);
             }
         }
 
