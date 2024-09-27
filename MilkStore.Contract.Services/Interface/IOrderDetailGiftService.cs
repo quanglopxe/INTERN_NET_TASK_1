@@ -10,9 +10,9 @@ namespace MilkStore.Contract.Services.Interface
 {
     public interface IOrderDetailGiftService
     {
-        Task<OrderDetailGift> CreateOrderDetailGift(OrderDetailGiftModel orderDetailGiftModel);
+        Task CreateOrderDetailGift(OrderDetailGiftModel orderDetailGiftModel);
         Task<IEnumerable<OrderDetailGiftModel>> GetOrderDetailGift(string? id);
-        Task<OrderDetailGift> UpdateOrderDetailGift(string id, OrderDetailGiftModel OrderDetailGiftModel);
-        Task<OrderDetailGift> DeleteOrderDetailGift(object id);
+        Task UpdateOrderDetailGift(string id, OrderDetailGiftModel OrderDetailGiftModel);
+        Task DeleteOrderDetailGift(string id);
     }
 }

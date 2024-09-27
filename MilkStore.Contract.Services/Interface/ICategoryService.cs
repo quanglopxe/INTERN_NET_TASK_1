@@ -12,9 +12,8 @@ namespace MilkStore.Contract.Services.Interface
     public interface ICategoryService
     {
         Task<IEnumerable<CategoryModel>> GetCategory(string? id);
-        Task<Category> CreateCategory(CategoryModel CategoryModel);
-        Task<Category> UpdateCategory(string id, CategoryModel CategoryModel);
-        Task<Category> DeleteCategory(object id);
-        Task<BasePaginatedList<Category>> PagingCategory(int page, int pageSize);
+        Task CreateCategory(CategoryModel CategoryModel);
+        Task UpdateCategory(string id, CategoryModel CategoryModel);
+        Task DeleteCategory(string id);
     }
 }
