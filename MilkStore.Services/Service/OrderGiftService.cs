@@ -24,8 +24,8 @@ namespace MilkStore.Services.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly DatabaseContext context;
         private readonly IMapper _mapper;
-        private readonly EmailService _emailService;
-        public OrderGiftService(DatabaseContext context, IUnitOfWork unitOfWork, IMapper mapper, EmailService mailService)
+        private readonly IEmailService _emailService;
+        public OrderGiftService(DatabaseContext context, IUnitOfWork unitOfWork, IMapper mapper, IEmailService mailService)
         {
             this.context = context;
             _unitOfWork = unitOfWork;

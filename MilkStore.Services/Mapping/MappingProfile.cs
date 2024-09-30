@@ -32,8 +32,8 @@ namespace MilkStore.Services.Mapping
             CreateMap<Gift, GiftModel>().ReverseMap();
             CreateMap<OrderGift, OrderGiftModel>().ReverseMap();
 
-            CreateMap<Category, CategoryModel>();
             CreateMap<CategoryModel, Category>();
+            CreateMap<Category, CategoryResponseDTO>();
 
             #region Post
             CreateMap<PostModelView, Post>();
