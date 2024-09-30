@@ -78,6 +78,7 @@ namespace MilkStore.Services.Mapping
             CreateMap<PreOrders, PreOrdersModelView>().ReverseMap();
 
             CreateMap<Voucher, VoucherModelView>().ReverseMap();
+            CreateMap<Voucher, VoucherResponseDTO>();
         }
     }
 }

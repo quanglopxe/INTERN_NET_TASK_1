@@ -169,16 +169,13 @@ namespace MilkStore.API.Controllers
                 {
                     return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
                 }
-
                 // Call the regular update method
                 await _orderService.UpdateAsync(id, item);
-
-                // If status is "In Delivery", deduct stock
-                if (item.Status == "In Delivery")
+                // If status is "Confirmed", deduct stock
+                if (item.Status == "Confirmed")
                 {
                     await _orderService.DeductStockOnDelivery(id);
                 }
-
                 return Ok(new { message = "Update Order thành công" });
             }
             catch (ArgumentException ex)
