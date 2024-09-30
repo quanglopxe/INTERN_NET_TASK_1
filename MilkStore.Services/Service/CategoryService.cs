@@ -7,6 +7,7 @@ using MilkStore.Core.Base;
 using MilkStore.Core.Constants;
 using MilkStore.ModelViews.CategoryModelViews;
 using MilkStore.ModelViews.ProductsModelViews;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.Repositories.Context;
 
 namespace MilkStore.Services.Service
@@ -23,15 +24,7 @@ namespace MilkStore.Services.Service
             _mapper = mapper;
         }
         public async Task CreateCategory(CategoryModel CategoryModel)
-        {
-            if (CategoryModel.Id.Contains(" "))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
-            }
-            if (CategoryModel.Id == "" || CategoryModel.Id == null)
-            {
-                CategoryModel.Id = Guid.NewGuid().ToString("N");
-            }
+        {                        
             Category newCategory = _mapper.Map<Category>(CategoryModel);
             newCategory.CreatedTime = DateTime.UtcNow;
 
@@ -56,7 +49,7 @@ namespace MilkStore.Services.Service
         }
 
 
-        public async Task<IEnumerable<CategoryModel>> GetCategory(string? id)
+        public async Task<IEnumerable<CategoryResponseDTO>> GetCategory(string? id)
         {
             if (id == null)
             {
@@ -66,7 +59,7 @@ namespace MilkStore.Services.Service
                 // Lọc sản phẩm có DeleteTime == null
                 Category = Category.Where(p => p.DeletedTime == null);
 
-                return _mapper.Map<IEnumerable<CategoryModel>>(Category);
+                return _mapper.Map<IEnumerable<CategoryResponseDTO>>(Category);
             }
             else
             {
@@ -75,11 +68,11 @@ namespace MilkStore.Services.Service
 
                 if (product != null && product.DeletedTime == null) // Kiểm tra DeleteTime
                 {
-                    return new List<CategoryModel> { _mapper.Map<CategoryModel>(product) };
+                    return new List<CategoryResponseDTO> { _mapper.Map<CategoryResponseDTO>(product) };
                 }
                 else
                 {
-                    return new List<CategoryModel>();
+                    return new List<CategoryResponseDTO>();
                 }
             }
         }

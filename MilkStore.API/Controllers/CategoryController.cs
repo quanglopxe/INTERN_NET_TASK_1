@@ -6,6 +6,7 @@ using MilkStore.ModelViews.CategoryModelViews;
 using MilkStore.Contract.Repositories.Entity;
 using Microsoft.AspNetCore.Authorization;
 using MilkStore.Core;
+using MilkStore.ModelViews.ResponseDTO;
 namespace MilkStore.API.Controllers
 {
     [Route("api/[controller]")]
@@ -21,7 +22,7 @@ namespace MilkStore.API.Controllers
         //[Authorize(Roles = "Admin,Member")]
         public async Task<IActionResult> GetCategory(string? id)
         {
-            IEnumerable<CategoryModel>? Category = await _CategoryService.GetCategory(id);
+            IEnumerable<CategoryResponseDTO>? Category = await _CategoryService.GetCategory(id);
             return Ok(Category);
         }
         [HttpPost()]
