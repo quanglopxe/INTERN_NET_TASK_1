@@ -333,7 +333,7 @@ namespace MilkStore.Services.Service
                     .FirstOrDefaultAsync(o => o.Id == orderId && !o.DeletedTime.HasValue)
                     ?? throw new KeyNotFoundException($"Order with ID {orderId} not found or deleted.");
 
-                if (order.Status == "In Delivery")
+                if (order.Status == "Confirmed")
                 {
                     // Retrieve the order details
                     List<OrderDetails> orderDetailsList = await _unitOfWork.GetRepository<OrderDetails>().Entities

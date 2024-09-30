@@ -107,12 +107,23 @@ namespace MilkStore.API.Controllers
         [HttpPut("UpdateQuantity{id}")]
         //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> UpdateQuantity(string id, OrderModelView item)
-        {            
-            // Call the regular update method
-            await _orderService.UpdateAsync(id, item);
-
-            // If status is "In Delivery", deduct stock
-            if (item.Status == "In Delivery")
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
+                }
+                // Call the regular update method
+                await _orderService.UpdateAsync(id, item);
+                // If status is "Confirmed", deduct stock
+                if (item.Status == "Confirmed")
+                {
+                    await _orderService.DeductStockOnDelivery(id);
+                }
+                return Ok(new { message = "Update Order thành công" });
+            }
+            catch (ArgumentException ex)
             {
                 await _orderService.DeductStockOnDelivery(id);
             }

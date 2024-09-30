@@ -84,6 +84,7 @@ namespace MilkStore.Services.Mapping
                 .ForMember(dest => dest.UserID, opt => opt.Ignore()); // Bỏ qua UserID khi map từ PreOrdersModelView sang PreOrders
 
             CreateMap<Voucher, VoucherModelView>().ReverseMap();
+            CreateMap<Voucher, VoucherResponseDTO>();
         }
     }
 }
