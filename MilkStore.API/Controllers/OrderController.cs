@@ -30,42 +30,11 @@ namespace MilkStore.API.Controllers
 
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAll(string? id, int index = 1, int pageSize = 10)
-        {
-            try
-            {
-                IList<OrderResponseDTO> ord = (IList<OrderResponseDTO>)await _orderService.GetAsync(id);
-                int totalItems = ord.Count;
-                List<OrderResponseDTO> pagedOrder = ord.Skip((index - 1) * pageSize).Take(pageSize).ToList();
-
-                // Tạo danh sách phân trang
-                BasePaginatedList<OrderResponseDTO> paginatedList = new BasePaginatedList<OrderResponseDTO>(
-                    pagedOrder, totalItems, index, pageSize);
-                return Ok(BaseResponse<BasePaginatedList<OrderResponseDTO>>.OkResponse(paginatedList));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);  // Trả về 400 BadRequest nếu có lỗi do dữ liệu
-            }
-            catch (ApplicationException ex)
-            {
-                return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
-            }
+        {            
+            BasePaginatedList<OrderResponseDTO> ord = await _orderService.GetAsync(id,index,pageSize);
+            return  Ok(BaseResponse<BasePaginatedList<OrderResponseDTO>>.OkResponse(ord));
         }
-        //[HttpGet("SendMail")]
-        //public async Task<IActionResult> SendMail(string ?id)
-        //{
-        //    IEnumerable<OrderModelView> order = new List<OrderModelView>();
-        //    try
-        //    {
-        //        order = await _orderService.GetStatus_Mail(id);
-        //    }
-        //    catch (ArgumentException ex)
-        //    {
-        //        return BadRequest("Lỗi !!!!");
-        //    }
-        //    return Ok(order);
-
-        //}
+        
 
         [HttpPost]
         //[Authorize(Roles = "Member")]
@@ -107,28 +76,15 @@ namespace MilkStore.API.Controllers
         [HttpPut("UpdateQuantity{id}")]
         //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> UpdateQuantity(string id, OrderModelView item)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
-                }
-                // Call the regular update method
-                await _orderService.UpdateAsync(id, item);
-                // If status is "Confirmed", deduct stock
-                if (item.Status == "Confirmed")
-                {
-                    await _orderService.DeductStockOnDelivery(id);
-                }
-                return Ok(new { message = "Update Order thành công" });
-            }
-            catch (ArgumentException ex)
+        {                
+            // Call the regular update method
+            await _orderService.UpdateAsync(id, item);
+            // If status is "Confirmed", deduct stock
+            if (item.Status == "Confirmed")
             {
                 await _orderService.DeductStockOnDelivery(id);
             }
-
-            return Ok(new { message = "Order update added successfully!" });           
+            return Ok(new { message = "Update Order thành công" });       
         }
 
     }
