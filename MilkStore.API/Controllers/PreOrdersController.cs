@@ -29,43 +29,15 @@ namespace MilkStore.API.Controllers
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> CreatePreOrders(PreOrdersModelView preOrdersModel)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
-            }
-
-            try
-            {
-                PreOrders preOrder = await _preOrdersService.CreatePreOrders(preOrdersModel);
-                return Ok(BaseResponse<PreOrders>.OkResponse(preOrder));
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Lỗi hệ thống: " + ex.Message });
-            }
+            await _preOrdersService.CreatePreOrders(preOrdersModel);
+            return Ok(BaseResponse<string>.OkResponse("Đặt trước đơn hàng thành công!"));
         }
         [HttpPut("{id}")]
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> UpdatePreOrder(string id, [FromBody] PreOrdersModelView preOrdersModel)
         {
-            if (!ModelState.IsValid)
-            {
-                return NotFound($"Pre-order có ID: {id} không tồn tại.");
-            }
-
-            try
-            {
-                PreOrders PreOrder = await _preOrdersService.UpdatePreOrders(id, preOrdersModel);
-                return Ok(BaseResponse<PreOrders>.OkResponse(PreOrder));
-            }
-            catch (Exception ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
+             PreOrders PreOrder = await _preOrdersService.UpdatePreOrders(id, preOrdersModel);
+             return Ok(BaseResponse<PreOrders>.OkResponse(PreOrder));
         }
         [HttpDelete("{id}")]
         [Authorize(Roles = "Member")]

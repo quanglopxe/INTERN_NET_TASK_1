@@ -1,9 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core.Base;
+using MilkStore.Core.Constants;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.ReviewsModelView;
 using MilkStore.Repositories.Context;
@@ -16,26 +19,45 @@ namespace MilkStore.Services.Service
     {
         private readonly IUnitOfWork _unitOfWork;        
         private readonly IMapper _mapper;
-        private readonly EmailService _emailService;
-        public ReviewsService(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IEmailService _emailService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public ReviewsService(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService, IHttpContextAccessor httpContextAccessor)
         {            
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _emailService = emailService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task CreateReviews(ReviewsModel reviewsModel, string userID, string userEmail)
-        {
-            Order order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(reviewsModel.OrderID);            
+        public async Task CreateReviews(ReviewsModel reviewsModel)
+        {            
+            OrderDetails? orderDetail = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(reviewsModel.OrderDetailID);
+            if (orderDetail == null)
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Order details not found with {reviewsModel.OrderDetailID}!!");
+            }
+                        
+            Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(orderDetail.OrderID);
+            string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            string userEmail = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Email).Value;
+
+            if(string.IsNullOrWhiteSpace(userID) || string.IsNullOrWhiteSpace(userEmail))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please log in with an email verified account!");
+            }
             if (order == null || order.UserId.ToString() != userID)
             {
-                throw new UnauthorizedAccessException("You do not have access to this order.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "You do not have access to review this product!");
             }
-            var productInOrder = order.OrderDetailss.Where(od => od.ProductID.Contains(reviewsModel.ProductsID)).FirstOrDefault();
+            var productInOrder = order.OrderDetailss.Where(od => od.ProductID.Contains(orderDetail.ProductID)).FirstOrDefault();
             if (productInOrder == null)
             {
-                throw new KeyNotFoundException($"Product with ID {reviewsModel.ProductsID} was not found in this order.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Order details not found for {orderDetail.ProductID}!!");
             }
             Review newReview = _mapper.Map<Review>(reviewsModel);
+            newReview.UserID = Guid.Parse(userID);
+            newReview.ProductsID = orderDetail.ProductID;
+            newReview.OrderID = orderDetail.OrderID;
             newReview.CreatedTime = DateTime.UtcNow;
             newReview.CreatedBy = userID;
             await _unitOfWork.GetRepository<Review>().InsertAsync(newReview);
@@ -65,9 +87,10 @@ namespace MilkStore.Services.Service
             Review review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);
             if (review == null)
             {
-                throw new KeyNotFoundException($"Review with ID {id} was not found.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"No reviews found for {id}!!");
             }
             review.DeletedTime = CoreHelper.SystemTimeNow;
+            review.DeletedBy = "Admin";
             await _unitOfWork.GetRepository<Review>().UpdateAsync(review);
             await _unitOfWork.SaveAsync();
         }
@@ -95,24 +118,28 @@ namespace MilkStore.Services.Service
                     .FirstOrDefaultAsync(r => r.Id == id && r.DeletedTime == null);
                 if (review == null)
                 {
-                    throw new KeyNotFoundException($"Review have ID: {id} was not found.");
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"No reviews found for {id}!!");
                 }
                 return _mapper.Map<List<Review>>(review);
             }
 
         }
 
-        public async Task<Review> UpdateReviews(string id, ReviewsModel reviewsModel, string userID)
+        public async Task<Review> UpdateReviews(string id, ReviewsModel reviewsModel)
         {
 
-            Review review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);            
+            Review? review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);            
             if (review == null)
             {
-                throw new Exception($"Review have ID: {id} was not found.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"No reviews found for {id}!!");
             }
-
-            _mapper.Map(reviewsModel, review);
-            review.LastUpdatedTime = DateTime.UtcNow;
+            string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            if (string.IsNullOrWhiteSpace(userID))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please log in with an authenticated account!");
+            }
+            _mapper.Map(reviewsModel, review);            
+            review.LastUpdatedTime = DateTime.UtcNow;            
             review.LastUpdatedBy = userID;
             await _unitOfWork.GetRepository<Review>().UpdateAsync(review);
             await _unitOfWork.SaveAsync();

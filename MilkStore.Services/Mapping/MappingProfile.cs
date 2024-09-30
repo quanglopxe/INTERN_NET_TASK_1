@@ -13,6 +13,8 @@ using MilkStore.ModelViews.PostModelViews;
 using MilkStore.ModelViews.VoucherModelViews;
 using MilkStore.ModelViews.GiftModelViews;
 using MilkStore.ModelViews.OrderGiftModelViews;
+using MilkStore.ModelViews.AuthModelViews;
+using MilkStore.ModelViews.OrderDetailGiftModelView;
 
 
 namespace MilkStore.Services.Mapping
@@ -23,14 +25,15 @@ namespace MilkStore.Services.Mapping
         public MappingProfile()
         {
 
-            CreateMap<ApplicationUser, LoginGoogleModel>().ReverseMap();
+            CreateMap<ApplicationUser, RegisterModelView>().ReverseMap();
 
+            CreateMap<OrderDetailGift, OrderDetailGiftModel>().ReverseMap();
 
             CreateMap<Gift, GiftModel>().ReverseMap();
             CreateMap<OrderGift, OrderGiftModel>().ReverseMap();
 
-            CreateMap<Category, CategoryModel>();
             CreateMap<CategoryModel, Category>();
+            CreateMap<Category, CategoryResponseDTO>();
 
             #region Post
             CreateMap<PostModelView, Post>();
@@ -73,9 +76,12 @@ namespace MilkStore.Services.Mapping
             CreateMap<OrderModelView, Order>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null)); // Chỉ ánh xạ khi giá trị mới khác null
 
-            CreateMap<Review, ReviewsModel>().ReverseMap();
+            CreateMap<Review, ReviewsModel>().ReverseMap()
+                .ForMember(dest => dest.UserID, opt => opt.Ignore()); // Bỏ qua UserID khi map từ ReviewsModel sang Review
 
-            CreateMap<PreOrders, PreOrdersModelView>().ReverseMap();
+
+            CreateMap<PreOrders, PreOrdersModelView>().ReverseMap()
+                .ForMember(dest => dest.UserID, opt => opt.Ignore()); // Bỏ qua UserID khi map từ PreOrdersModelView sang PreOrders
 
             CreateMap<Voucher, VoucherModelView>().ReverseMap();
             CreateMap<Voucher, VoucherResponseDTO>();

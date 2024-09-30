@@ -1,10 +1,11 @@
 ﻿using MailKit.Net.Smtp;
 using Microsoft.Extensions.Options;
+using MilkStore.Contract.Services.Interface;
 using MimeKit;
 
 namespace MilkStore.Services.EmailSettings
 {
-    public class EmailService
+    public class EmailService : IEmailService
     {
         private readonly EmailSettings _emailSettings;
 

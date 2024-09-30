@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Core.Utils;
+using System.ComponentModel.DataAnnotations;
 
 namespace MilkStore.Repositories.Entity
 {

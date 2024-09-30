@@ -12,9 +12,9 @@ namespace MilkStore.Contract.Services.Interface
     public interface IGiftService
     {
         Task<IEnumerable<GiftModel>> GetGift(string? id);
-        Task<Gift> CreateGift(GiftModel GiftModel);
-        Task<Gift> UpdateGift(string id, GiftModel GiftModel);
-        Task<Gift> DeleteGift(object id);
+        Task CreateGift(GiftModel GiftModel);
+        Task UpdateGift(string id, GiftModel GiftModel);
+        Task DeleteGift(string id);
         Task<BasePaginatedList<Gift>> PagingGift(int page, int pageSize);
     }
 }

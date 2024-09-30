@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MilkStore.Contract.Repositories.Entity;
+using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
@@ -25,6 +26,7 @@ namespace MilkStore.API
             services.AddConfigTimeToken();
             services.AddCorsConfig();
             services.AddSwaggerUIAuthentication();
+            services.AddMemoryCache();
             services.AddDatabase(configuration);
             services.AddIdentity();
             services.AddInfrastructure(configuration);
@@ -85,14 +87,15 @@ namespace MilkStore.API
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<IOrderDetailsService, OrderDetailsService>();
-            services.AddScoped<IProductsService, ProductsService>();
             services.AddScoped<IVoucherService, VoucherService>();
             services.AddScoped<IReviewsService, ReviewsService>();
             services.AddScoped<IPreOrdersService, PreOrdersService>();
+            services.AddScoped<IProductsService, ProductsService>();
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<IGiftService, GiftService>();
             services.AddScoped<IOrderGiftService, OrderGiftService>();
-            services.AddScoped<EmailService>();
+            services.AddScoped<IOrderDetailGiftService, OrderDetailGiftService>();
+            services.AddScoped<IEmailService, EmailService>();
 
             services.AddHttpContextAccessor();
         }
@@ -136,7 +139,7 @@ namespace MilkStore.API
             {
                 options.AddPolicy("AllowAllOrigins", builder =>
                 {
-                    builder.WithOrigins(Environment.GetEnvironmentVariable("DOMAIN") ?? throw new Exception("DOMAIN is not set"))
+                    builder.WithOrigins(Environment.GetEnvironmentVariable("CLIENT_DOMAIN") ?? throw new Exception("CLIENT_DOMAIN is not set"))
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials();

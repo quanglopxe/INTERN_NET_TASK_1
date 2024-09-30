@@ -13,8 +13,7 @@ namespace MilkStore.Contract.Repositories.Entity
     public class PreOrders : BaseEntity
     {
         public required Guid UserID { get; set; }
-        public string ProductID { get; set; }
-        public DateTime PreoderDate { get; set; }
+        public string ProductID { get; set; }        
         public string Status { get; set; }
         public int Quantity { get; set; }
         [ForeignKey("ProductID")]

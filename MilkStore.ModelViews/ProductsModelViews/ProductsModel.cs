@@ -4,6 +4,7 @@ namespace MilkStore.ModelViews.ProductsModelViews
 {
     public class ProductsModel
     {
+        public string Id {  get; set; }
         [Required(ErrorMessage = "Tên sp không được để trống")]
         public required string ProductName { get; set; }
         [Required(ErrorMessage = "Giá sp không được để trống")]

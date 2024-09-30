@@ -27,6 +27,7 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<Category> Category => Set<Category>();
         public virtual DbSet<Gift> Gifts => Set<Gift>();
         public virtual DbSet<OrderGift> OrderGifts => Set<OrderGift>();
+        public virtual DbSet<OrderDetailGift> OrderDetailGifts => Set<OrderDetailGift>();
         #endregion
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -76,17 +77,24 @@ namespace MilkStore.Repositories.Context
                 .WithMany(v => v.Gifts)
                 .HasForeignKey(o => o.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<OrderGift>()
+            modelBuilder.Entity<OrderDetailGift>()
                 .HasOne(o => o.Gift)
-                .WithMany(v => v.OrderGifts)
+                .WithMany(v => v.OrderDetailGifts)
                 .HasForeignKey(o => o.GiftId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OrderDetailGift>()
+                .HasOne(o => o.orderGift)
+                .WithMany(v => v.OGifts)
+                .HasForeignKey(o => o.OrderGiftId)
+                .OnDelete(DeleteBehavior.Cascade);
+
 
             modelBuilder.Entity<OrderGift>()
                 .HasOne(o => o.User)
                 .WithMany(v => v.orderGift)
                 .HasForeignKey(o => o.UserID);
+
 
             //Add FK_Order_Voucher
             modelBuilder.Entity<Order>()
@@ -124,18 +132,16 @@ namespace MilkStore.Repositories.Context
 
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.OrderDetails)
-                .WithMany()
-                .HasForeignKey(r => new { r.OrderID, r.ProductsID })
-                .OnDelete(DeleteBehavior.Restrict);
+                .WithMany() 
+                .HasForeignKey(r => r.OrderDetailID)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Review>()
-                .HasOne(r => r.Order)
-                .WithMany()
-                .HasForeignKey(r => r.OrderID)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasOne(r => r.User)
+                .WithMany() 
+                .HasForeignKey(r => r.UserID)
+                .OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<OrderDetails>()
-            .HasKey(od => new { od.OrderID, od.ProductID });
 
         }
     }

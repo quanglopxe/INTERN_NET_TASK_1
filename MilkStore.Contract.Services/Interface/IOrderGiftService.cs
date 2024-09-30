@@ -12,9 +12,9 @@ namespace MilkStore.Contract.Services.Interface
     public interface IOrderGiftService
     {
         Task<IEnumerable<OrderGiftModel>> GetOrderGift(string? id);
-        Task<OrderGift> CreateOrderGift(OrderGiftModel orderGiftModel);
-        Task<OrderGift> UpdateOrderGift(string id, OrderGiftModel orderGiftModel);
-        Task<OrderGift> DeleteOrderGift(object id);
+        Task CreateOrderGift(OrderGiftModel orderGiftModel);
+        Task UpdateOrderGift(string id, OrderGiftModel orderGiftModel);
+        Task DeleteOrderGift(string id);
         Task SendMail_OrderGift(string? id);
     }
 }

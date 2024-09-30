@@ -3,7 +3,11 @@ using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core;
+using MilkStore.Core.Base;
+using MilkStore.Core.Constants;
 using MilkStore.ModelViews.CategoryModelViews;
+using MilkStore.ModelViews.ProductsModelViews;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.Repositories.Context;
 
 namespace MilkStore.Services.Service
@@ -19,39 +23,33 @@ namespace MilkStore.Services.Service
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        public async Task<BasePaginatedList<Category>> PagingCategory(int pageIndex, int pageSize)
-        {
-            IQueryable<Category> query = _unitOfWork.GetRepository<Category>().Entities;
-            // Sử dụng hàm GetPagging để lấy danh sách phân trang
-            BasePaginatedList<Category> paginatedList = await _unitOfWork.GetRepository<Category>().GetPagging(query, pageIndex, pageSize);
-            //return new BasePaginatedList<T>(items, count, index, pageSize);
-            return paginatedList; // Trả về danh sách phân trang
-        }
-        public async Task<Category> CreateCategory(CategoryModel CategoryModel)
-        {
+        public async Task CreateCategory(CategoryModel CategoryModel)
+        {                        
             Category newCategory = _mapper.Map<Category>(CategoryModel);
             newCategory.CreatedTime = DateTime.UtcNow;
 
             await _unitOfWork.GetRepository<Category>().InsertAsync(newCategory);
             await _unitOfWork.SaveAsync();
-
-            return newCategory;
         }
-        public async Task<Category> DeleteCategory(object id)
+        public async Task DeleteCategory(string id)
         {
+            if(string.IsNullOrWhiteSpace(id))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
+            }    
             Category Category = await _unitOfWork.GetRepository<Category>().GetByIdAsync(id);
 
             if (Category.DeletedTime != null)
             {
-                throw new Exception($"Mã hàng đã được xóa:{id}");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
             }
             Category.DeletedTime = DateTime.UtcNow;
             await _unitOfWork.GetRepository<Category>().UpdateAsync(Category);
             await _unitOfWork.SaveAsync();
-
-            return Category;
         }
-        public async Task<IEnumerable<CategoryModel>> GetCategory(string? id)
+
+
+        public async Task<IEnumerable<CategoryResponseDTO>> GetCategory(string? id)
         {
             if (id == null)
             {
@@ -61,7 +59,7 @@ namespace MilkStore.Services.Service
                 // Lọc sản phẩm có DeleteTime == null
                 Category = Category.Where(p => p.DeletedTime == null);
 
-                return _mapper.Map<IEnumerable<CategoryModel>>(Category);
+                return _mapper.Map<IEnumerable<CategoryResponseDTO>>(Category);
             }
             else
             {
@@ -70,32 +68,35 @@ namespace MilkStore.Services.Service
 
                 if (product != null && product.DeletedTime == null) // Kiểm tra DeleteTime
                 {
-                    return new List<CategoryModel> { _mapper.Map<CategoryModel>(product) };
+                    return new List<CategoryResponseDTO> { _mapper.Map<CategoryResponseDTO>(product) };
                 }
                 else
                 {
-                    return new List<CategoryModel>();
+                    return new List<CategoryResponseDTO>();
                 }
             }
         }
 
 
-        public async Task<Category> UpdateCategory(string id, CategoryModel CategoryModel)
+        public async Task UpdateCategory(string id, CategoryModel CategoryModel)
         {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
+            }
             Category existingCategory = await _unitOfWork.GetRepository<Category>().GetByIdAsync(id);
 
             if (existingCategory == null)
             {
-                throw new Exception("Sản phẩm không tồn tại.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
             }
+
             // Cập nhật thông tin sản phẩm bằng cách ánh xạ từ DTO
             _mapper.Map(CategoryModel, existingCategory);
             existingCategory.LastUpdatedTime = DateTime.UtcNow;
 
             await _unitOfWork.GetRepository<Category>().UpdateAsync(existingCategory);
             await _unitOfWork.SaveAsync();
-
-            return existingCategory;
         }
 
 

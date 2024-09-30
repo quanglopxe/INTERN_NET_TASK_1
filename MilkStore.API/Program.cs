@@ -2,6 +2,7 @@ using AutoMapper;
 using dotenv.net;
 using Microsoft.EntityFrameworkCore;
 using MilkStore.API;
+using MilkStore.API.Middleware;
 using MilkStore.Contract.Repositories;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Repositories.Context;
@@ -23,7 +24,7 @@ builder.Configuration
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        //options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
@@ -37,6 +38,7 @@ WebApplication? app = builder.Build();
 // Configure the HTTP request pipeline.
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

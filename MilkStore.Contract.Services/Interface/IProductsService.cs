@@ -6,11 +6,10 @@ namespace MilkStore.Contract.Services.Interface
 {
     public interface IProductsService
     {
-        Task<IEnumerable<ProductsModel>> GetProducts(string? id);
-        Task<Products> CreateProducts(ProductsModel productsModel);
-        Task<Products> UpdateProducts(string id,ProductsModel productsModel);
-        Task<Products> DeleteProducts(object id);
-        Task<BasePaginatedList<Products>> PagingProducts(int page, int pageSize);
-        Task<IEnumerable<ProductsModel>> GetProductsName(string? Name);
+        Task<BasePaginatedList<ProductsModel>> GetProducts(string? id, int pageIndex, int pageSize);
+        Task CreateProducts(ProductsModel productsModel);
+        Task UpdateProducts(string id, ProductsModel productsModel);
+        Task DeleteProducts(string id);
+        Task<IEnumerable<ProductsModel>> GetProductsName(string? ProductdName, string? CategoryName);
     }
 }

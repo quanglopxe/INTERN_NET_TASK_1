@@ -54,48 +54,25 @@ namespace MilkStore.API.Controllers
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateGift(GiftModel GiftModel)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
-            }
-
-            Gift Gift = await _GiftService.CreateGift(GiftModel);
-            return Ok(BaseResponse<Gift>.OkResponse(Gift));
+            await _GiftService.CreateGift(GiftModel);
+            return Ok(BaseResponse<string>.OkResponse("Added successfully"));
         }
 
         [HttpPut("{id}")]
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateProduct(string id, [FromBody] GiftModel GiftModel)
         {
-            if (!ModelState.IsValid)
-            {
-                return NotFound("Sản phẩm không tồn tại!!!");
-            }
-
-            try
-            {
-                Gift updatedProduct = await _GiftService.UpdateGift(id, GiftModel);
-                return Ok(updatedProduct);
-            }
-            catch (Exception ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
+            await _GiftService.UpdateGift(id, GiftModel);
+            return Ok(BaseResponse<string>.OkResponse("Updated successfully"));
+            
         }
 
         [HttpDelete("{id}")]
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(string id)
         {
-            try
-            {
-                Gift deletedProduct = await _GiftService.DeleteGift(id);
-                return Ok(deletedProduct); // Trả về sản phẩm đã bị xóa
-            }
-            catch (Exception ex)
-            {
-                return NotFound("Sản phẩm không tồn tại!!!"); // Trả về 404 nếu sản phẩm không tồn tại
-            }
+            await _GiftService.DeleteGift(id);
+            return Ok(BaseResponse<string>.OkResponse("Deleted successfully"));
         }
     }
 }
