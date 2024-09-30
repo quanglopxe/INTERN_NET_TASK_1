@@ -10,63 +10,51 @@ using AutoMapper;
 using MilkStore.Repositories.Entity;
 using MilkStore.Services.EmailSettings;
 using Microsoft.AspNetCore.Identity;
+using MilkStore.Core;
+using System.Drawing.Printing;
 
 namespace MilkStore.Services.Service
 {
     public class OrderService : IOrderService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly DatabaseContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
-        protected readonly DbSet<Order> _dbSet;
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
-        public OrderService(IUnitOfWork unitOfWork, DatabaseContext context, IMapper mapper, IEmailService emailService, UserManager<ApplicationUser> userManager)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
-            _context = context;
-            _dbSet = _context.Set<Order>();
             _mapper = mapper;
             _emailService = emailService;
             _userManager = userManager;
         }
 
-        private OrderResponseDTO MapToOrderResponseDto(Order order)
+        public async Task<BasePaginatedList<OrderResponseDTO>> GetAsync(string? id, int pageIndex, int pageSize)
         {
-            return _mapper.Map<OrderResponseDTO>(order);
-        }
+            IQueryable<Order>? query = _unitOfWork.GetRepository<Order>().Entities.Where(order => order.DeletedTime == null);
+            if (!string.IsNullOrWhiteSpace(id))
+            {
+                query = query.Where(order => order.Id == id);
+            }            
+            BasePaginatedList<Order>? paginatedOrders = await _unitOfWork.GetRepository<Order>().GetPagging(query, pageIndex, pageSize);
 
-        public async Task<IEnumerable<OrderResponseDTO>> GetAsync(string? id)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(id))
+            if (!paginatedOrders.Items.Any() && !string.IsNullOrWhiteSpace(id))
+            {                
+                Order? orderById = await query.FirstOrDefaultAsync();
+                if (orderById != null)
                 {
-                    List<Order> listOrder = await _dbSet.Where
-                        (e => !EF.Property<DateTimeOffset?>(e, "DeletedTime").HasValue)
-                        .ToListAsync();
-                    return listOrder.Select(MapToOrderResponseDto).ToList();
-                }
-                else
-                {
-                    Order ord = await _unitOfWork.GetRepository<Order>().Entities
-                        .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
-                        ?? throw new KeyNotFoundException($"Order with ID  {id}  not found or has already been deleted.");
-                    return new List<OrderResponseDTO> { MapToOrderResponseDto(ord) };
-                }
+                    OrderResponseDTO? orderDto = _mapper.Map<OrderResponseDTO>(orderById);
+                    return new BasePaginatedList<OrderResponseDTO>(new List<OrderResponseDTO> { orderDto }, 1, 1, 1);
+                }                
             }
-            catch (KeyNotFoundException ex)
-            {
-                // Log lỗi chi tiết và trả về BadRequest
-                // Bạn có thể log lỗi tại đây nếu cần
-                throw new ArgumentException(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                // Log lỗi không mong muốn và trả về lỗi
-                // Tránh để lộ lỗi chi tiết cho phía client
-                throw new ApplicationException("An error occurred while processing your request.", ex);
-            }
+            //GetAll
+            List<OrderResponseDTO>? orderDtosResult = _mapper.Map<List<OrderResponseDTO>>(paginatedOrders.Items);
+            return new BasePaginatedList<OrderResponseDTO>(
+                orderDtosResult,
+                paginatedOrders.TotalItems,
+                paginatedOrders.CurrentPage,
+                paginatedOrders.PageSize
+            );
         }
 
         public async Task AddAsync(OrderModelView ord, string userId)
