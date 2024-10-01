@@ -12,7 +12,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using MilkStore.Core.Constants;
 using MilkStore.Contract.Repositories.Entity;
-using MilkStore.Services.EmailSettings;
 using Microsoft.Extensions.Caching.Memory;
 using Google.Apis.Auth;
 using MilkStore.Contract.Services.Interface;
