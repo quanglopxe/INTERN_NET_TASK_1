@@ -83,20 +83,18 @@ namespace MilkStore.API
         public static void AddServices(this IServiceCollection services)
         {
             services.AddScoped<IAuthService, AuthService>();
-            // services.AddScoped<IUserService, UserService>();
-            // services.AddScoped<IPostService, PostService>();
-            // services.AddScoped<IOrderService, OrderService>();
-            // services.AddScoped<IOrderDetailsService, OrderDetailsService>();
-
-            // services.AddScoped<IVoucherService, VoucherService>();
-            // services.AddScoped<IReviewsService, ReviewsService>();
-
-            services.AddScoped<IPaymentService, PaymentService>();
-            // services.AddScoped<IProductsService, ProductsService>();
-            // services.AddScoped<ICategoryService, CategoryService>();
-            // services.AddScoped<IGiftService, GiftService>();
-            // services.AddScoped<IOrderGiftService, OrderGiftService>();
-            // services.AddScoped<IOrderDetailGiftService, OrderDetailGiftService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IPostService, PostService>();
+            services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<IOrderDetailsService, OrderDetailsService>();
+            services.AddScoped<IVoucherService, VoucherService>();
+            services.AddScoped<IReviewsService, ReviewsService>();
+            services.AddScoped<IPreOrdersService, PreOrdersService>();
+            services.AddScoped<IProductsService, ProductsService>();
+            services.AddScoped<ICategoryService, CategoryService>();
+            services.AddScoped<IGiftService, GiftService>();
+            services.AddScoped<IOrderGiftService, OrderGiftService>();
+            services.AddScoped<IOrderDetailGiftService, OrderDetailGiftService>();
             services.AddScoped<IEmailService, EmailService>();
 
             services.AddHttpContextAccessor();

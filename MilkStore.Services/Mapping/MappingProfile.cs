@@ -32,8 +32,8 @@ namespace MilkStore.Services.Mapping
             CreateMap<Gift, GiftModel>().ReverseMap();
             CreateMap<OrderGift, OrderGiftModel>().ReverseMap();
 
-            CreateMap<Category, CategoryModel>();
             CreateMap<CategoryModel, Category>();
+            CreateMap<Category, CategoryResponseDTO>();
 
             #region Post
             CreateMap<PostModelView, Post>();
@@ -84,6 +84,7 @@ namespace MilkStore.Services.Mapping
                 .ForMember(dest => dest.UserID, opt => opt.Ignore()); // Bỏ qua UserID khi map từ PreOrdersModelView sang PreOrders
 
             CreateMap<Voucher, VoucherModelView>().ReverseMap();
+            CreateMap<Voucher, VoucherResponseDTO>();
         }
     }
 }
