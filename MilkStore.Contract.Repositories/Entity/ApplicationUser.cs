@@ -8,7 +8,6 @@ namespace MilkStore.Repositories.Entity
     public class ApplicationUser : IdentityUser<Guid>
     {
         public int Points { get; set; } = 0;
-        public string Password { get; set; } = string.Empty;
         public string? CreatedBy { get; set; }
         public string? LastUpdatedBy { get; set; }
         public string? DeletedBy { get; set; }

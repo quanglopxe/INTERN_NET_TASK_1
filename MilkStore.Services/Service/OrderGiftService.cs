@@ -24,8 +24,8 @@ namespace MilkStore.Services.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly DatabaseContext context;
         private readonly IMapper _mapper;
-        private readonly EmailService _emailService;
-        public OrderGiftService(DatabaseContext context, IUnitOfWork unitOfWork, IMapper mapper, EmailService mailService)
+        private readonly IEmailService _emailService;
+        public OrderGiftService(DatabaseContext context, IUnitOfWork unitOfWork, IMapper mapper, IEmailService mailService)
         {
             this.context = context;
             _unitOfWork = unitOfWork;
@@ -35,10 +35,10 @@ namespace MilkStore.Services.Service
 
         public async Task CreateOrderGift(OrderGiftModel orderGiftModel)
         {
-            if(orderGiftModel.Id.Contains(" "))
+            if (orderGiftModel.Id.Contains(" "))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
-            }    
+            }
             OrderGift newOG = _mapper.Map<OrderGift>(orderGiftModel);
             if (newOG.Id == null || newOG.Id == "")
             {
@@ -52,10 +52,10 @@ namespace MilkStore.Services.Service
 
         public async Task DeleteOrderGift(string id)
         {
-            if(String.IsNullOrWhiteSpace(id))
+            if (String.IsNullOrWhiteSpace(id))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
-            }    
+            }
             OrderGift OrderGift1 = await _unitOfWork.GetRepository<OrderGift>().GetByIdAsync(id);
 
             if (OrderGift1.DeletedTime != null)

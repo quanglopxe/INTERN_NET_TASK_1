@@ -26,7 +26,7 @@ namespace MilkStore.Services.Service
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IUserService _userService;
         public PreOrdersService(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService, IHttpContextAccessor httpContextAccessor, IUserService userService)
-        {            
+        {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _emailService = emailService;
@@ -42,7 +42,7 @@ namespace MilkStore.Services.Service
 
             if (product == null)
             {
-                throw new KeyNotFoundException($"Product with ID {preOrdersModel.ProductID} was not found.");                
+                throw new KeyNotFoundException($"Product with ID {preOrdersModel.ProductID} was not found.");
             }
             //Check sản phẩm còn hàng thì không lên pre-order
             if (product.QuantityInStock > 0)
@@ -55,12 +55,12 @@ namespace MilkStore.Services.Service
             newPreOrder.CreatedTime = DateTime.UtcNow;
             await _unitOfWork.GetRepository<PreOrders>().InsertAsync(newPreOrder);
             await _unitOfWork.SaveAsync();
-            
-            string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;              
+
+            string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
             var user = await _userService.GetUser(userID);
             if (!user.Any())
             {
-                   throw new KeyNotFoundException($"User with ID {userID} was not found.");
+                throw new KeyNotFoundException($"User with ID {userID} was not found.");
             }
             string toEmail = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Email).Value;
             string subject = "Xác nhận đặt hàng trước";
