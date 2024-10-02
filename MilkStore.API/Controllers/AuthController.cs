@@ -41,11 +41,11 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<string>.OkResponse("Email has been sent again!"));
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpPatch("Change_Password_Admin")]
-        public async Task<IActionResult> ChangePasswordForAdmin(ChangePasswordAdminModel model)
+        [Authorize]
+        [HttpPatch("Change_Password")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordModel model)
         {
-            await _authService.ChangePasswordAdmin(model);
+            await _authService.ChangePassword(model);
             return Ok(BaseResponse<string>.OkResponse("Change password success"));
         }
 

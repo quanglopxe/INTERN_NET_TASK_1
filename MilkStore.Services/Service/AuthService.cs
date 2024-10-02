@@ -198,7 +198,7 @@ public class AuthService(UserManager<ApplicationUser> userManager, SignInManager
         await emailService.SendEmailAsync(emailModelView.Email, "Xác nhận tài khoản",
                    $"Vui lòng xác nhận tài khoản của bạn, OTP của bạn là:  <div class='otp'>{OTP}</div>");
     }
-    public async Task ChangePasswordAdmin(ChangePasswordAdminModel model)
+    public async Task ChangePassword(ChangePasswordModel model)
     {
         string? userId = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
             throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Token is invalid.");

@@ -11,11 +11,11 @@ namespace MilkStore.Contract.Services.Interface
     public interface IUserService
     {
 
-        Task<ApplicationUser> UpdateUser(Guid id, UserModelView userModel, string updatedBy);
-        Task<ApplicationUser> DeleteUser(Guid userId, string deleteby);
+        Task UpdateUser(UserUpdateModelView userUpdateModelView);
+        Task DeleteUser(string userId);
         Task<IEnumerable<UserResponeseDTO>> GetUser(string? id, int index = 1, int pageSize = 10);
-        Task<ApplicationUser> AddUser(UserModelView userModel, string createdBy);
-        Task AccumulatePoints(Guid userId, double totalAmount);
+        Task AddUserWithRoleAsync(UserModelView userModel);
+        Task AccumulatePoints(string userId, double totalAmount);
 
     }
 }

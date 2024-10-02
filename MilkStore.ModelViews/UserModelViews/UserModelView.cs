@@ -7,21 +7,13 @@ namespace MilkStore.ModelViews.UserModelViews
     public class UserModelView
     {
 
-        [Required]
-        [StringLength(100, MinimumLength = 3)]
-        public string UserName { get; set; }
-
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Email is not valid")]
         public string Email { get; set; }
-        [Required]
-        [StringLength(255, MinimumLength = 6)]
-        public string? Password { get; set; }
-        [Required]
-        [StringLength(255, MinimumLength = 6)]
-        public string? PasswordHash { get; set; }
-
-        [Phone]
+        [Required(ErrorMessage = "PhoneNumber is required")]
+        [Phone(ErrorMessage = "PhoneNumber is not valid")]
         public string? PhoneNumber { get; set; }
+        [Required(ErrorMessage = "RoleID is required")]
+        public string RoleID { get; set; }
     }
 }
