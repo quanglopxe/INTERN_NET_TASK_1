@@ -19,7 +19,12 @@ namespace MilkStore.ModelViews.ResponseDTO
         public required string PaymentMethod { get; set; }
         public required string estimatedDeliveryDate { get; set; }
         public DateTimeOffset? deliveryDate { get; set; }
-
+        public DateTimeOffset? LastUpdatedTime { get; set; }
+        public DateTimeOffset? DeletedTime { get; set; }
+        public DateTimeOffset? CreatedTime { get; set; }
+        public required string CreatedBy { get; set; }
+        public required string LastUpdatedBy { get; set; }
+        public required string DeletedBy { get; set; }
         public IList<OrderDetailResponseDTO> OrderDetailss { get; set; } = new List<OrderDetailResponseDTO>();
     }
 }
