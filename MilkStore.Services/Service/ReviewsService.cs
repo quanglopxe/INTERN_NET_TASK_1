@@ -34,7 +34,7 @@ namespace MilkStore.Services.Service
             OrderDetails? orderDetail = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(reviewsModel.OrderDetailID);
             if (orderDetail == null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Order details not found with {reviewsModel.OrderDetailID}!!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order details not found with {reviewsModel.OrderDetailID}!!");
             }
                         
             Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(orderDetail.OrderID);
@@ -52,7 +52,7 @@ namespace MilkStore.Services.Service
             var productInOrder = order.OrderDetailss.Where(od => od.ProductID.Contains(orderDetail.ProductID)).FirstOrDefault();
             if (productInOrder == null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Order details not found for {orderDetail.ProductID}!!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order details not found for {orderDetail.ProductID}!!");
             }
             Review newReview = _mapper.Map<Review>(reviewsModel);
             newReview.UserID = Guid.Parse(userID);
@@ -87,7 +87,7 @@ namespace MilkStore.Services.Service
             Review review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);
             if (review == null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"No reviews found for {id}!!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.BadRequest, $"No reviews found for {id}!!");
             }
             review.DeletedTime = CoreHelper.SystemTimeNow;
             review.DeletedBy = "Admin";
@@ -118,7 +118,7 @@ namespace MilkStore.Services.Service
                     .FirstOrDefaultAsync(r => r.Id == id && r.DeletedTime == null);
                 if (review == null)
                 {
-                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"No reviews found for {id}!!");
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"No reviews found for {id}!!");
                 }
                 return _mapper.Map<List<Review>>(review);
             }
@@ -131,7 +131,7 @@ namespace MilkStore.Services.Service
             Review? review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);            
             if (review == null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"No reviews found for {id}!!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"No reviews found for {id}!!");
             }
             string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
             if (string.IsNullOrWhiteSpace(userID))
