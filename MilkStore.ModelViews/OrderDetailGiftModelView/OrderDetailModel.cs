@@ -9,7 +9,6 @@ namespace MilkStore.ModelViews.OrderDetailGiftModelView
 {
     public class OrderDetailGiftModel
     {
-        public string id { get; set; }
         [Required(ErrorMessage = "Id ordergift không được để trống")]
         public required string? OrderGiftId { get; set; }
         [Required(ErrorMessage = "Id gift không được để trống")]

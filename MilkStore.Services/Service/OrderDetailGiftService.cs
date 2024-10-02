@@ -9,6 +9,7 @@ using MilkStore.Core.Constants;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.GiftModelViews;
 using MilkStore.ModelViews.OrderDetailGiftModelView;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
 using MilkStore.Services.EmailSettings;
@@ -34,9 +35,17 @@ namespace MilkStore.Services.Service
         }
         public async Task CreateOrderDetailGift(OrderDetailGiftModel orderDetailGiftModel)
         {
-            if (orderDetailGiftModel.id.Contains(" ")) {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
+            int temppoint = 0;
+            OrderGift OG = await _unitOfWork.GetRepository<OrderGift>().GetByIdAsync(orderDetailGiftModel.OrderGiftId);
+            temppoint = OG.User.Points;
+            int temppoint1 = 0;
+            Gift G = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(orderDetailGiftModel.GiftId);
+            temppoint1 = G.point * orderDetailGiftModel.quantity;
+            if (temppoint < temppoint1)
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Not enough points!!!");
             }
+
             OrderDetailGift newOrderDetailGift = _mapper.Map<OrderDetailGift>(orderDetailGiftModel);
             IEnumerable<OrderDetailGift> newODG = await _unitOfWork.GetRepository<OrderDetailGift>().GetAllAsync();
             //Gift gift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(newOrderDetailGift.GiftId);
@@ -60,10 +69,6 @@ namespace MilkStore.Services.Service
 
                 }
             }
-            if (orderDetailGiftModel.id == null || orderDetailGiftModel.id == "")
-            {
-                newOrderDetailGift.Id = Guid.NewGuid().ToString("N");
-            }
             // Đặt các thuộc tính mặc định (nếu có)
             newOrderDetailGift.CreatedTime = DateTime.UtcNow;
             newOrderDetailGift.LastUpdatedTime = DateTime.UtcNow;
@@ -72,6 +77,7 @@ namespace MilkStore.Services.Service
             // Thêm mới vào cơ sở dữ liệu
             await _unitOfWork.GetRepository<OrderDetailGift>().InsertAsync(newOrderDetailGift);
             await _unitOfWork.SaveAsync();
+
         }
 
         //public async Task<OrderDetailGift> Check_PointGift(OrderDetailGiftModel orderDetailGiftModel)
@@ -108,7 +114,7 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
         }
 
-        public async Task<IEnumerable<OrderDetailGiftModel>> GetOrderDetailGift(string? id)
+        public async Task<IEnumerable<OrderDetailGiftResponseDTO>> GetOrderDetailGift(string? id)
         {
             if (id == null)
             {
@@ -118,7 +124,7 @@ namespace MilkStore.Services.Service
                 // Lọc sản phẩm có DeleteTime == null
                 Gift = Gift.Where(p => p.DeletedTime == null);
 
-                return _mapper.Map<IEnumerable<OrderDetailGiftModel>>(Gift);
+                return _mapper.Map<IEnumerable<OrderDetailGiftResponseDTO>>(Gift);
             }
             else
             {
@@ -127,22 +133,18 @@ namespace MilkStore.Services.Service
 
                 if (Gift != null && Gift.DeletedTime == null) // Kiểm tra DeleteTime
                 {
-                    return new List<OrderDetailGiftModel> { _mapper.Map<OrderDetailGiftModel>(Gift) };
+                    return new List<OrderDetailGiftResponseDTO> { _mapper.Map<OrderDetailGiftResponseDTO>(Gift) };
                 }
                 else
                 {
-                    return new List<OrderDetailGiftModel>();
+                    return new List<OrderDetailGiftResponseDTO>();
                 }
             }
         }
 
 
         public async Task UpdateOrderDetailGift(string id, OrderDetailGiftModel OrderDetailGiftModel)
-        {
-            if(OrderDetailGiftModel.id.Contains(" "))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
-            }    
+        { 
             OrderDetailGift existingGift = await _unitOfWork.GetRepository<OrderDetailGift>().GetByIdAsync(id);
 
             if (existingGift == null)

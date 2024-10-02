@@ -8,7 +8,9 @@ using MilkStore.Core.Base;
 using MilkStore.Core.Constants;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.ProductsModelViews;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.Repositories.Context;
+using Org.BouncyCastle.Math.Field;
 
 namespace MilkStore.Services.Service
 {
@@ -23,9 +25,13 @@ namespace MilkStore.Services.Service
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        public async Task<IEnumerable<ProductsModel>> GetProductsName(string? ProductdName, string? CategoryName)
+        public async Task<IEnumerable<ProductResponseDTO>> GetProductsName(string? ProductdName, string? CategoryName)
         {
             IEnumerable<Products> products = await _unitOfWork.GetRepository<Products>().GetAllAsync();
+            if(CategoryName == null && ProductdName == null)
+            {
+                return _mapper.Map<IEnumerable<ProductResponseDTO>>(products);
+            }    
             if (CategoryName == null)
             {
                 products = products.Where(p => p.ProductName.Contains(ProductdName, StringComparison.OrdinalIgnoreCase) && p.DeletedTime == null);
@@ -36,25 +42,18 @@ namespace MilkStore.Services.Service
                 IEnumerable<Category> cte = await _unitOfWork.GetRepository<Category>().GetAllAsync();
                 foreach (Category c in cte)
                 {
-                    if (c.CategoryName == CategoryName)
+                    if (c.CategoryName == CategoryName && c.DeletedTime == null)
                     {
                         temp = c.Id;
                     }
                 }
                 products = products.Where(p => p.CategoryId.Contains(temp, StringComparison.OrdinalIgnoreCase) && p.DeletedTime == null);
             }
-            return _mapper.Map<IEnumerable<ProductsModel>>(products);
+
+            return _mapper.Map<IEnumerable<ProductResponseDTO>>(products);
         }
         public async Task CreateProducts(ProductsModel productsModel)
-        {
-            if(productsModel.Id.Contains(" "))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
-            }    
-            if (productsModel.Id == "" || productsModel.Id == null)
-            {
-                productsModel.Id = Guid.NewGuid().ToString("N");
-            }
+        {   
             Products newProduct = _mapper.Map<Products>(productsModel);
             newProduct.CreatedTime = DateTime.UtcNow;
 
@@ -81,38 +80,31 @@ namespace MilkStore.Services.Service
         }
 
 
-        public async Task<BasePaginatedList<ProductsModel>> GetProducts(string? id, int pageIndex, int pageSize)
+        public async Task<BasePaginatedList<ProductResponseDTO>> GetProducts(string? id, int pageIndex, int pageSize)
         {
             IQueryable<Products> query = _unitOfWork.GetRepository<Products>().Entities;
 
-            // Kiểm tra xem có truyền id hay không
             if (!string.IsNullOrEmpty(id))
             {
-                // Lấy sản phẩm theo id
                 query = query.Where(p => p.Id == id && p.DeletedTime == null);
 
-                // Nếu chỉ cần tìm kiếm theo id thì không cần phân trang, trả về 1 kết quả hoặc rỗng
                 var product = await query.FirstOrDefaultAsync();
                 if (product != null)
                 {
-                    var productModel = _mapper.Map<ProductsModel>(product);
-                    return new BasePaginatedList<ProductsModel>(new List<ProductsModel> { productModel }, 1, 1, 1); // Chỉ trả về 1 sản phẩm
+                    var productModel = _mapper.Map<ProductResponseDTO>(product);
+                    return new BasePaginatedList<ProductResponseDTO>(new List<ProductResponseDTO> { productModel }, 1, 1, 1);
                 }
                 else
                 {
-                    return new BasePaginatedList<ProductsModel>(new List<ProductsModel>(), 0, pageIndex, pageSize); // Trả về rỗng
+                    return new BasePaginatedList<ProductResponseDTO>(new List<ProductResponseDTO>(), 0, pageIndex, pageSize);
                 }
             }
-
-            // Nếu không có id thì lấy tất cả sản phẩm và áp dụng phân trang
             query = query.Where(p => p.DeletedTime == null);
 
-            // Lấy danh sách phân trang
             BasePaginatedList<Products> paginatedList = await _unitOfWork.GetRepository<Products>().GetPagging(query, pageIndex, pageSize);
 
-            // Ánh xạ sang ProductsModel và trả về kết quả phân trang
-            var productsModel = _mapper.Map<IEnumerable<ProductsModel>>(paginatedList.Items);
-            return new BasePaginatedList<ProductsModel>(productsModel.ToList(), paginatedList.TotalPages, pageIndex, pageSize);
+            var productsModel = _mapper.Map<IEnumerable<ProductResponseDTO>>(paginatedList.Items);
+            return new BasePaginatedList<ProductResponseDTO>(productsModel.ToList(), paginatedList.TotalPages, pageIndex, pageSize);
         }
 
 
@@ -135,10 +127,6 @@ namespace MilkStore.Services.Service
 
         public async Task UpdateProducts(string id, ProductsModel productsModel)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
-            }
             Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id);
             if (product == null)
             {
