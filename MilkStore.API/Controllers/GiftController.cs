@@ -6,6 +6,8 @@ using MilkStore.Core.Base;
 using MilkStore.Core;
 using MilkStore.ModelViews.GiftModelViews;
 using Microsoft.AspNetCore.Authorization;
+using MilkStore.Services.Service;
+using System.Drawing.Printing;
 
 namespace MilkStore.API.Controllers
 {
@@ -21,34 +23,21 @@ namespace MilkStore.API.Controllers
 
         [HttpGet]
         //[Authorize(Roles = "Admin,Member")]
-        public async Task<IActionResult> GetGift(string? id)
+        public async Task<IActionResult> GetGift(string? id, int PageIndex, int PageSize)
         {
-            try
-            {
-                IEnumerable<GiftModel> Gift = await _GiftService.GetGift(id);
-
-                if (Gift == null || !Gift.Any())
-                {
-                    return NotFound("Sản phẩm không tồn tại!!!");
-                }
-
-                return Ok(Gift);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500); // Trả về mã lỗi 500
-            }
+            var result = await _GiftService.GetGift(id, PageIndex, PageSize);
+            return Ok(result);
         }
 
 
 
-        [HttpGet("GetPagging")]
-        //[Authorize(Roles = "Admin,Member")]
-        public async Task<IActionResult> Paging(int index, int size)
-        {
-            BasePaginatedList<Gift> paging = await _GiftService.PagingGift(index, size);
-            return Ok(paging);
-        }
+        //[HttpGet("GetPagging")]
+        ////[Authorize(Roles = "Admin,Member")]
+        //public async Task<IActionResult> Paging(int index, int size)
+        //{
+        //    BasePaginatedList<Gift> paging = await _GiftService.PagingGift(index, size);
+        //    return Ok(paging);
+        //}
 
         [HttpPost()]
         //[Authorize(Roles = "Admin")]

@@ -28,10 +28,12 @@ namespace MilkStore.Services.Mapping
 
             CreateMap<ApplicationUser, RegisterModelView>().ReverseMap();
 
-            CreateMap<OrderDetailGift, OrderDetailGiftModel>().ReverseMap();
-
-            CreateMap<Gift, GiftModel>().ReverseMap();
-            CreateMap<OrderGift, OrderGiftModel>().ReverseMap();
+            CreateMap<OrderDetailGiftModel, OrderDetailGift>();
+            CreateMap<OrderDetailGift,OrderDetailGiftResponseDTO>();
+            CreateMap<GiftModel, Gift>();
+            CreateMap<Gift, GiftResponseDTO>();
+            CreateMap<OrderGiftModel, OrderGift>();
+            CreateMap<OrderGift, OrderGiftResponseDTO>();
 
             CreateMap<CategoryModel, Category>();
             CreateMap<Category, CategoryResponseDTO>();
@@ -41,7 +43,7 @@ namespace MilkStore.Services.Mapping
             CreateMap<Post, PostResponseDTO>()
                 .ForMember(dest => dest.Products, opt => opt.MapFrom(src => src.PostProducts.Select(pp => new ProductResponseDTO
                 {
-                    ProductID = pp.Product.Id,
+                    Id = pp.Product.Id,
                     ProductName = pp.Product.ProductName,
                     Description = pp.Product.Description,
                     Price = pp.Product.Price,
@@ -51,9 +53,8 @@ namespace MilkStore.Services.Mapping
                 }).ToList()));
             #endregion
 
-            CreateMap<Products, ProductsModel>();
             CreateMap<ProductsModel, Products>();
-
+            CreateMap<Products, ProductResponseDTO>();
             CreateMap<UserModelView, ApplicationUser>()
             .ForMember(dest => dest.Points, opt => opt.MapFrom(src => 0)) // Set Points to 0
             .ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(src => DateTimeOffset.UtcNow));
