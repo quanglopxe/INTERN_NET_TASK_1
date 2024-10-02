@@ -39,9 +39,8 @@ namespace MilkStore.API.Controllers
         [HttpPost]
         //[Authorize(Roles = "Member")]
         public async Task<IActionResult> Add(OrderModelView item)
-        {            
-            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            await _orderService.AddAsync(item, userId);
+        {                        
+            await _orderService.AddAsync(item);
             return Ok(BaseResponse<string>.OkResponse("Order added successfully!"));            
         }
 
