@@ -1,91 +1,66 @@
-using System.Net.Http.Json;
-using System.Security.Cryptography;
-using System.Text;
+using Microsoft.AspNetCore.Http;
+using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Core.Base;
 using MilkStore.Core.Constants;
-using Newtonsoft.Json;
+using MilkStore.ModelViews;
+using MilkStore.Services.Service.lib;
 
-public class PaymentService
+
+namespace MilkStore.Services.Service;
+public class PaymentService(IHttpContextAccessor httpContextAccessor, IUnitOfWork unitOfWork) : IPaymentService
 {
-    private readonly IUnitOfWork unitOfWork;
-    public PaymentService(IUnitOfWork unitOfWork)
+    private readonly IUnitOfWork unitOfWork = unitOfWork;
+    private readonly HttpContext httpContext = httpContextAccessor.HttpContext;
+    public string CreatePayment(PaymentRequest request)
     {
-        this.unitOfWork = unitOfWork;
+        VnPayLibrary vnpay = new VnPayLibrary(httpContext);
+        vnpay.AddRequestData("vnp_Version", "2.1.0");
+        vnpay.AddRequestData("vnp_Command", "pay");
+        vnpay.AddRequestData("vnp_TmnCode", "262XSFHX");
+        vnpay.AddRequestData("vnp_Amount", (request.TotalAmount * 100).ToString());
+        vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
+        vnpay.AddRequestData("vnp_CurrCode", "VND");
+
+        string clientIp = vnpay.GetClientIpAddress();
+
+        vnpay.AddRequestData("vnp_IpAddr", clientIp);
+
+        vnpay.AddRequestData("vnp_Locale", "vn");
+        vnpay.AddRequestData("vnp_OrderInfo", "Thanh toan hoa don " + request.InvoiceCode);
+        vnpay.AddRequestData("vnp_OrderType", "other");
+        vnpay.AddRequestData("vnp_ReturnUrl", Environment.GetEnvironmentVariable("CLIENT_DOMAIN") ?? throw new Exception("CLIENT_DOMAIN is not set"));
+        vnpay.AddRequestData("vnp_TxnRef", request.InvoiceCode);
+        vnpay.AddRequestData("vnp_ExpireDate", DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmmss"));
+
+        string paymentUrl = vnpay.CreateRequestUrl(Environment.GetEnvironmentVariable("VNPAY_URL") ??
+            throw new Exception("VNPAY_URL is not set"), Environment.GetEnvironmentVariable("VNPAY_KEY") ??
+            throw new Exception("VNPAY_KEY is not set"));
+
+        return paymentUrl;
     }
-
-    public async Task<string> PaymentMoMoURL(string orderId, decimal amount)
+    public async Task HandleIPN(VNPayIPNRequest request)
     {
+        VnPayLibrary vnpay = new VnPayLibrary(httpContext);
 
-        string partnerCode = "MOMOBKUN20180529";
-        string accessKey = "klm05TvNBzhg7h7j";
-        string endpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
-        string redirectUrl = Environment.GetEnvironmentVariable("CLIENT_DOMAIN") ?? throw new Exception("CLIENT_DOMAIN is not set");
-        string ipnUrl = $"{Environment.GetEnvironmentVariable("SERVER_DOMAIN") ?? throw new Exception("SERVER_DOMAIN is not set")}/api/payment/MomoIPN";
-        string? requestId = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        string? orderInfo = "Thanh toán qua MoMo";
-        string? requestType = "payWithATM";
-        string? extraData = "";
-
-        string secretKey = "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa";
-
-        // tạo chữ ký
-        string? rawHash = $"accessKey={accessKey}&amount={amount}&extraData={extraData}&ipnUrl={ipnUrl}&orderId={orderId}&orderInfo={orderInfo}&partnerCode={partnerCode}&redirectUrl={redirectUrl}&requestId={requestId}&requestType={requestType}";
-        string? signature = CreateSignature(rawHash, secretKey);
-
-        PaymentMoMoModel? paymentRequest = new PaymentMoMoModel
+        bool isValidSignature = vnpay.ValidateSignature(request.vnp_SecureHash, Environment.GetEnvironmentVariable("VNPAY_KEY") ?? throw new Exception("VNPAY_KEY is not set"));
+        if (!isValidSignature)
         {
-            PartnerCode = partnerCode,
-            PartnerName = "Test",
-            StoreId = "MomoTestStore",
-            RequestId = requestId,
-            Amount = amount,
-            OrderId = orderId,
-            OrderInfo = orderInfo,
-            RedirectUrl = redirectUrl,
-            IpnUrl = ipnUrl,
-            Lang = "vi",
-            ExtraData = extraData,
-            RequestType = requestType,
-            Signature = signature
-        };
-
-        using HttpClient? client = new HttpClient();
-        HttpResponseMessage? response = await client.PostAsJsonAsync(endpoint, paymentRequest);
-        string? result = await response.Content.ReadAsStringAsync();
-        dynamic jsonResult = JsonConvert.DeserializeObject(result);
-
-        // Trả về URL thanh toán từ MoMo
-        if (jsonResult != null && jsonResult.payUrl != null)
+            throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Signature is not valid");
+        }
+        if (request.vnp_ResponseCode == "00")
         {
-            return jsonResult.payUrl.toString();
+            Order? order = await unitOfWork.GetRepository<Order>().GetByIdAsync(request.vnp_TxnRef)
+                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
+            order.Status = "Đã thanh toán";
+            unitOfWork.GetRepository<Order>().Update(order);
+            await unitOfWork.SaveAsync();
+        }
+        else
+        {
+            throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "ErrorCode: " + request.vnp_ResponseCode);
         }
 
-        throw new BaseException.ErrorException(StatusCodes.BadRequest, "BadRequest", "Error Payment");
-
-    }
-    private string CreateSignature(string rawData, string secretKey)
-    {
-        using HMACSHA256? hmacsha256 = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
-        byte[]? hash = hmacsha256.ComputeHash(Encoding.UTF8.GetBytes(rawData));
-        return BitConverter.ToString(hash).Replace("-", "").ToLower();
     }
 
-    public async Task ReceiveMoMoIPN(MoMoIPNRequest request)
-    {
-        string partnerCode = "MOMOBKUN20180529";
-        string accessKey = "klm05TvNBzhg7h7j";
-        string secretKey = "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa";
-        string? rawHash = $"accessKey={accessKey}&amount={request.Amount}&extraData={request.ExtraData}&message={request.Message}&orderId={request.OrderId}&orderInfo={request.OrderInfo}&partnerCode={partnerCode}&payType={request.PayType}&requestId={request.RequestId}&responseTime={request.ResponseTime}&resultCode={request.ResultCode}&transId={request.TransId}";
-        string? signature = CreateSignature(rawHash, secretKey);
-        if (signature != request.Signature)
-        {
-            throw new BaseException.ErrorException(StatusCodes.BadRequest, "BadRequest", "Invalid signature");
-
-        }
-        // xử lý nghiệp vụ tại đây
-
-        await unitOfWork.SaveAsync();
-
-    }
 }

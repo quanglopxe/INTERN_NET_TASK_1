@@ -12,32 +12,21 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using MilkStore.Core.Constants;
 using MilkStore.Contract.Repositories.Entity;
-using MilkStore.Services.EmailSettings;
 using Microsoft.Extensions.Caching.Memory;
 using Google.Apis.Auth;
 using MilkStore.Contract.Services.Interface;
-public class AuthService : IAuthService
+namespace MilkStore.Services.Service;
+public class AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
+      IMapper mapper, IHttpContextAccessor httpContextAccessor,
+      RoleManager<ApplicationRole> roleManager, IEmailService emailService, IMemoryCache memoryCache) : IAuthService
 {
-    private readonly UserManager<ApplicationUser> userManager;
-    private readonly SignInManager<ApplicationUser> signInManager;
-    private readonly RoleManager<ApplicationRole> roleManager;
-    private readonly IEmailService emailService;
-    private readonly IMapper mapper;
-    private readonly IMemoryCache memoryCache;
-    private readonly IHttpContextAccessor httpContextAccessor;
-
-    public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
-          IMapper mapper, IHttpContextAccessor httpContextAccessor,
-          RoleManager<ApplicationRole> roleManager, IEmailService emailService, IMemoryCache memoryCache)
-    {
-        this.userManager = userManager;
-        this.signInManager = signInManager;
-        this.mapper = mapper;
-        this.roleManager = roleManager;
-        this.httpContextAccessor = httpContextAccessor;
-        this.emailService = emailService;
-        this.memoryCache = memoryCache;
-    }
+    private readonly UserManager<ApplicationUser> userManager = userManager;
+    private readonly SignInManager<ApplicationUser> signInManager = signInManager;
+    private readonly RoleManager<ApplicationRole> roleManager = roleManager;
+    private readonly IEmailService emailService = emailService;
+    private readonly IMapper mapper = mapper;
+    private readonly IMemoryCache memoryCache = memoryCache;
+    private readonly IHttpContextAccessor httpContextAccessor = httpContextAccessor;
     #region Private Service
     private async Task<ApplicationUser> CheckRefreshToken(string refreshToken)
     {
@@ -107,7 +96,7 @@ public class AuthService : IAuthService
         {
             if (user.DeletedTime.HasValue)
             {
-                throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Account have been locked");
+                throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Account have been deleted");
             }
             if (!await userManager.IsEmailConfirmedAsync(user))
             {
@@ -209,7 +198,7 @@ public class AuthService : IAuthService
         await emailService.SendEmailAsync(emailModelView.Email, "Xác nhận tài khoản",
                    $"Vui lòng xác nhận tài khoản của bạn, OTP của bạn là:  <div class='otp'>{OTP}</div>");
     }
-    public async Task ChangePasswordAdmin(ChangePasswordAdminModel model)
+    public async Task ChangePassword(ChangePasswordModel model)
     {
         string? userId = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
             throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Token is invalid.");

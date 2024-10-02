@@ -15,6 +15,7 @@ using MilkStore.ModelViews.GiftModelViews;
 using MilkStore.ModelViews.OrderGiftModelViews;
 using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.ModelViews.OrderDetailGiftModelView;
+using MilkStore.ModelViews.RoleModelView;
 
 
 namespace MilkStore.Services.Mapping
@@ -61,6 +62,11 @@ namespace MilkStore.Services.Mapping
             .ForMember(dest => dest.LastUpdatedBy, opt => opt.Ignore())
             .ForMember(dest => dest.LastUpdatedTime, opt => opt.Ignore())
             .ForMember(dest => dest.Points, opt => opt.Ignore()); // Nếu không muốn ánh xạ Points
+
+            CreateMap<ApplicationRole, RoleViewModel>()
+            .ForMember(dest => dest.RoleId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Name));
+            CreateMap<UserUpdateModelView, ApplicationUser>().ReverseMap();
 
             CreateMap<OrderModelView, Order>().ReverseMap();
             CreateMap<Order, OrderResponseDTO>()
