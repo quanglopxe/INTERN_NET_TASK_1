@@ -346,6 +346,12 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<double>("DiscountedAmount")
                         .HasColumnType("float");
 
+                    b.Property<bool>("IsInventoryUpdated")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPointAdded")
+                        .HasColumnType("bit");
+
                     b.Property<string>("LastUpdatedBy")
                         .HasColumnType("nvarchar(max)");
 
@@ -355,18 +361,19 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<DateTimeOffset>("OrderDate")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("OrderStatuss")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PaymentStatuss")
+                        .HasColumnType("int");
 
                     b.Property<int>("PointsAdded")
                         .HasColumnType("int");
 
                     b.Property<string>("ShippingAddress")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -632,9 +639,8 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("UserID")
                         .HasColumnType("uniqueidentifier");

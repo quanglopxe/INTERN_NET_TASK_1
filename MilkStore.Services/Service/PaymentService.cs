@@ -52,7 +52,7 @@ public class PaymentService(IHttpContextAccessor httpContextAccessor, IUnitOfWor
         {
             Order? order = await unitOfWork.GetRepository<Order>().GetByIdAsync(request.vnp_TxnRef)
                  ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
-            order.Status = "Đã thanh toán";
+            order.PaymentStatuss = PaymentStatus.Paid;
             unitOfWork.GetRepository<Order>().Update(order);
             await unitOfWork.SaveAsync();
         }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MilkStore.Repositories.Migrations
 {
     /// <inheritdoc />
-    public partial class initDB : Migration
+    public partial class updateDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -326,11 +326,12 @@ namespace MilkStore.Repositories.Migrations
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     VoucherId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     OrderDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    OrderStatuss = table.Column<int>(type: "int", nullable: false),
+                    PaymentStatuss = table.Column<int>(type: "int", nullable: false),
                     TotalAmount = table.Column<double>(type: "float", nullable: false),
                     DiscountedAmount = table.Column<double>(type: "float", nullable: false),
                     ShippingAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PaymentMethod = table.Column<int>(type: "int", nullable: false),
                     estimatedDeliveryDate = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     deliveryDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     PointsAdded = table.Column<int>(type: "int", nullable: false),
@@ -421,7 +422,7 @@ namespace MilkStore.Repositories.Migrations
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ProductID = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
