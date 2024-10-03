@@ -4,6 +4,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MilkStore.Contract.Repositories.Entity
 {
+    public enum OrderGiftStatus
+    {
+        Pending,
+        Confirmed,
+        Cancelled,
+        Delivering,
+        Delivered,
+        Refunded
+    }
     public class OrderGift : BaseEntity
     {
         public string Address { get; set; }
