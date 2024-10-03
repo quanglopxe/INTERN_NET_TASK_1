@@ -9,8 +9,7 @@ namespace MilkStore.Contract.Services.Interface
 {
     public interface IStatisticalProductService
     {
-        Task<List<ProductRevenueDTO>> GetRevenueByProduct(DateTime? startDate, DateTime? endDate);
-        Task<List<ProductSalesDTO>> GetBestWorstSellingProducts(DateTime? startDate, DateTime? endDate);
+        Task<List<ProductSalesDTO>> GetTopSellingProducts(int topN, DateTime? startDate, DateTime? endDate, string? productName, string? categoryName);
         Task<List<ProductStockDTO>> GetLowStockProducts(int threshold);
     }
 }

@@ -14,17 +14,23 @@ namespace MilkStore.Services.Service
     public class StatisticalProductService : IStatisticalProductService
     {
         private readonly IUnitOfWork _unitOfWork;
+
         public StatisticalProductService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
-        public async Task<List<ProductRevenueDTO>> GetRevenueByProduct(DateTime? startDate, DateTime? endDate)
+
+        // Phương thức lấy top 10 sản phẩm bán chạy nhất
+        public async Task<List<ProductSalesDTO>> GetTopSellingProducts(int topN, DateTime? startDate, DateTime? endDate, string? productName, string? categoryName)
         {
             var query = from od in _unitOfWork.GetRepository<OrderDetails>().Entities
                         join o in _unitOfWork.GetRepository<Order>().Entities on od.OrderID equals o.Id
+                        join p in _unitOfWork.GetRepository<Products>().Entities on od.ProductID equals p.Id
+                        join c in _unitOfWork.GetRepository<Category>().Entities on p.CategoryId equals c.Id
                         where o.OrderStatuss == OrderStatus.Delivered
-                        select new { od.ProductID, od.Quantity, od.UnitPrice, o.OrderDate };
+                        select new { od.ProductID, od.Quantity, o.OrderDate, p.ProductName, c.CategoryName };
 
+            // Lọc theo ngày
             if (startDate.HasValue)
             {
                 query = query.Where(x => x.OrderDate >= startDate.Value);
@@ -35,51 +41,37 @@ namespace MilkStore.Services.Service
                 query = query.Where(x => x.OrderDate <= endDate.Value);
             }
 
-            var revenueByProduct = await query
-                .GroupBy(x => x.ProductID)
-                .Select(g => new ProductRevenueDTO
-                {
-                    ProductId = g.Key,
-                    TotalRevenue = g.Sum(x => x.Quantity * x.UnitPrice),
-                    TotalQuantity = g.Sum(x => x.Quantity)
-                })
-                .ToListAsync();
-
-            return revenueByProduct;
-        }
-        public async Task<List<ProductSalesDTO>> GetBestWorstSellingProducts(DateTime? startDate, DateTime? endDate)
-        {
-            var query = from od in _unitOfWork.GetRepository<OrderDetails>().Entities
-                        join o in _unitOfWork.GetRepository<Order>().Entities on od.OrderID equals o.Id
-                        where o.OrderStatuss == OrderStatus.Delivered
-                        select new { od.ProductID, od.Quantity, o.OrderDate };
-
-            if (startDate.HasValue)
+            // Lọc theo tên sản phẩm
+            if (!string.IsNullOrEmpty(productName))
             {
-                query = query.Where(x => x.OrderDate >= startDate.Value);
+                query = query.Where(x => x.ProductName.Contains(productName));
             }
 
-            if (endDate.HasValue)
+            // Lọc theo thể loại
+            if (!string.IsNullOrEmpty(categoryName))
             {
-                query = query.Where(x => x.OrderDate <= endDate.Value);
+                query = query.Where(x => x.CategoryName.Contains(categoryName));
             }
 
-            var salesByProduct = await query
-                .GroupBy(x => x.ProductID)
+            // Lấy danh sách 10 sản phẩm bán chạy nhất
+            var topSellingProducts = await query
+                .GroupBy(x => new { x.ProductID, x.ProductName })
                 .Select(g => new ProductSalesDTO
                 {
-                    ProductId = g.Key,
+                    ProductId = g.Key.ProductID,
                     TotalSold = g.Sum(x => x.Quantity)
                 })
-                .OrderByDescending(p => p.TotalSold) 
+                .OrderByDescending(p => p.TotalSold)
+                .Take(topN) // Lấy top N sản phẩm
                 .ToListAsync();
 
-            return salesByProduct;
+            return topSellingProducts;
         }
+
         public async Task<List<ProductStockDTO>> GetLowStockProducts(int threshold)
         {
             var lowStockProducts = await _unitOfWork.GetRepository<Products>().Entities
-                .Where(p => p.QuantityInStock <= threshold) 
+                .Where(p => p.QuantityInStock <= threshold)
                 .Select(p => new ProductStockDTO
                 {
                     Id = p.Id,
@@ -92,4 +84,5 @@ namespace MilkStore.Services.Service
             return lowStockProducts;
         }
     }
+
 }

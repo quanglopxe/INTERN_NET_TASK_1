@@ -14,23 +14,25 @@ namespace MilkStore.API.Controllers
         {
             _statisticalProductService = statisticalProduct;
         }
-        [HttpGet("revenue-by-product")]
-        public async Task<IActionResult> GetRevenueByProduct([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        [HttpGet("top-selling-products")]
+        public async Task<IActionResult> GetTopSellingProducts(
+            [FromQuery] int topN = 10,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null,
+            [FromQuery] string? productName = null,
+            [FromQuery] string? categoryName = null)
         {
-            var result = await _statisticalProductService.GetRevenueByProduct(startDate, endDate);
-            return result != null ? Ok(result) : NotFound();
+            var result = await _statisticalProductService.GetTopSellingProducts(topN, startDate, endDate, productName, categoryName);
+
+            return result != null && (result is not IEnumerable<object> enumerable || enumerable.Any()) ? Ok(result) : NotFound();
         }
-        [HttpGet("best-worst-selling-products")]
-        public async Task<IActionResult> GetBestWorstSellingProducts([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
-        {
-            var result = await _statisticalProductService.GetBestWorstSellingProducts(startDate, endDate);
-            return result != null && result.Any() ? Ok(result) : NotFound();
-        }
+
         [HttpGet("low-stock-products")]
         public async Task<IActionResult> GetLowStockProducts([FromQuery] int threshold)
         {
             var result = await _statisticalProductService.GetLowStockProducts(threshold);
-            return result != null && result.Any() ? Ok(result) : NotFound();
+
+            return result != null && (result is not IEnumerable<object> enumerable || enumerable.Any()) ? Ok(result) : NotFound();
         }
     }
 }
