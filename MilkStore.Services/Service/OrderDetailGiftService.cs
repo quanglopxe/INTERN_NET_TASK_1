@@ -36,10 +36,12 @@ namespace MilkStore.Services.Service
         public async Task CreateOrderDetailGift(OrderDetailGiftModel orderDetailGiftModel)
         {
             int temppoint = 0;
-            OrderGift OG = await _unitOfWork.GetRepository<OrderGift>().GetByIdAsync(orderDetailGiftModel.OrderGiftId);
+            OrderGift OG = await _unitOfWork.GetRepository<OrderGift>().GetByIdAsync(orderDetailGiftModel.OrderGiftId) 
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! OrderGift null");
             temppoint = OG.User.Points;
             int temppoint1 = 0;
-            Gift G = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(orderDetailGiftModel.GiftId);
+            Gift G = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(orderDetailGiftModel.GiftId)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Gift null");
             temppoint1 = G.point * orderDetailGiftModel.quantity;
             if (temppoint < temppoint1)
             {
@@ -60,7 +62,7 @@ namespace MilkStore.Services.Service
                     if (item.GiftId == orderDetailGiftModel.GiftId)
                     {
                         Console.WriteLine("GiftId: " + orderDetailGiftModel.GiftId);
-                        OrderDetailGift newOrderDetailGift1 = await _unitOfWork.GetRepository<OrderDetailGift>().GetByIdAsync(item.Id);
+                        OrderDetailGift newOrderDetailGift1 = await _unitOfWork.GetRepository<OrderDetailGift>().GetByIdAsync(item.Id) ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! OrderDetailGift null");
                         newOrderDetailGift1.quantity += orderDetailGiftModel.quantity;
                         newOrderDetailGift1.LastUpdatedTime = DateTime.UtcNow;
                         await _unitOfWork.GetRepository<OrderDetailGift>().UpdateAsync(newOrderDetailGift1);
@@ -100,14 +102,9 @@ namespace MilkStore.Services.Service
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
             }    
-                OrderDetailGift existingOrderDetailGift = await _unitOfWork.GetRepository<OrderDetailGift>().GetByIdAsync(id);
-            if (existingOrderDetailGift == null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
-            }    
-                //throw new BaseException.ErrorException(400, "Bad Request", "Không tồn tại id!!!");
+                OrderDetailGift existingOrderDetailGift = await _unitOfWork.GetRepository<OrderDetailGift>().GetByIdAsync(id)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
 
-                // Đánh dấu là đã xóa
                 existingOrderDetailGift.DeletedTime = DateTime.UtcNow;
 
             await _unitOfWork.GetRepository<OrderDetailGift>().UpdateAsync(existingOrderDetailGift);
@@ -118,10 +115,8 @@ namespace MilkStore.Services.Service
         {
             if (id == null)
             {
-                // Lấy tất cả sản phẩm
                 IEnumerable<OrderDetailGift> Gift = await _unitOfWork.GetRepository<OrderDetailGift>().GetAllAsync();
 
-                // Lọc sản phẩm có DeleteTime == null
                 Gift = Gift.Where(p => p.DeletedTime == null);
 
                 return _mapper.Map<IEnumerable<OrderDetailGiftResponseDTO>>(Gift);
@@ -129,9 +124,10 @@ namespace MilkStore.Services.Service
             else
             {
                 // Lấy sản phẩm theo ID
-                Gift Gift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(id);
+                Gift Gift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(id) 
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Gift null");
 
-                if (Gift != null && Gift.DeletedTime == null) // Kiểm tra DeleteTime
+                if ( Gift.DeletedTime == null) // Kiểm tra DeleteTime
                 {
                     return new List<OrderDetailGiftResponseDTO> { _mapper.Map<OrderDetailGiftResponseDTO>(Gift) };
                 }
@@ -144,15 +140,11 @@ namespace MilkStore.Services.Service
 
 
         public async Task UpdateOrderDetailGift(string id, OrderDetailGiftModel OrderDetailGiftModel)
-        { 
-            OrderDetailGift existingGift = await _unitOfWork.GetRepository<OrderDetailGift>().GetByIdAsync(id);
+        {
+            OrderDetailGift existingGift = await _unitOfWork.GetRepository<OrderDetailGift>().GetByIdAsync(id) 
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! OrderDetailGift null");
 
-            if (existingGift == null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
-            }
 
-            // Cập nhật thông tin sản phẩm bằng cách ánh xạ từ DTO
             _mapper.Map(OrderDetailGiftModel, existingGift);
             existingGift.LastUpdatedTime = DateTime.UtcNow;
 
