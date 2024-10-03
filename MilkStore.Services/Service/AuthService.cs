@@ -15,14 +15,17 @@ using MilkStore.Contract.Repositories.Entity;
 using Microsoft.Extensions.Caching.Memory;
 using Google.Apis.Auth;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Repositories.UOW;
 namespace MilkStore.Services.Service;
 public class AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
       IMapper mapper, IHttpContextAccessor httpContextAccessor,
-      RoleManager<ApplicationRole> roleManager, IEmailService emailService, IMemoryCache memoryCache) : IAuthService
+      RoleManager<ApplicationRole> roleManager, IEmailService emailService, IMemoryCache memoryCache,
+      IUnitOfWork unitOfWork) : IAuthService
 {
     private readonly UserManager<ApplicationUser> userManager = userManager;
     private readonly SignInManager<ApplicationUser> signInManager = signInManager;
     private readonly RoleManager<ApplicationRole> roleManager = roleManager;
+    private readonly IUnitOfWork unitOfWork = unitOfWork;
     private readonly IEmailService emailService = emailService;
     private readonly IMapper mapper = mapper;
     private readonly IMemoryCache memoryCache = memoryCache;
@@ -85,6 +88,32 @@ public class AuthService(UserManager<ApplicationUser> userManager, SignInManager
         string otp = random.Next(100000, 999999).ToString();
         return otp;
     }
+    private async Task<string> AssignMemberToStaffAsync()
+    {
+        IList<ApplicationUser>? staffUsers = await userManager.GetUsersInRoleAsync("Staff");
+        if (staffUsers.Any())
+        {
+            ApplicationUser? staffWithLeastMembers = null;
+            int leastMembersCount = int.MaxValue;
+            foreach (ApplicationUser staff in staffUsers)
+            {
+                List<ApplicationUser>? members = await unitOfWork.GetRepository<ApplicationUser>().Entities.Where(u => u.ManagerId == staff.Id).ToListAsync();
+                int memberCount = members.Count;
+                if (memberCount < leastMembersCount)
+                {
+                    leastMembersCount = memberCount;
+                    staffWithLeastMembers = staff;
+                }
+            }
+            staffWithLeastMembers ??= staffUsers.First();
+            return staffWithLeastMembers.Id.ToString();
+        }
+        else
+        {
+            throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "No staff found.");
+        }
+
+    }
     #endregion
 
 
@@ -136,7 +165,13 @@ public class AuthService(UserManager<ApplicationUser> userManager, SignInManager
             throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Email already exists.");
         }
         ApplicationUser? newUser = mapper.Map<ApplicationUser>(registerModelView);
+
         newUser.UserName = registerModelView.Email;
+
+        string ManagerId = await AssignMemberToStaffAsync();
+
+        newUser.ManagerId = Guid.Parse(ManagerId);
+
         IdentityResult? result = await userManager.CreateAsync(newUser, registerModelView.Password);
         if (result.Succeeded)
         {

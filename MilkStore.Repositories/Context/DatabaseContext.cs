@@ -31,6 +31,13 @@ namespace MilkStore.Repositories.Context
         #endregion
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
+            modelBuilder.Entity<ApplicationUser>()
+                .HasOne(u => u.Manager)
+                .WithMany(u => u.Members)
+                .HasForeignKey(u => u.ManagerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<ApplicationUser>(entity =>
             {
                 entity.ToTable("Users");
@@ -132,13 +139,13 @@ namespace MilkStore.Repositories.Context
 
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.OrderDetails)
-                .WithMany() 
+                .WithMany()
                 .HasForeignKey(r => r.OrderDetailID)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.User)
-                .WithMany() 
+                .WithMany()
                 .HasForeignKey(r => r.UserID)
                 .OnDelete(DeleteBehavior.NoAction);
 

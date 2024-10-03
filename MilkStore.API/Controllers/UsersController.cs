@@ -21,6 +21,7 @@ namespace MilkStore.API.Controllers
             IEnumerable<UserResponeseDTO> users = await _userService.GetUser(id, index, pageSize);
             return Ok(BaseResponse<IEnumerable<UserResponeseDTO>>.OkResponse(users));
         }
+
         [HttpPost("AddUserWithRoleAsync")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddUserWithRoleAsync(UserModelView userModel)
@@ -28,6 +29,7 @@ namespace MilkStore.API.Controllers
             await _userService.AddUserWithRoleAsync(userModel);
             return Ok(BaseResponse<object>.OkResponse("Create user successfully"));
         }
+
         [HttpPut("UserUpdate")]
         [Authorize]
         public async Task<IActionResult> UpdateUser([FromBody] UserUpdateModelView userModel)

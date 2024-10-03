@@ -2,6 +2,7 @@
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Core.Utils;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MilkStore.Repositories.Entity
 {
@@ -21,6 +22,15 @@ namespace MilkStore.Repositories.Entity
             CreatedTime = CoreHelper.SystemTimeNow;
             LastUpdatedTime = CreatedTime;
         }
+
+        [ForeignKey("Manager")]
+        public Guid? ManagerId { get; set; }
+
+        [InverseProperty("Members")]
+        public virtual ApplicationUser? Manager { get; set; }
+
+        [InverseProperty("Manager")]
+        public virtual ICollection<ApplicationUser> Members { get; set; } = new List<ApplicationUser>();
 
         public virtual ICollection<Order> Orders { get; set; } // Một người dùng có nhiều đơn hàng
         public virtual ICollection<OrderGift> orderGift { get; set; }
