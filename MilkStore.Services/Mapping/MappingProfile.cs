@@ -69,7 +69,7 @@ namespace MilkStore.Services.Mapping
             .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Name));
             CreateMap<UserUpdateModelView, ApplicationUser>().ReverseMap();
 
-            CreateMap<OrderModelView, Order>().ReverseMap();
+            CreateMap<Order, OrderModelView>().ReverseMap();
             CreateMap<Order, OrderResponseDTO>()
                 .ForMember(dest => dest.OrderDetailss, opt => opt.MapFrom(src => src.OrderDetailss));
 

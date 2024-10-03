@@ -10,11 +10,17 @@ using System.Threading.Tasks;
 
 namespace MilkStore.Contract.Repositories.Entity
 {
+    public enum PreOrderStatus
+    {
+        Pending,
+        Available,
+        Confirmed
+    }
     public class PreOrders : BaseEntity
     {
         public required Guid UserID { get; set; }
         public string ProductID { get; set; }        
-        public string Status { get; set; }
+        public PreOrderStatus Status { get; set; }
         public int Quantity { get; set; }
         [ForeignKey("ProductID")]
         public virtual Products Products { get; set; }
