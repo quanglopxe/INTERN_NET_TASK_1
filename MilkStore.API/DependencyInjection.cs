@@ -22,9 +22,11 @@ namespace MilkStore.API
     {
         public static void AddConfig(this IServiceCollection services, IConfiguration configuration)
         {
+
             services.ConfigRoute();
+            // services.AddCorsConfig();
+            services.AddSignalConfig();
             services.AddConfigTimeToken();
-            services.AddCorsConfig();
             services.AddSwaggerUIAuthentication();
             services.AddMemoryCache();
             services.AddDatabase(configuration);
@@ -35,6 +37,10 @@ namespace MilkStore.API
             services.AddAuthenticationBearer(configuration);
             services.AddAutoMapperConfig();
             services.AddEmailConfig(configuration);
+        }
+        public static void AddSignalConfig(this IServiceCollection services)
+        {
+            services.AddSignalR();
         }
         public static void AddAuthenticationBearer(this IServiceCollection services, IConfiguration configuration)
         {
@@ -55,7 +61,28 @@ namespace MilkStore.API
                         ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? throw new Exception("JWT_AUDIENCE is not set"),
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new Exception("JWT_KEY is not set")))
                     };
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
+                            {
+                                if (accessToken.ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    context.Token = accessToken.ToString().AsSpan(7).Trim().ToString();
+                                }
+                                else
+                                {
+                                    context.Token = accessToken;
+                                }
+                            }
+                            return Task.CompletedTask;
+                        }
+                    };
                 });
+
         }
         public static void ConfigRoute(this IServiceCollection services)
         {
@@ -82,6 +109,7 @@ namespace MilkStore.API
         }
         public static void AddServices(this IServiceCollection services)
         {
+            services.AddScoped<ChatHubService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();
@@ -101,6 +129,8 @@ namespace MilkStore.API
 
             services.AddHttpContextAccessor();
         }
+
+
         public static void AddAutoMapperConfig(this IServiceCollection services)
         {
             services.AddAutoMapper(typeof(MappingProfile));
@@ -135,19 +165,19 @@ namespace MilkStore.API
                 });
             });
         }
-        public static void AddCorsConfig(this IServiceCollection services)
-        {
-            services.AddCors(options =>
-            {
-                options.AddPolicy("AllowAllOrigins", builder =>
-                {
-                    builder.WithOrigins(Environment.GetEnvironmentVariable("CLIENT_DOMAIN") ?? throw new Exception("CLIENT_DOMAIN is not set"))
-                            .AllowAnyHeader()
-                            .AllowAnyMethod()
-                            .AllowCredentials();
-                });
-            });
-        }
+        // public static void AddCorsConfig(this IServiceCollection services)
+        // {
+        //     services.AddCors(options =>
+        //     {
+        //         options.AddPolicy("AllowAllOrigins", builder =>
+        //         {
+        //             builder.WithOrigins(Environment.GetEnvironmentVariable("CLIENT_DOMAIN") ?? throw new Exception("CLIENT_DOMAIN is not set"))
+        //                     .AllowAnyHeader()
+        //                     .AllowAnyMethod()
+        //                     .AllowCredentials();
+        //         });
+        //     });
+        // }
         public static void AddAuthenticationGoogle(this IServiceCollection services)
         {
             services.AddAuthentication(options =>

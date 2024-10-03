@@ -1,20 +1,24 @@
-using AutoMapper;
 using dotenv.net;
-using Microsoft.EntityFrameworkCore;
 using MilkStore.API;
 using MilkStore.API.Middleware;
-using MilkStore.Contract.Repositories;
-using MilkStore.Contract.Services.Interface;
-using MilkStore.Repositories.Context;
-using MilkStore.Repositories.UOW;
 using MilkStore.Services.Configs;
-using MilkStore.Services.Service;
+
 
 DotEnv.Load();
 
-var builder = WebApplication.CreateBuilder(args);
-
+WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
+builder.Services.AddCors(options =>
+           {
+               options.AddPolicy("AllowAllOrigins", builder =>
+               {
+                   builder.WithOrigins("http://localhost:3000")
+                           .AllowAnyHeader()
+                           .AllowAnyMethod()
+                           .AllowCredentials();
+               });
+           });
 // config appsettings by env
+builder.Services.AddConfig(builder.Configuration);
 builder.Configuration
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -32,23 +36,30 @@ builder.Services.AddControllers()
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddConfig(builder.Configuration);
 WebApplication? app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseCors("AllowAllOrigins");
 app.UseSwagger();
 app.UseSwaggerUI();
+
 app.UseMiddleware<ExceptionMiddleware>();
+
 app.UseHttpsRedirection();
+
+
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors("AllowAllOrigins");
+
+app.MapHub<ChatHub>("/chathub").RequireAuthorization();
+
+
 app.MapControllers();
 
-// seed data account admin
-using (IServiceScope scope = app.Services.CreateScope())
-{
-    IServiceProvider? services = scope.ServiceProvider;
-    SeedDataAccount.SeedAsync(services).Wait();
-}
+//Seed Data
+// using (IServiceScope scope = app.Services.CreateScope())
+// {
+//     IServiceProvider? services = scope.ServiceProvider;
+//     SeedDataAccount.SeedAsync(services).Wait();
+// }
 app.Run();

@@ -852,6 +852,9 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<Guid?>("ManagerId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("NormalizedEmail")
                         .HasColumnType("nvarchar(max)");
 
@@ -880,6 +883,8 @@ namespace MilkStore.Repositories.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ManagerId");
 
                     b.ToTable("Users", (string)null);
                 });
@@ -1090,6 +1095,16 @@ namespace MilkStore.Repositories.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("MilkStore.Repositories.Entity.ApplicationUser", b =>
+                {
+                    b.HasOne("MilkStore.Repositories.Entity.ApplicationUser", "Manager")
+                        .WithMany("Members")
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Manager");
+                });
+
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.ApplicationRole", b =>
                 {
                     b.Navigation("UserRoles");
@@ -1137,6 +1152,8 @@ namespace MilkStore.Repositories.Migrations
             modelBuilder.Entity("MilkStore.Repositories.Entity.ApplicationUser", b =>
                 {
                     b.Navigation("Logins");
+
+                    b.Navigation("Members");
 
                     b.Navigation("Orders");
 
