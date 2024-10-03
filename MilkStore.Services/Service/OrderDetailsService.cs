@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using MilkStore.ModelViews.PreOrdersModelView;
 using MilkStore.Core.Constants;
+using PreOrderStatus = MilkStore.ModelViews.PreOrdersModelView.PreOrderStatus;
 
 namespace MilkStore.Services.Service
 {
@@ -43,7 +44,11 @@ namespace MilkStore.Services.Service
         {
             try
             {
-                string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+                string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier).Value;
+                if (userID == null)
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
+                }
                 // Kiểm tra xem số lượng có hợp lệ không
                 if (model.Quantity <= 0 || model.Quantity % 1 != 0)
                 {
@@ -63,23 +68,22 @@ namespace MilkStore.Services.Service
                     {
                         ProductID = model.ProductID,
                         Quantity = model.Quantity,
-                        Status = "Waiting...",
+                        Status = PreOrderStatus.Pending,
                         UserID = Guid.Parse(userID)
                     };
                     await _preOrdersService.CreatePreOrders(preOrdersModelView);
                     throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Product {product.ProductName} does not have sufficient quantity. Please check your email for more information!");
                 }
                 // Kiểm tra xem OrderDetails đã tồn tại hay chưa dựa trên OrderID và ProductID
-                OrderDetails existingOrderDetail = await _context.OrderDetails
-                    .FirstOrDefaultAsync(od => od.OrderID == model.OrderID && od.ProductID == model.ProductID);
+                OrderDetails? existingOrderDetail = await _unitOfWork.GetRepository<OrderDetails>().Entities
+                    .FirstOrDefaultAsync(od => od.OrderID == model.OrderID && od.ProductID == model.ProductID && od.DeletedTime == null);
 
                 if (existingOrderDetail != null)
                 {
                     // Nếu đã tồn tại, cập nhật số lượng và tính lại tổng tiền
                     existingOrderDetail.Quantity += model.Quantity;
                     existingOrderDetail.UnitPrice = product.Price;
-                    existingOrderDetail.CreatedBy = userID;
-                    product.QuantityInStock -= model.Quantity;
+                    existingOrderDetail.CreatedBy = userID;                    
                 }
                 else
                 {

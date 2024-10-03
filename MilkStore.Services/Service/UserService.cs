@@ -193,7 +193,7 @@ namespace MilkStore.Services.Service
 
             ApplicationUser user = await userManager.FindByIdAsync(userId)
              ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, "NotFound", "User not found");
-
+            
             // Tính điểm thưởng: 10 điểm cho mỗi 10.000 VND
             int earnedPoints = (int)(totalAmount / 10000) * 10;
 
