@@ -99,6 +99,7 @@ namespace MilkStore.API
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<IRoleService, RoleService>();
             services.AddScoped<IStatisticalService, StatisticalService>();
+            services.AddScoped<IStatisticalProductService, StatisticalProductService>();
 
             services.AddHttpContextAccessor();
         }
