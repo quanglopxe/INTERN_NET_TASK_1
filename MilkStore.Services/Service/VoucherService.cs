@@ -1,13 +1,15 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core;
+using MilkStore.Core.Base;
+using MilkStore.Core.Constants;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.VoucherModelViews;
 using MilkStore.ModelViews.ResponseDTO;
-
 
 namespace MilkStore.Services.Service
 {
@@ -24,11 +26,6 @@ namespace MilkStore.Services.Service
 
         public async Task CreateVoucher(VoucherModelView voucherModel)
         {
-            if (voucherModel == null)
-            {
-                throw new ArgumentNullException(nameof(voucherModel), "Voucher model cannot be null.");
-            }
-
             Voucher newVoucher = _mapper.Map<Voucher>(voucherModel);
             newVoucher.CreatedTime = CoreHelper.SystemTimeNow;
             newVoucher.LastUpdatedTime = CoreHelper.SystemTimeNow;
@@ -42,18 +39,15 @@ namespace MilkStore.Services.Service
         {
             if (string.IsNullOrWhiteSpace(id))
             {
-                throw new KeyNotFoundException("Voucher ID is required.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please enter voucher ID!");
             }
 
-            Voucher voucher = await _unitOfWork.GetRepository<Voucher>().GetByIdAsync(id);
-            if (voucher == null)
-            {
-                throw new KeyNotFoundException($"Voucher with ID {id} was not found.");
-            }
+            Voucher? voucher = await _unitOfWork.GetRepository<Voucher>().GetByIdAsync(id)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"No voucher found with ID {id}");
 
             if (voucher.DeletedTime != null)
             {
-                throw new InvalidOperationException($"Voucher with ID {id} has already been deleted.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "This voucher has already been deleted!");
             }
 
             voucher.DeletedTime = CoreHelper.SystemTimeNow;
@@ -63,33 +57,29 @@ namespace MilkStore.Services.Service
 
         public async Task<BasePaginatedList<VoucherResponseDTO>> GetVouchers(string? name, int pageIndex, int pageSize)
         {
-            var query = _unitOfWork.GetRepository<Voucher>().Entities.Where(voucher => voucher.DeletedTime == null);
+            IQueryable<Voucher>? query = _unitOfWork.GetRepository<Voucher>().Entities.Where(voucher => voucher.DeletedTime == null);
 
             if (!string.IsNullOrWhiteSpace(name))
             {
                 query = query.Where(voucher => voucher.Name.Contains(name));
             }
 
-            var paginatedVouchers = await _unitOfWork.GetRepository<Voucher>().GetPagging(query, pageIndex, pageSize);
+            BasePaginatedList<Voucher>? paginatedVouchers = await _unitOfWork.GetRepository<Voucher>().GetPagging(query, pageIndex, pageSize);
 
-            if (!paginatedVouchers.Items.Any())
+            if (!paginatedVouchers.Items.Any() && !string.IsNullOrWhiteSpace(name))
             {
-                if (!string.IsNullOrWhiteSpace(name))
-                {
-                    var vouchersByName = await _unitOfWork.GetRepository<Voucher>().Entities
-                        .Where(voucher => voucher.Name.Contains(name) && voucher.DeletedTime == null)
-                        .ToListAsync();
+                List<Voucher>? vouchersByName = await _unitOfWork.GetRepository<Voucher>().Entities
+                    .Where(voucher => voucher.Name.Contains(name) && voucher.DeletedTime == null)
+                    .ToListAsync();
 
-                    if (vouchersByName.Any())
-                    {
-                        var paginatedVoucherDtos = _mapper.Map<List<VoucherResponseDTO>>(vouchersByName);
-                        return new BasePaginatedList<VoucherResponseDTO>(paginatedVoucherDtos, vouchersByName.Count, 1, pageSize);
-                    }
+                if (vouchersByName.Any())
+                {
+                    List<VoucherResponseDTO>? voucherDtosByName = _mapper.Map<List<VoucherResponseDTO>>(vouchersByName);
+                    return new BasePaginatedList<VoucherResponseDTO>(voucherDtosByName, vouchersByName.Count, 1, pageSize);
                 }
             }
 
-            var voucherDtosResult = _mapper.Map<List<VoucherResponseDTO>>(paginatedVouchers.Items);
-
+            List<VoucherResponseDTO>? voucherDtosResult = _mapper.Map<List<VoucherResponseDTO>>(paginatedVouchers.Items);
             return new BasePaginatedList<VoucherResponseDTO>(
                 voucherDtosResult,
                 paginatedVouchers.TotalItems,
@@ -102,17 +92,14 @@ namespace MilkStore.Services.Service
         {
             if (string.IsNullOrWhiteSpace(id))
             {
-                throw new KeyNotFoundException("Voucher ID is required.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please enter voucher ID!");
             }
 
-            Voucher voucher = await _unitOfWork.GetRepository<Voucher>().GetByIdAsync(id);
-            if (voucher == null)
-            {
-                throw new KeyNotFoundException($"Voucher with ID {id} was not found.");
-            }
+            Voucher? voucher = await _unitOfWork.GetRepository<Voucher>().GetByIdAsync(id)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"No voucher found with ID {id}");
 
-            // Map voucherModel to voucher (only update changed fields)
             _mapper.Map(voucherModel, voucher);
+
             voucher.LastUpdatedTime = CoreHelper.SystemTimeNow;
 
             await _unitOfWork.GetRepository<Voucher>().UpdateAsync(voucher);
