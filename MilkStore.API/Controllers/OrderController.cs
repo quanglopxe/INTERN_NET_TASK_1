@@ -39,9 +39,8 @@ namespace MilkStore.API.Controllers
         [HttpPost]
         //[Authorize(Roles = "Member")]
         public async Task<IActionResult> Add(OrderModelView item)
-        {            
-            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            await _orderService.AddAsync(item, userId);
+        {                        
+            await _orderService.AddAsync(item);
             return Ok(BaseResponse<string>.OkResponse("Order added successfully!"));            
         }
 
@@ -59,9 +58,11 @@ namespace MilkStore.API.Controllers
         public async Task<IActionResult> Update(string id, OrderModelView item)
         {            
             await _orderService.UpdateAsync(id, item);
-            await _orderService.GetStatus_Mail(id);
-            await _orderService.GetNewStatus_Mail(id);
-            return Ok(BaseResponse<string>.OkResponse("Order update successfully!"));           
+            await _orderService.UpdateInventoryQuantity(id);
+            await _orderService.UpdateUserPoint(id);
+            await _orderService.SendingPaymentStatus_Mail(id);
+            await _orderService.SendingOrderStatus_Mail(id);
+            return Ok(BaseResponse<string>.OkResponse("Order was updated successfully!"));           
         }
 
         [HttpDelete("{id}")]
@@ -69,23 +70,8 @@ namespace MilkStore.API.Controllers
         public async Task<IActionResult> Delete(string id)
         {            
             await _orderService.DeleteAsync(id);
-            return Ok(new { message = "Order delete successfully!" });
+            return Ok(BaseResponse<string>.OkResponse("Order was deleted successfully!"));
             
         }
-
-        [HttpPut("UpdateQuantity{id}")]
-        //[Authorize(Roles = "Guest, Member")]
-        public async Task<IActionResult> UpdateQuantity(string id, OrderModelView item)
-        {                
-            // Call the regular update method
-            await _orderService.UpdateAsync(id, item);
-            // If status is "Confirmed", deduct stock
-            if (item.Status == "Confirmed")
-            {
-                await _orderService.DeductStockOnDelivery(id);
-            }
-            return Ok(new { message = "Update Order thành công" });       
-        }
-
     }
 }

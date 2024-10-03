@@ -5,6 +5,9 @@ using Microsoft.IdentityModel.Tokens;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core;
+using MilkStore.Core.Base;
+using MilkStore.Core.Constants;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.PreOrdersModelView;
 using MilkStore.Repositories.Context;
@@ -36,7 +39,7 @@ namespace MilkStore.Services.Service
 
         public async Task CreatePreOrders(PreOrdersModelView preOrdersModel)
         {
-            var product = await _unitOfWork.GetRepository<Products>()
+            Products? product = await _unitOfWork.GetRepository<Products>()
                 .Entities
                 .FirstOrDefaultAsync(p => p.Id == preOrdersModel.ProductID);
 
@@ -83,13 +86,18 @@ namespace MilkStore.Services.Service
 
         public async Task DeletePreOrders(string id)
         {
-            PreOrders preord = await _unitOfWork.GetRepository<PreOrders>().GetByIdAsync(id);
-            if (preord == null)
+            if (string.IsNullOrWhiteSpace(id))
             {
-                throw new KeyNotFoundException($"Pre-order with ID {id} was not found.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please enter postID!");
             }
-            preord.DeletedTime = CoreHelper.SystemTimeNow;
-            await _unitOfWork.GetRepository<PreOrders>().UpdateAsync(preord);
+            PreOrders? preOrder = await _unitOfWork.GetRepository<PreOrders>().GetByIdAsync(id)
+                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"No pre-order found with {id}");
+            if (preOrder.DeletedTime != null)
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "This pre-order has already been deleted!");
+            }
+            preOrder.DeletedTime = CoreHelper.SystemTimeNow;
+            await _unitOfWork.GetRepository<PreOrders>().UpdateAsync(preOrder);
             await _unitOfWork.SaveAsync();
         }
 
@@ -97,13 +105,13 @@ namespace MilkStore.Services.Service
         {
             if (id == null)
             {
-                var query = _unitOfWork.GetRepository<PreOrders>()
+                IQueryable<PreOrders>? query = _unitOfWork.GetRepository<PreOrders>()
                     .Entities
                     .Where(detail => detail.DeletedTime == null)
                     .OrderBy(detail => detail.ProductID);
 
 
-                var paginated = await _unitOfWork.GetRepository<PreOrders>()
+                BasePaginatedList<PreOrders>? paginated = await _unitOfWork.GetRepository<PreOrders>()
                 .GetPagging(query, page, pageSize);
 
                 return paginated.Items;
@@ -111,7 +119,7 @@ namespace MilkStore.Services.Service
             }
             else
             {
-                var preord = await _unitOfWork.GetRepository<PreOrders>()
+                PreOrders? preord = await _unitOfWork.GetRepository<PreOrders>()
                     .Entities
                     .FirstOrDefaultAsync(r => r.Id == id && r.DeletedTime == null);
                 if (preord == null)
@@ -122,20 +130,23 @@ namespace MilkStore.Services.Service
             }
         }
 
-        public async Task<PreOrders> UpdatePreOrders(string id, PreOrdersModelView preOrdersModel)
+        public async Task UpdatePreOrders(string id, PreOrdersModelView preOrdersModel)
         {
-
-            PreOrders preord = await _unitOfWork.GetRepository<PreOrders>().GetByIdAsync(id);
-
-            if (preord == null)
+            string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            if (!string.IsNullOrWhiteSpace(userID))
             {
-                throw new Exception("Pre-order không tồn tại.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please log in!");
             }
-            _mapper.Map(preOrdersModel, preord);
-            preord.LastUpdatedTime = CoreHelper.SystemTimeNow;
-            await _unitOfWork.GetRepository<PreOrders>().UpdateAsync(preord);
+            PreOrders? preOrders = await _unitOfWork.GetRepository<PreOrders>().GetByIdAsync(id)
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"No pre-order found with {id}!");
+
+            _mapper.Map(preOrdersModel, preOrders);
+
+            preOrders.LastUpdatedTime = CoreHelper.SystemTimeNow;
+            preOrders.LastUpdatedBy = userID;
+
+            await _unitOfWork.GetRepository<PreOrders>().UpdateAsync(preOrders);
             await _unitOfWork.SaveAsync();
-            return preord;
         }
     }
 }

@@ -7,14 +7,33 @@ using System.Threading.Tasks;
 
 namespace MilkStore.ModelViews.OrderModelViews
 {
+    public enum OrderStatus
+    {
+        Pending,
+        Confirmed,
+        Cancelled,
+        Delivering,
+        Delivered,
+        Refunded
+    }
+    public enum PaymentMethod
+    {
+        Online,
+        COD
+    }
+    public enum PaymentStatus
+    {
+        Unpaid,
+        Paid,
+        Refunded
+    }
     public class OrderModelView
     {
-        //public required string Id { get; set; }
-        // public required Guid UserId { get; set; }
-        public required string Status { get; set; }
+        public required OrderStatus OrderStatuss { get; set; }
+        public required PaymentStatus PaymentStatuss { get; set; }
         [Required(ErrorMessage = "ShippingAddress không được để trống")]
         public required string ShippingAddress { get; set; }
         [Required(ErrorMessage = "PaymentMethod không được để trống")]
-        public required string PaymentMethod { get; set; }
+        public required PaymentMethod PaymentMethod { get; set; }
     }
 }

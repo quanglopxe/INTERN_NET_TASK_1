@@ -1,13 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using MilkStore.Contract.Repositories.Entity;
+﻿using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
 using MilkStore.ModelViews.ProductsModelViews;
-using MilkStore.ModelViews.UserModelViews;
-using MilkStore.Repositories.Entity;
-using MilkStore.Services.Service;
+using MilkStore.ModelViews.ResponseDTO;
 
 namespace MilkStore.API.Controllers
 {
@@ -22,10 +17,9 @@ namespace MilkStore.API.Controllers
         }
         [HttpGet("GetProduct & Pagging")]
         //[Authorize(Roles = "Admin,Member")]
-        public async Task<IActionResult> GetProducts([FromQuery] string? id, [FromQuery] int pageIndex, [FromQuery] int pageSize)
+        public async Task<IActionResult> GetProducts(string? id, int pageIndex, int pageSize)
 
         {
-            
             var result = await _ProductsService.GetProducts(id, pageIndex, pageSize);
             return Ok(result);
             
@@ -33,7 +27,7 @@ namespace MilkStore.API.Controllers
         [HttpGet("GetByName")]
         public async Task<IActionResult> GetByName(string? Productname, string? CategoryName)
         {
-            IEnumerable<ProductsModel> product = await _ProductsService.GetProductsName(Productname, CategoryName);
+            IEnumerable<ProductResponseDTO> product = await _ProductsService.GetProductsName(Productname, CategoryName);
             return Ok(product);
         }
         [HttpPost()]

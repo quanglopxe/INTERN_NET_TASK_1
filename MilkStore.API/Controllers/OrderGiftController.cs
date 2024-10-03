@@ -5,6 +5,7 @@ using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
 using MilkStore.Core;
 using MilkStore.ModelViews.OrderGiftModelViews;
+using MilkStore.ModelViews.ResponseDTO;
 
 namespace MilkStore.API.Controllers
 {
@@ -22,21 +23,8 @@ namespace MilkStore.API.Controllers
         //[Authorize(Roles = "Admin,Member")]
         public async Task<IActionResult> GetOrderGift(string? id)
         {
-            try
-            {
-                IEnumerable<OrderGiftModel> Gift = await _OGiftService.GetOrderGift(id);
-
-                if (Gift == null || !Gift.Any())
-                {
-                    return NotFound("Quà tặng không tồn tại!!!");
-                }
-
-                return Ok(Gift);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500); // Trả về mã lỗi 500
-            }
+            IEnumerable<OrderGiftResponseDTO> Gift = await _OGiftService.GetOrderGift(id);
+            return Ok(Gift);
         }
 
         [HttpPost()]
@@ -52,7 +40,9 @@ namespace MilkStore.API.Controllers
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateOrderGift(string id, [FromBody] OrderGiftModel OrderGiftModel)
         {
+            //await _OGiftService.SendMail_OrderGift(id);
             await _OGiftService.UpdateOrderGift(id, OrderGiftModel);
+            
             return Ok(BaseResponse<string>.OkResponse("Updated successfully"));
             
         }

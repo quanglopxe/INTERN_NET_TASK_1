@@ -7,6 +7,7 @@ using MilkStore.Core.Base;
 using MilkStore.Core.Constants;
 using MilkStore.ModelViews.GiftModelViews;
 using MilkStore.ModelViews.OrderGiftModelViews;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.Repositories.Context;
 using MilkStore.Repositories.Entity;
 using MilkStore.Services.EmailSettings;
@@ -35,10 +36,6 @@ namespace MilkStore.Services.Service
 
         public async Task CreateOrderGift(OrderGiftModel orderGiftModel)
         {
-            if (orderGiftModel.Id.Contains(" "))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
-            }
             OrderGift newOG = _mapper.Map<OrderGift>(orderGiftModel);
             if (newOG.Id == null || newOG.Id == "")
             {
@@ -67,7 +64,7 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
         }
 
-        public async Task<IEnumerable<OrderGiftModel>> GetOrderGift(string? id)
+        public async Task<IEnumerable<OrderGiftResponseDTO>> GetOrderGift(string? id)
         {
             if (id == null)
             {
@@ -77,7 +74,7 @@ namespace MilkStore.Services.Service
                 // Lọc sản phẩm có DeleteTime == null
                 OGift = OGift.Where(p => p.DeletedTime == null);
 
-                return _mapper.Map<IEnumerable<OrderGiftModel>>(OGift);
+                return _mapper.Map<IEnumerable<OrderGiftResponseDTO>>(OGift);
             }
             else
             {
@@ -86,11 +83,11 @@ namespace MilkStore.Services.Service
 
                 if (OGift != null && OGift.DeletedTime == null) // Kiểm tra DeleteTime
                 {
-                    return new List<OrderGiftModel> { _mapper.Map<OrderGiftModel>(OGift) };
+                    return new List<OrderGiftResponseDTO> { _mapper.Map<OrderGiftResponseDTO>(OGift) };
                 }
                 else
                 {
-                    return new List<OrderGiftModel>();
+                    return new List<OrderGiftResponseDTO>();
                 }
             }
         }
@@ -102,29 +99,12 @@ namespace MilkStore.Services.Service
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
             }
-
-            OrderGift existingOGift = await _unitOfWork.GetRepository<OrderGift>().GetByIdAsync(id);
-
-            if (existingOGift == null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
-            }
-
-            // Cập nhật thông tin sản phẩm bằng cách ánh xạ từ DTO
-            _mapper.Map(orderGiftModel, existingOGift);
-            existingOGift.LastUpdatedTime = DateTime.UtcNow;
-            await _unitOfWork.GetRepository<OrderGift>().UpdateAsync(existingOGift);
-            await _unitOfWork.SaveAsync();
-        }
-        public async Task SendMail_OrderGift(string? id)
-        {
             DateTime currentDate = DateTime.Now;
             DateTime futureDate = currentDate.AddDays(3);
             DateTime futureDate2 = currentDate.AddDays(5);
             string temp = "Thời gian giao dự kiến từ " + futureDate.ToString("dd/MM/yyyy") + " đến " + futureDate2.ToString("dd/MM/yyyy");
-            string productname = "";
-            OrderGift OG = await _unitOfWork.GetRepository<OrderGift>().GetByIdAsync(id); // lấy thông tin theo id
-            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(OG.UserID);
+            string productname = ""; // lấy thông tin theo id
+            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(orderGiftModel.UserId);
             int dem = 0;
 
             IEnumerable<OrderDetailGift> ODG = await _unitOfWork.GetRepository<OrderDetailGift>().GetAllAsync();
@@ -139,13 +119,55 @@ namespace MilkStore.Services.Service
                 }
             }
             string temp1 = " Quà tặng gồm: " + productname;
-            if (OG.Status == "Confirmed" && OG.User != null)
+            if (orderGiftModel.Status == "Confirmed")
             {
                 _emailService.SendEmailAsync(user.Email, "ĐỔI ĐIỂM LẤY QUÀ - MILKSTORE", temp + temp1);
                 user.Points = user.Points - dem;
                 await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
                 await _unitOfWork.SaveAsync();
             }
+            OrderGift existingOGift = await _unitOfWork.GetRepository<OrderGift>().GetByIdAsync(id);
+
+            if (existingOGift == null)
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
+            }
+
+            // Cập nhật thông tin sản phẩm bằng cách ánh xạ từ DTO
+            _mapper.Map(orderGiftModel, existingOGift);
+            existingOGift.LastUpdatedTime = DateTime.UtcNow;
+            await _unitOfWork.GetRepository<OrderGift>().UpdateAsync(existingOGift);
+            await _unitOfWork.SaveAsync();
         }
+        //public async Task SendMail_OrderGift(string? id, OrderGiftModel orderGiftModel)
+        //{
+        //    DateTime currentDate = DateTime.Now;
+        //    DateTime futureDate = currentDate.AddDays(3);
+        //    DateTime futureDate2 = currentDate.AddDays(5);
+        //    string temp = "Thời gian giao dự kiến từ " + futureDate.ToString("dd/MM/yyyy") + " đến " + futureDate2.ToString("dd/MM/yyyy");
+        //    string productname = ""; // lấy thông tin theo id
+        //    ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(OG.UserID);
+        //    int dem = 0;
+
+        //    IEnumerable<OrderDetailGift> ODG = await _unitOfWork.GetRepository<OrderDetailGift>().GetAllAsync();
+        //    foreach (var item in ODG)
+        //    {
+
+        //        if (item.OrderGiftId == id)
+        //        {
+        //            Gift gift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(item.GiftId);
+        //            dem += gift.point * item.quantity;
+        //            productname += " " + gift.Products.ProductName + " Số lượng: " + item.quantity;
+        //        }
+        //    }
+        //    string temp1 = " Quà tặng gồm: " + productname;
+        //    if (orderGiftModel.Status == "Confirmed")
+        //    {
+        //        _emailService.SendEmailAsync(user.Email, "ĐỔI ĐIỂM LẤY QUÀ - MILKSTORE", temp + temp1);
+        //        user.Points = user.Points - dem;
+        //        await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
+        //        await _unitOfWork.SaveAsync();
+        //    }
+        //}
     }
 }
