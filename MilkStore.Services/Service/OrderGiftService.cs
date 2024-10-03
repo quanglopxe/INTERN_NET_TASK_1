@@ -79,9 +79,9 @@ namespace MilkStore.Services.Service
             else
             {
                 // Lấy sản phẩm theo ID
-                OrderGift OGift = await _unitOfWork.GetRepository<OrderGift>().GetByIdAsync(id);
+                OrderGift OGift = await _unitOfWork.GetRepository<OrderGift>().GetByIdAsync(id) ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! OrderGift null");
 
-                if (OGift != null && OGift.DeletedTime == null) // Kiểm tra DeleteTime
+                if (OGift.DeletedTime == null) // Kiểm tra DeleteTime
                 {
                     return new List<OrderGiftResponseDTO> { _mapper.Map<OrderGiftResponseDTO>(OGift) };
                 }
@@ -104,7 +104,8 @@ namespace MilkStore.Services.Service
             DateTime futureDate2 = currentDate.AddDays(5);
             string temp = "Thời gian giao dự kiến từ " + futureDate.ToString("dd/MM/yyyy") + " đến " + futureDate2.ToString("dd/MM/yyyy");
             string productname = ""; // lấy thông tin theo id
-            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(orderGiftModel.UserId);
+            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(orderGiftModel.UserId) 
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! User null");
             int dem = 0;
 
             IEnumerable<OrderDetailGift> ODG = await _unitOfWork.GetRepository<OrderDetailGift>().GetAllAsync();
@@ -126,12 +127,9 @@ namespace MilkStore.Services.Service
                 await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
                 await _unitOfWork.SaveAsync();
             }
-            OrderGift existingOGift = await _unitOfWork.GetRepository<OrderGift>().GetByIdAsync(id);
+            OrderGift existingOGift = await _unitOfWork.GetRepository<OrderGift>().GetByIdAsync(id)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! OrderGift null");
 
-            if (existingOGift == null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
-            }
 
             // Cập nhật thông tin sản phẩm bằng cách ánh xạ từ DTO
             _mapper.Map(orderGiftModel, existingOGift);

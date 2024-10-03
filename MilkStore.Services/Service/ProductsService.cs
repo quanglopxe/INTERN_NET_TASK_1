@@ -67,7 +67,8 @@ namespace MilkStore.Services.Service
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
             }    
-            Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id);
+            Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Product null");
 
             if (product.DeletedTime != null)
             {
@@ -83,8 +84,12 @@ namespace MilkStore.Services.Service
         public async Task<BasePaginatedList<ProductResponseDTO>> GetProducts(string? id, int pageIndex, int pageSize)
         {
             IQueryable<Products> query = _unitOfWork.GetRepository<Products>().Entities;
-
-            if (!string.IsNullOrEmpty(id))
+            if(pageIndex==0 || pageSize == 0)
+            {
+                pageSize = 5;
+                pageIndex = 1;
+            }    
+            if (!string.IsNullOrWhiteSpace(id))
             {
                 query = query.Where(p => p.Id == id && p.DeletedTime == null);
 
@@ -127,11 +132,8 @@ namespace MilkStore.Services.Service
 
         public async Task UpdateProducts(string id, ProductsModel productsModel)
         {
-            Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id);
-            if (product == null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist{id}");
-            }
+            Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist{id}");
             var oldQuantityInStock = product.QuantityInStock;
 
             _mapper.Map(productsModel, product);
