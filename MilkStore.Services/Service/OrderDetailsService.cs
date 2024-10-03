@@ -20,15 +20,13 @@ namespace MilkStore.Services.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IOrderService _orderService;
-        private readonly DatabaseContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IPreOrdersService _preOrdersService;
 
-        public OrderDetailsService(IUnitOfWork unitOfWork, DatabaseContext context, IOrderService orderService, IMapper mapper, IHttpContextAccessor httpContextAccessor, IPreOrdersService preOrdersService)
+        public OrderDetailsService(IUnitOfWork unitOfWork, IOrderService orderService, IMapper mapper, IHttpContextAccessor httpContextAccessor, IPreOrdersService preOrdersService)
         {
             _unitOfWork = unitOfWork;
-            _context = context;
             _orderService = orderService;
             _mapper = mapper;
             _httpContextAccessor = httpContextAccessor;
@@ -45,7 +43,7 @@ namespace MilkStore.Services.Service
             try
             {
                 string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier).Value;
-                if (userID == null)
+                if (string.IsNullOrWhiteSpace(userID))
                 {
                     throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
                 }
@@ -55,12 +53,10 @@ namespace MilkStore.Services.Service
                     throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Quantity must be greater than 0 and an integer.");
                 }
 
-                // Truy cập trực tiếp vào DbContext để tìm sản phẩm
-                Products product = await _context.Products.FirstOrDefaultAsync(p => p.Id == model.ProductID);
-                if (product == null)
-                {
-                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Product with {product} not found!");
-                }
+                // Truy cập trực tiếp để tìm sản phẩm
+                Products product = await _unitOfWork.GetRepository<Products>().Entities
+                    .FirstOrDefaultAsync(p => p.Id == model.ProductID)
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Product is not found!");
                 //PreOrder
                 if (product.QuantityInStock < model.Quantity)
                 {
@@ -92,10 +88,10 @@ namespace MilkStore.Services.Service
                     orderDetails.UnitPrice = product.Price;
 
                     // Thêm mới OrderDetails
-                    _context.OrderDetails.Add(orderDetails);
+                    _unitOfWork.GetRepository<OrderDetails>().InsertAsync(orderDetails);
                     existingOrderDetail = orderDetails;
                 }
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveAsync();
 
                 // Cập nhật tổng giá trị đơn hàng
                 await _orderService.UpdateToTalAmount(model.OrderID);
@@ -111,7 +107,7 @@ namespace MilkStore.Services.Service
         //Read OrderDetails
         public async Task<IEnumerable<OrderDetails>> ReadOrderDetails(string? id, int page, int pageSize)
         {
-            if (id == null)
+            if (string.IsNullOrWhiteSpace(id))
             {
                 IQueryable<OrderDetails> query = _unitOfWork.GetRepository<OrderDetails>().Entities
                     .Where(detail => detail.DeletedTime == null)
@@ -124,13 +120,10 @@ namespace MilkStore.Services.Service
             }
             else
             {
-                OrderDetails? od = await _unitOfWork.GetRepository<OrderDetails>()
-                    .Entities
-                    .FirstOrDefaultAsync(or => or.Id == id && or.DeletedTime == null);
-                if (od == null)
-                {
-                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Order detail with {od} not found!");
-                }
+                OrderDetails? od = await _unitOfWork.GetRepository<OrderDetails>().Entities
+                    .FirstOrDefaultAsync(or => or.Id == id && or.DeletedTime == null) 
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Order detail with {id} not found!");
+                
                 return new List<OrderDetails> { od };
             }
         }
@@ -146,19 +139,13 @@ namespace MilkStore.Services.Service
 
             //OrderDetails orderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetAllAsync()
             //    .ContinueWith(task => task.Result.FirstOrDefault(od => od.OrderID == orderId && od.ProductID == productId));
-            OrderDetails? orderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id);
-            if (orderDetails == null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Order detail with {orderDetails} not found!");
-            }
+            OrderDetails? orderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Order detail with {id} not found!");
 
             string productID = orderDetails.ProductID;
-            Products? product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(productID);
-            if (product == null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Product with {product} not found!");
-            }
-
+            Products? product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(productID)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Product with {productID} not found!");
+            
             orderDetails.Quantity = model.Quantity;
             orderDetails.UnitPrice = product.Price;
 
@@ -174,11 +161,8 @@ namespace MilkStore.Services.Service
         {
             //OrderDetails od = await _unitOfWork.GetRepository<OrderDetails>().GetAllAsync()
             //    .ContinueWith(task => task.Result.FirstOrDefault(od => od.OrderID == orderId && od.ProductID == productId));
-            OrderDetails? od = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id);
-            if (od == null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Order detail with {od} not found!");
-            }
+            OrderDetails? od = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Order detail with {id} not found!");
 
             od.DeletedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(od);
