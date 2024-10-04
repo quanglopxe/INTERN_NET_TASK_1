@@ -97,6 +97,7 @@ namespace MilkStore.Services.Service
                 Id = user.Id,
                 UserName = user.UserName,
                 Email = user.Email,
+                Name = user.Name,
                 Points = user.Points,
                 CreatedBy = user.CreatedBy,
                 DeletedBy = user.DeletedBy,
@@ -165,6 +166,7 @@ namespace MilkStore.Services.Service
             ApplicationUser? newUser = _mapper.Map<ApplicationUser>(userModel);
             newUser.CreatedBy = handleBy;
             newUser.EmailConfirmed = true;
+            newUser.Name = userModel.Name;
             newUser.UserName = userModel.Email;
             string passwordChars = GenerateRandomPassword();
             IdentityResult? result = await userManager.CreateAsync(newUser, passwordChars);
@@ -193,7 +195,7 @@ namespace MilkStore.Services.Service
 
             ApplicationUser user = await userManager.FindByIdAsync(userId)
              ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, "NotFound", "User not found");
-            
+
             // Tính điểm thưởng: 10 điểm cho mỗi 10.000 VND
             int earnedPoints = (int)(totalAmount / 10000) * 10;
 
@@ -201,6 +203,21 @@ namespace MilkStore.Services.Service
 
             await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
             await _unitOfWork.SaveAsync();
+        }
+
+
+        public async Task<UserProfileResponseModelView> GetUserProfile()
+        {
+            string? userIdToken = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Token is invalid.");
+
+            ApplicationUser? user = await userManager.FindByIdAsync(userIdToken)
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found.");
+
+            UserProfileResponseModelView? userResponse = _mapper.Map<UserProfileResponseModelView>(user);
+
+            return userResponse;
+
         }
 
     }
