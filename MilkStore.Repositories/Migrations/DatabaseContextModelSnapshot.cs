@@ -540,7 +540,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasIndex("VoucherId");
 
-                    b.ToTable("OrderVoucher");
+                    b.ToTable("OrderVouchers");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Post", b =>

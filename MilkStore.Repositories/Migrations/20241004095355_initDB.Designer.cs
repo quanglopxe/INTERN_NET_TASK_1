@@ -12,8 +12,8 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20241004091158_test")]
-    partial class test
+    [Migration("20241004095355_initDB")]
+    partial class initDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -543,7 +543,7 @@ namespace MilkStore.Repositories.Migrations
 
                     b.HasIndex("VoucherId");
 
-                    b.ToTable("OrderVoucher");
+                    b.ToTable("OrderVouchers");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Post", b =>

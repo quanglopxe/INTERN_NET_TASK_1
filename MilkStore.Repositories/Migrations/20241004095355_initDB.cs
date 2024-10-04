@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MilkStore.Repositories.Migrations
 {
     /// <inheritdoc />
-    public partial class test : Migration
+    public partial class initDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -487,7 +487,7 @@ namespace MilkStore.Repositories.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "OrderVoucher",
+                name: "OrderVouchers",
                 columns: table => new
                 {
                     OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
@@ -495,15 +495,15 @@ namespace MilkStore.Repositories.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OrderVoucher", x => new { x.OrderId, x.VoucherId });
+                    table.PrimaryKey("PK_OrderVouchers", x => new { x.OrderId, x.VoucherId });
                     table.ForeignKey(
-                        name: "FK_OrderVoucher_Orders_OrderId",
+                        name: "FK_OrderVouchers_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_OrderVoucher_Vouchers_VoucherId",
+                        name: "FK_OrderVouchers_Vouchers_VoucherId",
                         column: x => x.VoucherId,
                         principalTable: "Vouchers",
                         principalColumn: "Id",
@@ -612,8 +612,8 @@ namespace MilkStore.Repositories.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrderVoucher_VoucherId",
-                table: "OrderVoucher",
+                name: "IX_OrderVouchers_VoucherId",
+                table: "OrderVouchers",
                 column: "VoucherId");
 
             migrationBuilder.CreateIndex(
@@ -679,7 +679,7 @@ namespace MilkStore.Repositories.Migrations
                 name: "OrderDetailGifts");
 
             migrationBuilder.DropTable(
-                name: "OrderVoucher");
+                name: "OrderVouchers");
 
             migrationBuilder.DropTable(
                 name: "PostProduct");
