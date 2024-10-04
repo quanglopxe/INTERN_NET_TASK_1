@@ -76,10 +76,11 @@ namespace MilkStore.Services.Service
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
             }
+
             // Sử dụng mapper để ánh xạ từ OrderModelView sang Order
             Order item = _mapper.Map<Order>(ord);
             item.UserId = Guid.Parse(userID);
-            item.CreatedBy = userID;            
+            item.CreatedBy = userID;
             item.OrderDate = CoreHelper.SystemTimeNow;
             DateTimeOffset d1 = item.OrderDate.AddDays(3);
             DateTimeOffset d2 = item.OrderDate.AddDays(5);
@@ -91,8 +92,45 @@ namespace MilkStore.Services.Service
             item.PaymentStatuss = PaymentStatus.Unpaid;
             item.OrderStatuss = OrderStatus.Pending;
 
+            // Kiểm tra giới hạn số lượng voucher (tối đa 3)
+            if (ord.VoucherIds is not null && ord.VoucherIds.Count > 3)
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "You can apply a maximum of 3 vouchers to an order.");
+            }
+
+            // Xử lý danh sách voucher nếu có
+            if (ord.VoucherIds is not null && ord.VoucherIds.Any())
+            {
+                foreach (var voucherId in ord.VoucherIds)
+                {
+                    Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
+                        .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
+                        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Voucher with ID {voucherId} not found.");
+
+                    if (vch.ExpiryDate < item.OrderDate)
+                    {
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher with ID {voucherId} has expired.");
+                    }
+
+                    // Cập nhật số lần sử dụng voucher
+                    vch.UsedCount++;
+                    await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
+
+                    // Tạo bản ghi trong bảng OrderVoucher
+                    var orderVoucher = new OrderVoucher
+                    {
+                        OrderId = item.Id,
+                        VoucherId = vch.Id
+                    };
+                    await _unitOfWork.GetRepository<OrderVoucher>().InsertAsync(orderVoucher);
+                }
+            }
+
             await _unitOfWork.GetRepository<Order>().InsertAsync(item);
-            await _unitOfWork.SaveAsync();                    
+            await _unitOfWork.SaveAsync();
+
+            // Cập nhật lại tổng tiền sau khi đã áp dụng voucher
+            await UpdateToTalAmount(item.Id);
         }
 
         public async Task UpdateAsync(string id, OrderModelView ord)
@@ -108,10 +146,7 @@ namespace MilkStore.Services.Service
                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID  {id}  not found or has already been deleted."); 
 
             // Sử dụng AutoMapper để ánh xạ những thay đổi
-            _mapper.Map(ord, orderss);  // Chỉ ánh xạ những thuộc tính có giá trị khác biệt
-
-
-                
+            _mapper.Map(ord, orderss);  // Chỉ ánh xạ những thuộc tính có giá trị khác biệt                
 
             // Cập nhật thời gian cập nhật
             orderss.LastUpdatedTime = CoreHelper.SystemTimeNow;
@@ -143,61 +178,76 @@ namespace MilkStore.Services.Service
         public async Task UpdateToTalAmount(string id)
         {
             Order ord = await _unitOfWork.GetRepository<Order>().Entities
-            .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
-            ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID  {id}  not found or has already been deleted.");
+                .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID {id} not found or has already been deleted.");
 
             List<OrderDetails> lstOrd = await _unitOfWork.GetRepository<OrderDetails>().Entities
                 .Where(ordt => ordt.OrderID == id && !ordt.DeletedTime.HasValue).ToListAsync();
+
             ord.TotalAmount = lstOrd.Sum(o => o.TotalAmount);
 
-            double discountAmount = 0;
-            //Tính thành tiền áp dụng ưu đãi
-            Voucher? vch = await _unitOfWork.GetRepository<Voucher>().Entities
-                .FirstOrDefaultAsync(v => v.Id == ord.VoucherId && !v.DeletedTime.HasValue);
-            if (vch is
-                {
-                    ExpiryDate: DateTime expiryDate,
-                    LimitSalePrice: int limitSalePrice,
-                    SalePercent: int salePercent,
-                    UsedCount: int usedCount,
-                    UsingLimit: int usingLimit
-                })
+            double totalDiscount = 0;
+
+            // Lấy danh sách các voucher đã áp dụng
+            List<OrderVoucher> orderVouchers = await _unitOfWork.GetRepository<OrderVoucher>().Entities
+                .Where(ov => ov.OrderId == ord.Id).ToListAsync();
+
+            foreach (var orderVoucher in orderVouchers)
             {
-                if (expiryDate > ord.OrderDate
-                    && Convert.ToDouble(limitSalePrice) <= ord.TotalAmount
-                    && usedCount < usingLimit)
+                Voucher? vch = await _unitOfWork.GetRepository<Voucher>().Entities
+                    .FirstOrDefaultAsync(v => v.Id == orderVoucher.VoucherId && !v.DeletedTime.HasValue);
+
+                if (vch is
+                    {
+                        ExpiryDate: DateTime expiryDate,
+                        LimitSalePrice: int limitSalePrice,
+                        SalePercent: int salePercent,
+                        UsedCount: int usedCount,
+                        UsingLimit: int usingLimit
+                    })
                 {
-                    discountAmount = (ord.TotalAmount * salePercent) / 100.0;
+                    if (expiryDate > ord.OrderDate
+                        && ord.TotalAmount >= Convert.ToDouble(limitSalePrice)
+                        && usedCount < usingLimit)
+                    {
+                        double discountAmount = (ord.TotalAmount * salePercent) / 100.0;
+                        totalDiscount += Math.Min(discountAmount, ord.TotalAmount * 0.30); // Giới hạn mỗi voucher giảm tối đa 30%
+                    }
                 }
             }
-            ord.DiscountedAmount = ord.TotalAmount - discountAmount;
+
+            // Cập nhật tổng số tiền sau khi giảm giá
+            ord.DiscountedAmount = ord.TotalAmount - totalDiscount;
+
+            // Cập nhật lại thông tin đơn hàng trong cơ sở dữ liệu
             await _unitOfWork.GetRepository<Order>().UpdateAsync(ord);
-            await _unitOfWork.SaveAsync();            
-        }
-
-        public async Task AddVoucher(string id, string voucherId)
-        {
-            Order orderss = await _unitOfWork.GetRepository<Order>().Entities
-                .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID  {id}  not found or has already been deleted.");
-
-            // Kiểm tra sự tồn tại của Voucher
-            Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
-                    .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
-                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Voucher with ID {voucherId} not found."); 
-
-            if (vch.ExpiryDate < orderss.OrderDate)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher has expired.");
-            }
-            vch.UsedCount++;
-            await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
-
-            orderss.VoucherId = vch.Id;
-            await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
             await _unitOfWork.SaveAsync();
-            await UpdateToTalAmount(orderss.Id);       
         }
+
+
+        //public async Task AddVoucher(string id, string voucherId)
+        //{
+        //    Order orderss = await _unitOfWork.GetRepository<Order>().Entities
+        //        .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
+        //        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID  {id}  not found or has already been deleted.");
+
+        //    // Kiểm tra sự tồn tại của Voucher
+        //    Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
+        //            .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
+        //            ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Voucher with ID {voucherId} not found."); 
+
+        //    if (vch.ExpiryDate < orderss.OrderDate)
+        //    {
+        //        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher has expired.");
+        //    }
+        //    vch.UsedCount++;
+        //    await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
+
+        //    orderss.VoucherId = vch.Id;
+        //    await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
+        //    await _unitOfWork.SaveAsync();
+        //    await UpdateToTalAmount(orderss.Id);       
+        //}
 
         public async Task DeleteAsync(string id)
         {

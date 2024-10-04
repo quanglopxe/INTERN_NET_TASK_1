@@ -44,13 +44,13 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<string>.OkResponse("Order added successfully!"));            
         }
 
-        [HttpPut("AddVoucher{id}")]
-        //[Authorize(Roles = "Guest, Member")]
-        public async Task<IActionResult> AddVoucher(string id, string item)
-        {            
-            await _orderService.AddVoucher(id, item);
-            return Ok(BaseResponse<string>.OkResponse("Voucher added successfully!"));           
-        }
+        //[HttpPut("AddVoucher{id}")]
+        ////[Authorize(Roles = "Guest, Member")]
+        //public async Task<IActionResult> AddVoucher(string id, string item)
+        //{            
+        //    await _orderService.AddVoucher(id, item);
+        //    return Ok(BaseResponse<string>.OkResponse("Voucher added successfully!"));           
+        //}
 
 
         [HttpPut("Update{id}")]

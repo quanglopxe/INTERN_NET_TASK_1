@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MilkStore.Repositories.Migrations
 {
     /// <inheritdoc />
-    public partial class initDatabase : Migration
+    public partial class test : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -218,6 +218,43 @@ namespace MilkStore.Repositories.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Orders",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    VoucherId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OrderDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    OrderStatuss = table.Column<int>(type: "int", nullable: false),
+                    PaymentStatuss = table.Column<int>(type: "int", nullable: false),
+                    TotalAmount = table.Column<double>(type: "float", nullable: false),
+                    DiscountedAmount = table.Column<double>(type: "float", nullable: false),
+                    ShippingAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PaymentMethod = table.Column<int>(type: "int", nullable: false),
+                    estimatedDeliveryDate = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    deliveryDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    IsInventoryUpdated = table.Column<bool>(type: "bit", nullable: false),
+                    IsPointAdded = table.Column<bool>(type: "bit", nullable: false),
+                    PointsAdded = table.Column<int>(type: "int", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastUpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedTime = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastUpdatedTime = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    DeletedTime = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Orders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Orders_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UserClaims",
                 columns: table => new
                 {
@@ -324,48 +361,6 @@ namespace MilkStore.Repositories.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Orders",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    VoucherId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    OrderDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    OrderStatuss = table.Column<int>(type: "int", nullable: false),
-                    PaymentStatuss = table.Column<int>(type: "int", nullable: false),
-                    TotalAmount = table.Column<double>(type: "float", nullable: false),
-                    DiscountedAmount = table.Column<double>(type: "float", nullable: false),
-                    ShippingAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PaymentMethod = table.Column<int>(type: "int", nullable: false),
-                    estimatedDeliveryDate = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    deliveryDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    IsInventoryUpdated = table.Column<bool>(type: "bit", nullable: false),
-                    IsPointAdded = table.Column<bool>(type: "bit", nullable: false),
-                    PointsAdded = table.Column<int>(type: "int", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    LastUpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedTime = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    LastUpdatedTime = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    DeletedTime = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Orders", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Orders_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Orders_Vouchers_VoucherId",
-                        column: x => x.VoucherId,
-                        principalTable: "Vouchers",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -492,6 +487,30 @@ namespace MilkStore.Repositories.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OrderVoucher",
+                columns: table => new
+                {
+                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    VoucherId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderVoucher", x => new { x.OrderId, x.VoucherId });
+                    table.ForeignKey(
+                        name: "FK_OrderVoucher_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderVoucher_Vouchers_VoucherId",
+                        column: x => x.VoucherId,
+                        principalTable: "Vouchers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OrderDetailGifts",
                 columns: table => new
                 {
@@ -593,8 +612,8 @@ namespace MilkStore.Repositories.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Orders_VoucherId",
-                table: "Orders",
+                name: "IX_OrderVoucher_VoucherId",
+                table: "OrderVoucher",
                 column: "VoucherId");
 
             migrationBuilder.CreateIndex(
@@ -660,6 +679,9 @@ namespace MilkStore.Repositories.Migrations
                 name: "OrderDetailGifts");
 
             migrationBuilder.DropTable(
+                name: "OrderVoucher");
+
+            migrationBuilder.DropTable(
                 name: "PostProduct");
 
             migrationBuilder.DropTable(
@@ -690,6 +712,9 @@ namespace MilkStore.Repositories.Migrations
                 name: "OrderGifts");
 
             migrationBuilder.DropTable(
+                name: "Vouchers");
+
+            migrationBuilder.DropTable(
                 name: "Posts");
 
             migrationBuilder.DropTable(
@@ -706,9 +731,6 @@ namespace MilkStore.Repositories.Migrations
 
             migrationBuilder.DropTable(
                 name: "Users");
-
-            migrationBuilder.DropTable(
-                name: "Vouchers");
 
             migrationBuilder.DropTable(
                 name: "Category");
