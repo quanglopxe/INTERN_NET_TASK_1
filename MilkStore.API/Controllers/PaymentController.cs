@@ -15,7 +15,7 @@ public class PaymentController(IPaymentService paymentService) : ControllerBase
         string paymentUrl = paymentService.CreatePayment(request);
         return Ok(BaseResponse<object>.OkResponse(paymentUrl));
     }
-    [HttpGet("IPN")]
+    [HttpPost("IPN")]
     public async Task<IActionResult> IPN(VNPayIPNRequest request)
     {
         await paymentService.HandleIPN(request);

@@ -25,6 +25,8 @@ namespace MilkStore.Services.Configs
                 ApplicationUser? newAccount = new ApplicationUser
                 {
                     UserName = emailAdmin,
+                    ManagerId = null,
+                    Name = "Admin",
                     Email = emailAdmin,
                     EmailConfirmed = true
                 };
@@ -44,6 +46,8 @@ namespace MilkStore.Services.Configs
                 ApplicationUser? newAccount = new ApplicationUser
                 {
                     UserName = emailMember,
+                    Name = "Member",
+                    ManagerId = null,
                     Email = emailMember,
                     EmailConfirmed = true
                 };
@@ -62,26 +66,14 @@ namespace MilkStore.Services.Configs
                 ApplicationUser? newAccount = new ApplicationUser
                 {
                     UserName = emailStaff,
+                    Name = "Staff",
+                    ManagerId = null,
                     Email = emailStaff,
                     EmailConfirmed = true
                 };
                 await userManager.CreateAsync(newAccount, passwordStaff);
                 await userManager.AddToRoleAsync(newAccount, "Staff");
-            }
-            string emailStaff2 = "Staff2@gmail.com";
-            string passwordStaff2 = "Staff123*";
-            ApplicationUser? staffAccount2 = await userManager.FindByEmailAsync(emailStaff);
-            if (staffAccount2 is null)
-            {
-                ApplicationUser? newAccount = new ApplicationUser
-                {
-                    UserName = emailStaff2,
-                    Email = emailStaff,
-                    EmailConfirmed = true
-                };
-                await userManager.CreateAsync(newAccount, passwordStaff2);
-                await userManager.AddToRoleAsync(newAccount, "Staff");
-            }
+            }            
         }
     }
 }
