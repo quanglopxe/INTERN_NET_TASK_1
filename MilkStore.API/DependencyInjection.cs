@@ -23,8 +23,8 @@ namespace MilkStore.API
         public static void AddConfig(this IServiceCollection services, IConfiguration configuration)
         {
 
+            services.AddCorsConfig();
             services.ConfigRoute();
-            // services.AddCorsConfig();
             services.AddSignalConfig();
             services.AddConfigTimeToken();
             services.AddSwaggerUIAuthentication();
@@ -166,19 +166,19 @@ namespace MilkStore.API
                 });
             });
         }
-        // public static void AddCorsConfig(this IServiceCollection services)
-        // {
-        //     services.AddCors(options =>
-        //     {
-        //         options.AddPolicy("AllowAllOrigins", builder =>
-        //         {
-        //             builder.WithOrigins(Environment.GetEnvironmentVariable("CLIENT_DOMAIN") ?? throw new Exception("CLIENT_DOMAIN is not set"))
-        //                     .AllowAnyHeader()
-        //                     .AllowAnyMethod()
-        //                     .AllowCredentials();
-        //         });
-        //     });
-        // }
+        public static void AddCorsConfig(this IServiceCollection services)
+        {
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAllOrigins", builder =>
+                {
+                    builder.WithOrigins(Environment.GetEnvironmentVariable("CLIENT_DOMAIN") ?? throw new Exception("CLIENT_DOMAIN is not set"))
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
+                });
+            });
+        }
         public static void AddAuthenticationGoogle(this IServiceCollection services)
         {
             services.AddAuthentication(options =>
