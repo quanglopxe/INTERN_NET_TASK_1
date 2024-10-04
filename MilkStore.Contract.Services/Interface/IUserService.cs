@@ -16,6 +16,7 @@ namespace MilkStore.Contract.Services.Interface
         Task<IEnumerable<UserResponeseDTO>> GetUser(string? id, int index = 1, int pageSize = 10);
         Task AddUserWithRoleAsync(UserModelView userModel);
         Task AccumulatePoints(string userId, double totalAmount);
+        Task<UserProfileResponseModelView> GetUserProfile();
 
     }
 }

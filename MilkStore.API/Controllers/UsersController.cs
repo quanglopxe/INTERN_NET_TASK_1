@@ -22,7 +22,7 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<IEnumerable<UserResponeseDTO>>.OkResponse(users));
         }
 
-        [HttpPost("AddUserWithRoleAsync")]
+        [HttpPost("Add_User_With_Role_Async")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddUserWithRoleAsync(UserModelView userModel)
         {
@@ -30,7 +30,7 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<object>.OkResponse("Create user successfully"));
         }
 
-        [HttpPut("UserUpdate")]
+        [HttpPut("User_Update")]
         [Authorize]
         public async Task<IActionResult> UpdateUser([FromBody] UserUpdateModelView userModel)
         {
@@ -38,13 +38,22 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<object>.OkResponse("Update user successfully"));
         }
 
-        [HttpDelete("DeleteOneUser")]
+        [HttpDelete("Delete_One_User")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteOneUser([FromQuery] string userId)
         {
 
             await _userService.DeleteUser(userId);
             return Ok(BaseResponse<object>.OkResponse("Delete user successfully"));
+        }
+
+
+        [HttpGet("Get_User_Profile")]
+        [Authorize]
+        public async Task<IActionResult> GetUserProfile()
+        {
+            UserProfileResponseModelView? userProfile = await _userService.GetUserProfile();
+            return Ok(BaseResponse<UserProfileResponseModelView>.OkResponse(userProfile));
         }
     }
 }
