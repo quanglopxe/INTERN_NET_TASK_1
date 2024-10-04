@@ -171,6 +171,7 @@ public class AuthService(UserManager<ApplicationUser> userManager, SignInManager
         string ManagerId = await AssignMemberToStaffAsync();
 
         newUser.ManagerId = Guid.Parse(ManagerId);
+        newUser.Name = registerModelView.Name;
 
         IdentityResult? result = await userManager.CreateAsync(newUser, registerModelView.Password);
         if (result.Succeeded)

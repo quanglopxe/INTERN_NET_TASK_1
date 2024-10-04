@@ -7,16 +7,7 @@ using MilkStore.Services.Configs;
 DotEnv.Load();
 
 WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
-builder.Services.AddCors(options =>
-           {
-               options.AddPolicy("AllowAllOrigins", builder =>
-               {
-                   builder.WithOrigins("http://localhost:3000")
-                           .AllowAnyHeader()
-                           .AllowAnyMethod()
-                           .AllowCredentials();
-               });
-           });
+
 // config appsettings by env
 builder.Services.AddConfig(builder.Configuration);
 builder.Configuration
@@ -57,9 +48,9 @@ app.MapHub<ChatHub>("/chathub").RequireAuthorization();
 app.MapControllers();
 
 //Seed Data
-// using (IServiceScope scope = app.Services.CreateScope())
-// {
-//     IServiceProvider? services = scope.ServiceProvider;
-//     SeedDataAccount.SeedAsync(services).Wait();
-// }
+using (IServiceScope scope = app.Services.CreateScope())
+{
+    IServiceProvider? services = scope.ServiceProvider;
+    SeedDataAccount.SeedAsync(services).Wait();
+}
 app.Run();
