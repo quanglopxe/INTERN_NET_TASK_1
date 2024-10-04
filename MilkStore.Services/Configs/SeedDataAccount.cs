@@ -28,7 +28,6 @@ namespace MilkStore.Services.Configs
                 {
                     UserName = emailAdmin,
                     ManagerId = null,
-                    Name = "Admin",
                     Email = emailAdmin,
                     EmailConfirmed = true,
                     Name = nameAdmin
@@ -51,7 +50,7 @@ namespace MilkStore.Services.Configs
                 ApplicationUser? newAccount = new ApplicationUser
                 {
                     UserName = emailMember,
-                    Name = "Member",
+
                     ManagerId = null,
                     Email = emailMember,
                     EmailConfirmed = true,
@@ -73,7 +72,7 @@ namespace MilkStore.Services.Configs
                 ApplicationUser? newAccount = new ApplicationUser
                 {
                     UserName = emailStaff,
-                    Name = "Staff",
+
                     ManagerId = null,
                     Email = emailStaff,
                     EmailConfirmed = true,
