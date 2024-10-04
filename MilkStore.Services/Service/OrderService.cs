@@ -95,7 +95,7 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();                    
         }
 
-        public async Task UpdateAsync(string id, OrderModelView ord)
+        public async Task UpdateAsync(string id, OrderModelView ord, OrderStatus orderStatus, PaymentStatus paymentStatus, PaymentMethod paymentMethod)
         {
             string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier).Value;
             if (string.IsNullOrWhiteSpace(userID))
@@ -110,8 +110,10 @@ namespace MilkStore.Services.Service
             // Sử dụng AutoMapper để ánh xạ những thay đổi
             _mapper.Map(ord, orderss);  // Chỉ ánh xạ những thuộc tính có giá trị khác biệt
 
-
-                
+            // Cập nhật trạng thái đơn hàng
+            orderss.OrderStatuss = orderStatus;
+            orderss.PaymentStatuss = paymentStatus;
+            orderss.PaymentMethod = paymentMethod;
 
             // Cập nhật thời gian cập nhật
             orderss.LastUpdatedTime = CoreHelper.SystemTimeNow;
