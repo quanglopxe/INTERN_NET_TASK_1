@@ -48,11 +48,11 @@ namespace MilkStore.Services.Service
                 throw new KeyNotFoundException($"Product with ID {preOrdersModel.ProductID} was not found.");
             }
             //Check sản phẩm còn hàng thì không lên pre-order
-            if (product.QuantityInStock > 0)
-            {
-                throw new InvalidOperationException($"The product {product.ProductName} is currently available." +
-                    $" Please check and purchase the product on our product page.");
-            }
+            //if (product.QuantityInStock > 0)
+            //{
+            //    throw new InvalidOperationException($"The product {product.ProductName} is currently available." +
+            //        $" Please check and purchase the product on our product page.");
+            //}
 
             PreOrders newPreOrder = _mapper.Map<PreOrders>(preOrdersModel);
             newPreOrder.CreatedTime = DateTime.UtcNow;
