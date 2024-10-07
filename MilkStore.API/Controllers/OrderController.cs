@@ -38,9 +38,13 @@ namespace MilkStore.API.Controllers
 
         [HttpPost]
         //[Authorize(Roles = "Member")]
-        public async Task<IActionResult> Add(OrderModelView item)
-        {                        
-            await _orderService.AddAsync(item);
+        public async Task<IActionResult> Add([FromBody] CreateOrderDTO request)
+        {
+            if (request == null || request.OrderItems == null || !request.OrderItems.Any())
+            {
+                return BadRequest("Order data or order items are missing.");
+            }
+            await _orderService.AddAsync(request.Order, request.OrderItems);
             return Ok(BaseResponse<string>.OkResponse("Order added successfully!"));            
         }
 

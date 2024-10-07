@@ -20,6 +20,7 @@ using PaymentStatus = MilkStore.Contract.Repositories.Entity.PaymentStatus;
 using PaymentMethod = MilkStore.Contract.Repositories.Entity.PaymentMethod;
 using OrderStatus = MilkStore.Contract.Repositories.Entity.OrderStatus;
 using MilkStore.ModelViews.PreOrdersModelView;
+using System;
 
 namespace MilkStore.Services.Service
 {
@@ -68,8 +69,7 @@ namespace MilkStore.Services.Service
                 paginatedOrders.PageSize
             );
         }
-
-        public async Task AddAsync(OrderModelView ord)
+        public async Task AddAsync(OrderModelView ord, List<OrderItemResponseDTO> orderItems)
         {
             string? userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrWhiteSpace(userID))
@@ -92,12 +92,37 @@ namespace MilkStore.Services.Service
             item.PaymentStatuss = PaymentStatus.Unpaid;
             item.OrderStatuss = OrderStatus.Pending;
 
+            // Kiểm tra các mặt hàng mà người dùng nhập
+            if (orderItems == null || !orderItems.Any())
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Product list cannot be empty.");
+            }
             // Kiểm tra giới hạn số lượng voucher (tối đa 3)
             if (ord.VoucherIds is not null && ord.VoucherIds.Count > 3)
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "You can apply a maximum of 3 vouchers to an order.");
             }
 
+            // Tính tổng tiền dựa trên danh sách sản phẩm từ orderItems
+            foreach (var orderItem in orderItems)
+            {
+                // Lấy sản phẩm từ bảng Sản phẩm
+                Products product = await _unitOfWork.GetRepository<Products>().Entities
+                    .FirstOrDefaultAsync(p => p.Id == orderItem.ProductId && !p.DeletedTime.HasValue)
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderItem.ProductId} not found.");
+
+                if (orderItem.Quantity <= 0)
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Quantity for product {orderItem.ProductId} must be greater than zero.");
+                }
+
+                // Tính tổng tiền cho từng sản phẩm
+                item.TotalAmount += product.Price * orderItem.Quantity;
+            }
+
+            double totalDiscount = 0;
+            double discountedTotal = item.TotalAmount;
+            List<string> invalidVouchers = new List<string>();
             // Xử lý danh sách voucher nếu có
             if (ord.VoucherIds is not null && ord.VoucherIds.Any())
             {
@@ -110,11 +135,19 @@ namespace MilkStore.Services.Service
                     if (vch.ExpiryDate < item.OrderDate)
                     {
                         throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher with ID {voucherId} has expired.");
+                        continue;
                     }
 
-                    // Cập nhật số lần sử dụng voucher
-                    vch.UsedCount++;
-                    await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
+                    // Kiểm tra điều kiện áp dụng voucher
+                    if (discountedTotal < Convert.ToDouble(vch.LimitSalePrice)) 
+                    {
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The total amount does not meet the requirements to apply voucher {voucherId}.");
+                        continue;
+                    }
+                    // Tính toán giảm giá nếu voucher hợp lệ
+                    double discountAmount = (discountedTotal * vch.SalePercent) / 100.0;
+                    discountedTotal -= discountAmount;
+                    totalDiscount += discountAmount;
 
                     // Tạo bản ghi trong bảng OrderVoucher
                     var orderVoucher = new OrderVoucher
@@ -123,15 +156,103 @@ namespace MilkStore.Services.Service
                         VoucherId = vch.Id
                     };
                     await _unitOfWork.GetRepository<OrderVoucher>().InsertAsync(orderVoucher);
+
+                    // Cập nhật số lần sử dụng voucher
+                    vch.UsedCount++;
+                    await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);                    
                 }
+            }
+            // Nếu có voucher không hợp lệ, ném exception với danh sách thông báo
+            if (invalidVouchers.Any())
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, string.Join(", ", invalidVouchers));
             }
 
             await _unitOfWork.GetRepository<Order>().InsertAsync(item);
             await _unitOfWork.SaveAsync();
 
+            // Thêm chi tiết đơn hàng
+            foreach (var product in orderItems)
+            {
+                var orderDetails = new OrderDetails
+                {
+                    OrderID = item.Id,
+                    ProductID = product.ProductId,
+                    Quantity = product.Quantity,
+                    UnitPrice = (await _unitOfWork.GetRepository<Products>().Entities
+                        .FirstAsync(p => p.Id == product.ProductId)).Price
+                };
+
+                await _unitOfWork.GetRepository<OrderDetails>().InsertAsync(orderDetails);
+            }
+
+            await _unitOfWork.SaveAsync();
             // Cập nhật lại tổng tiền sau khi đã áp dụng voucher
             await UpdateToTalAmount(item.Id);
         }
+        //public async Task AddAsync(OrderModelView ord)
+        //{
+        //    string? userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    if (string.IsNullOrWhiteSpace(userID))
+        //    {
+        //        throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
+        //    }
+
+        //    // Sử dụng mapper để ánh xạ từ OrderModelView sang Order
+        //    Order item = _mapper.Map<Order>(ord);
+        //    item.UserId = Guid.Parse(userID);
+        //    item.CreatedBy = userID;
+        //    item.OrderDate = CoreHelper.SystemTimeNow;
+        //    DateTimeOffset d1 = item.OrderDate.AddDays(3);
+        //    DateTimeOffset d2 = item.OrderDate.AddDays(5);
+        //    item.estimatedDeliveryDate = $"từ {d1:dd/MM/yyyy} đến {d2:dd/MM/yyyy}";
+
+        //    // Đảm bảo gán các giá trị khác không được ánh xạ từ model view
+        //    item.TotalAmount = 0;
+        //    item.DiscountedAmount = 0;
+        //    item.PaymentStatuss = PaymentStatus.Unpaid;
+        //    item.OrderStatuss = OrderStatus.Pending;
+
+        //    // Kiểm tra giới hạn số lượng voucher (tối đa 3)
+        //    if (ord.VoucherIds is not null && ord.VoucherIds.Count > 3)
+        //    {
+        //        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "You can apply a maximum of 3 vouchers to an order.");
+        //    }
+
+        //    // Xử lý danh sách voucher nếu có
+        //    if (ord.VoucherIds is not null && ord.VoucherIds.Any())
+        //    {
+        //        foreach (var voucherId in ord.VoucherIds)
+        //        {
+        //            Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
+        //                .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
+        //                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Voucher with ID {voucherId} not found.");
+
+        //            if (vch.ExpiryDate < item.OrderDate)
+        //            {
+        //                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher with ID {voucherId} has expired.");
+        //            }
+
+        //            // Cập nhật số lần sử dụng voucher
+        //            vch.UsedCount++;
+        //            await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
+
+        //            // Tạo bản ghi trong bảng OrderVoucher
+        //            var orderVoucher = new OrderVoucher
+        //            {
+        //                OrderId = item.Id,
+        //                VoucherId = vch.Id
+        //            };
+        //            await _unitOfWork.GetRepository<OrderVoucher>().InsertAsync(orderVoucher);
+        //        }
+        //    }
+
+        //    await _unitOfWork.GetRepository<Order>().InsertAsync(item);
+        //    await _unitOfWork.SaveAsync();
+
+        //    // Cập nhật lại tổng tiền sau khi đã áp dụng voucher
+        //    await UpdateToTalAmount(item.Id);
+        //}
 
         public async Task UpdateAsync(string id, OrderModelView ord)
         {
@@ -187,10 +308,12 @@ namespace MilkStore.Services.Service
             ord.TotalAmount = lstOrd.Sum(o => o.TotalAmount);
 
             double totalDiscount = 0;
+            double discountedTotal = ord.TotalAmount;
 
             // Lấy danh sách các voucher đã áp dụng
             List<OrderVoucher> orderVouchers = await _unitOfWork.GetRepository<OrderVoucher>().Entities
-                .Where(ov => ov.OrderId == ord.Id).ToListAsync();
+                .Where(ov => ov.OrderId == ord.Id)
+                .ToListAsync();
 
             foreach (var orderVoucher in orderVouchers)
             {
@@ -205,17 +328,14 @@ namespace MilkStore.Services.Service
                         UsedCount: int usedCount,
                         UsingLimit: int usingLimit
                     })
-                {
-                    if (expiryDate > ord.OrderDate
-                        && ord.TotalAmount >= Convert.ToDouble(limitSalePrice)
-                        && usedCount < usingLimit)
-                    {
-                        double discountAmount = (ord.TotalAmount * salePercent) / 100.0;
-                        totalDiscount += Math.Min(discountAmount, ord.TotalAmount * 0.30); // Giới hạn mỗi voucher giảm tối đa 30%
-                    }
+                {                    
+                    // Tính toán giảm giá nếu voucher hợp lệ
+                    double discountAmount = (discountedTotal * salePercent) / 100.0;
+                    discountedTotal -= discountAmount;
+                    totalDiscount += discountAmount;
                 }
             }
-
+            
             // Cập nhật tổng số tiền sau khi giảm giá
             ord.DiscountedAmount = ord.TotalAmount - totalDiscount;
 

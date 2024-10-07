@@ -14,7 +14,8 @@ namespace MilkStore.Contract.Services.Interface
     public interface IOrderService
     {
         Task<BasePaginatedList<OrderResponseDTO>> GetAsync(string? id, int pageIndex, int pageSize);
-        Task AddAsync(OrderModelView ord);
+        //Task AddAsync(OrderModelView ord, List);
+        Task AddAsync(OrderModelView ord, List<OrderItemResponseDTO> orderItems);
         Task UpdateAsync(string id, OrderModelView item);
         //Task AddVoucher(string id, string voucherId);
         Task UpdateToTalAmount(string id);

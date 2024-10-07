@@ -30,7 +30,7 @@ namespace MilkStore.ModelViews.OrderModelViews
     }
     public class OrderModelView
     {
-        public required OrderStatus OrderStatuss { get; set; }
+        public required OrderStatus OrderStatuss { get; set; }        
         public ICollection<string>? VoucherIds { get; set; }
         public required PaymentStatus PaymentStatuss { get; set; }
         [Required(ErrorMessage = "ShippingAddress không được để trống")]

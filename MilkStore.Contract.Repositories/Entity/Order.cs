@@ -49,6 +49,6 @@ namespace MilkStore.Contract.Repositories.Entity
         //public virtual Voucher? Voucher { get; set; }
         public virtual ApplicationUser User { get; set; } // Một đơn hàng thuộc về một người dùng
         public virtual ICollection<OrderDetails> OrderDetailss { get; set; }
-        public virtual ICollection<OrderVoucher> OrderVouchers { get; set; } = new List<OrderVoucher>();
+        public virtual ICollection<OrderVoucher> OrderVouchers { get; set; }
     }
 }
