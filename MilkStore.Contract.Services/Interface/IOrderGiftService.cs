@@ -14,7 +14,7 @@ namespace MilkStore.Contract.Services.Interface
     {
         Task<IEnumerable<OrderGiftResponseDTO>> GetOrderGift(string? id);
         Task CreateOrderGift(OrderGiftModel orderGiftModel);
-        Task UpdateOrderGift(string id, OrderGiftModel orderGiftModel);
+        Task UpdateOrderGift(string id, OrderGiftModel orderGiftModel, OrderGiftStatus ordergiftstatus);
         Task DeleteOrderGift(string id);
     }
 }
