@@ -38,10 +38,10 @@ namespace MilkStore.API.Controllers
 
         [HttpPut("{id}")]
         //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateOrderGift(string id, [FromBody] OrderGiftModel OrderGiftModel)
+        public async Task<IActionResult> UpdateOrderGift(string id, [FromBody] OrderGiftModel OrderGiftModel, OrderGiftStatus ogs)
         {
             //await _OGiftService.SendMail_OrderGift(id);
-            await _OGiftService.UpdateOrderGift(id, OrderGiftModel);
+            await _OGiftService.UpdateOrderGift(id, OrderGiftModel,ogs);
             
             return Ok(BaseResponse<string>.OkResponse("Updated successfully"));
             

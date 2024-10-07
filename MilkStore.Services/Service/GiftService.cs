@@ -24,6 +24,14 @@ namespace MilkStore.Services.Service
         }
         public async Task CreateGift(GiftModel GiftModel)
         {  
+            IEnumerable<Gift> g = await _unitOfWork.GetRepository<Gift>().GetAllAsync();
+            foreach (var iem in g)
+            {
+                if(iem.ProductId.Equals(GiftModel.ProductId, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Same gift");
+                }    
+            }
             Gift newGift = _mapper.Map<Gift>(GiftModel);
             newGift.CreatedTime = DateTime.UtcNow;
             await _unitOfWork.GetRepository<Gift>().InsertAsync(newGift);
@@ -96,7 +104,15 @@ namespace MilkStore.Services.Service
 
         public async Task UpdateGift(string id, GiftModel GiftModel)
         {
-            if(string.IsNullOrWhiteSpace(id))
+            IEnumerable<Gift> g = await _unitOfWork.GetRepository<Gift>().GetAllAsync();
+            foreach (var iem in g)
+            {
+                if (iem.ProductId.Equals(GiftModel.ProductId, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Same gift");
+                }
+            }
+            if (string.IsNullOrWhiteSpace(id))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
             }    
