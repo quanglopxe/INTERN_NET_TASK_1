@@ -20,6 +20,7 @@ using PaymentStatus = MilkStore.Contract.Repositories.Entity.PaymentStatus;
 using PaymentMethod = MilkStore.Contract.Repositories.Entity.PaymentMethod;
 using OrderStatus = MilkStore.Contract.Repositories.Entity.OrderStatus;
 using MilkStore.ModelViews.PreOrdersModelView;
+using System;
 
 namespace MilkStore.Services.Service
 {
@@ -69,7 +70,7 @@ namespace MilkStore.Services.Service
             );
         }
 
-        public async Task AddAsync()
+        public async Task AddAsync(OrderModelView ord, List<OrderItemResponseDTO> orderItems)
         {
             string? userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrWhiteSpace(userID))
@@ -77,7 +78,6 @@ namespace MilkStore.Services.Service
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
             }
             var user = await _userManager.FindByIdAsync(userID) ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
-            // Sử dụng mapper để ánh xạ từ OrderModelView sang Order
 
             Order item = new Order
             {
@@ -94,8 +94,103 @@ namespace MilkStore.Services.Service
             };
 
 
+            // Kiểm tra các mặt hàng mà người dùng nhập
+            if (orderItems == null || !orderItems.Any())
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Product list cannot be empty.");
+            }
+            // Kiểm tra giới hạn số lượng voucher (tối đa 3)
+            if (ord.VoucherIds is not null && ord.VoucherIds.Count > 3)
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "You can apply a maximum of 3 vouchers to an order.");
+            }
+
+            // Tính tổng tiền dựa trên danh sách sản phẩm từ orderItems
+            foreach (var orderItem in orderItems)
+            {
+                // Lấy sản phẩm từ bảng Sản phẩm
+                Products product = await _unitOfWork.GetRepository<Products>().Entities
+                    .FirstOrDefaultAsync(p => p.Id == orderItem.ProductId && !p.DeletedTime.HasValue)
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderItem.ProductId} not found.");
+
+                if (orderItem.Quantity <= 0)
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Quantity for product {orderItem.ProductId} must be greater than zero.");
+                }
+
+                // Tính tổng tiền cho từng sản phẩm
+                item.TotalAmount += product.Price * orderItem.Quantity;
+            }
+
+            double totalDiscount = 0;
+            double discountedTotal = item.TotalAmount;
+            List<string> invalidVouchers = new List<string>();
+            // Xử lý danh sách voucher nếu có
+            if (ord.VoucherIds is not null && ord.VoucherIds.Any())
+            {
+                foreach (var voucherId in ord.VoucherIds)
+                {
+                    Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
+                        .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
+                        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Voucher with ID {voucherId} not found.");
+
+                    if (vch.ExpiryDate < item.OrderDate)
+                    {
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher with ID {voucherId} has expired.");
+                        continue;
+                    }
+
+                    // Kiểm tra điều kiện áp dụng voucher
+                    if (discountedTotal < Convert.ToDouble(vch.LimitSalePrice)) 
+                    {
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The total amount does not meet the requirements to apply voucher {voucherId}.");
+                        continue;
+                    }
+                    // Tính toán giảm giá nếu voucher hợp lệ
+                    double discountAmount = (discountedTotal * vch.SalePercent) / 100.0;
+                    discountedTotal -= discountAmount;
+                    totalDiscount += discountAmount;
+
+                    // Tạo bản ghi trong bảng OrderVoucher
+                    var orderVoucher = new OrderVoucher
+                    {
+                        OrderId = item.Id,
+                        VoucherId = vch.Id
+                    };
+                    await _unitOfWork.GetRepository<OrderVoucher>().InsertAsync(orderVoucher);
+
+                    // Cập nhật số lần sử dụng voucher
+                    vch.UsedCount++;
+                    await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);                    
+                }
+            }
+            // Nếu có voucher không hợp lệ, ném exception với danh sách thông báo
+            if (invalidVouchers.Any())
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, string.Join(", ", invalidVouchers));
+            }
+
             await _unitOfWork.GetRepository<Order>().InsertAsync(item);
-            await _unitOfWork.SaveAsync();                    
+            await _unitOfWork.SaveAsync();
+
+            // Thêm chi tiết đơn hàng
+            foreach (var product in orderItems)
+            {
+                var orderDetails = new OrderDetails
+                {
+                    OrderID = item.Id,
+                    ProductID = product.ProductId,
+                    Quantity = product.Quantity,
+                    UnitPrice = (await _unitOfWork.GetRepository<Products>().Entities
+                        .FirstAsync(p => p.Id == product.ProductId)).Price
+                };
+
+                await _unitOfWork.GetRepository<OrderDetails>().InsertAsync(orderDetails);
+            }
+
+            await _unitOfWork.SaveAsync();
+            // Cập nhật lại tổng tiền sau khi đã áp dụng voucher
+            await UpdateToTalAmount(item.Id);
         }
         public async Task Checkout (OrderModelView ord)
         {
@@ -171,61 +266,75 @@ namespace MilkStore.Services.Service
         public async Task UpdateToTalAmount(string id)
         {
             Order ord = await _unitOfWork.GetRepository<Order>().Entities
-            .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
-            ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID  {id}  not found or has already been deleted.");
+                .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID {id} not found or has already been deleted.");
 
             List<OrderDetails> lstOrd = await _unitOfWork.GetRepository<OrderDetails>().Entities
                 .Where(ordt => ordt.OrderID == id && !ordt.DeletedTime.HasValue).ToListAsync();
+
             ord.TotalAmount = lstOrd.Sum(o => o.TotalAmount);
 
-            double discountAmount = 0;
-            //Tính thành tiền áp dụng ưu đãi
-            Voucher? vch = await _unitOfWork.GetRepository<Voucher>().Entities
-                .FirstOrDefaultAsync(v => v.Id == ord.VoucherId && !v.DeletedTime.HasValue);
-            if (vch is
-                {
-                    ExpiryDate: DateTime expiryDate,
-                    LimitSalePrice: int limitSalePrice,
-                    SalePercent: int salePercent,
-                    UsedCount: int usedCount,
-                    UsingLimit: int usingLimit
-                })
+            double totalDiscount = 0;
+            double discountedTotal = ord.TotalAmount;
+
+            // Lấy danh sách các voucher đã áp dụng
+            List<OrderVoucher> orderVouchers = await _unitOfWork.GetRepository<OrderVoucher>().Entities
+                .Where(ov => ov.OrderId == ord.Id)
+                .ToListAsync();
+
+            foreach (var orderVoucher in orderVouchers)
             {
-                if (expiryDate > ord.OrderDate
-                    && Convert.ToDouble(limitSalePrice) <= ord.TotalAmount
-                    && usedCount < usingLimit)
-                {
-                    discountAmount = (ord.TotalAmount * salePercent) / 100.0;
+                Voucher? vch = await _unitOfWork.GetRepository<Voucher>().Entities
+                    .FirstOrDefaultAsync(v => v.Id == orderVoucher.VoucherId && !v.DeletedTime.HasValue);
+
+                if (vch is
+                    {
+                        ExpiryDate: DateTime expiryDate,
+                        LimitSalePrice: int limitSalePrice,
+                        SalePercent: int salePercent,
+                        UsedCount: int usedCount,
+                        UsingLimit: int usingLimit
+                    })
+                {                    
+                    // Tính toán giảm giá nếu voucher hợp lệ
+                    double discountAmount = (discountedTotal * salePercent) / 100.0;
+                    discountedTotal -= discountAmount;
+                    totalDiscount += discountAmount;
                 }
             }
-            ord.DiscountedAmount = ord.TotalAmount - discountAmount;
+            
+            // Cập nhật tổng số tiền sau khi giảm giá
+            ord.DiscountedAmount = ord.TotalAmount - totalDiscount;
+
+            // Cập nhật lại thông tin đơn hàng trong cơ sở dữ liệu
             await _unitOfWork.GetRepository<Order>().UpdateAsync(ord);
-            await _unitOfWork.SaveAsync();            
-        }
-
-        public async Task AddVoucher(string id, string voucherId)
-        {
-            Order orderss = await _unitOfWork.GetRepository<Order>().Entities
-                .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID  {id}  not found or has already been deleted.");
-
-            // Kiểm tra sự tồn tại của Voucher
-            Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
-                    .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
-                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Voucher with ID {voucherId} not found."); 
-
-            if (vch.ExpiryDate < orderss.OrderDate)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher has expired.");
-            }
-            vch.UsedCount++;
-            await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
-
-            orderss.VoucherId = vch.Id;
-            await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
             await _unitOfWork.SaveAsync();
-            await UpdateToTalAmount(orderss.Id);       
         }
+
+
+        //public async Task AddVoucher(string id, string voucherId)
+        //{
+        //    Order orderss = await _unitOfWork.GetRepository<Order>().Entities
+        //        .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
+        //        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID  {id}  not found or has already been deleted.");
+
+        //    // Kiểm tra sự tồn tại của Voucher
+        //    Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
+        //            .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
+        //            ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Voucher with ID {voucherId} not found."); 
+
+        //    if (vch.ExpiryDate < orderss.OrderDate)
+        //    {
+        //        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher has expired.");
+        //    }
+        //    vch.UsedCount++;
+        //    await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
+
+        //    orderss.VoucherId = vch.Id;
+        //    await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
+        //    await _unitOfWork.SaveAsync();
+        //    await UpdateToTalAmount(orderss.Id);       
+        //}
 
         public async Task DeleteAsync(string id)
         {

@@ -76,7 +76,8 @@ namespace MilkStore.Services.Mapping
 
             CreateMap<Order, OrderModelView>().ReverseMap();
             CreateMap<Order, OrderResponseDTO>()
-                .ForMember(dest => dest.OrderDetailss, opt => opt.MapFrom(src => src.OrderDetailss));
+                .ForMember(dest => dest.OrderDetailss, opt => opt.MapFrom(src => src.OrderDetailss))
+                .ForMember(dest => dest.Vouchers, opt => opt.MapFrom(src => src.OrderVouchers.Select(ov => ov.Voucher)));
 
             CreateMap<OrderDetailsModelView, OrderDetails>();
             CreateMap<OrderDetails, OrderDetailResponseDTO>()
