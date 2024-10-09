@@ -25,6 +25,10 @@ namespace MilkStore.Services.Mapping
     {
         public MappingProfile()
         {
+            CreateMap<UserUpdateByAdminModel, ApplicationUser>()
+                .ForMember(x => x.PasswordHash, option => option.Ignore());
+
+
             CreateMap<ApplicationUser, UserProfileResponseModelView>().ReverseMap();
 
             CreateMap<ApplicationUser, RegisterModelView>().ReverseMap();
