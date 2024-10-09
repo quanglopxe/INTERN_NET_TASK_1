@@ -477,6 +477,9 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
                     b.Property<double>("UnitPrice")
                         .HasColumnType("float");
 

@@ -38,143 +38,71 @@ namespace MilkStore.Services.Service
         //}
 
         // Create OrderDetails check PreOrder
-        public async Task<OrderDetailResponseDTO> CreateOrderDetails(OrderDetailsModelView model)
+        public async Task<OrderDetails> CreateOrderDetails(OrderDetailsModelView model)
         {
-            string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrWhiteSpace(userID))
+            try
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
-            }
-
-            if (model.Quantity <= 0 || model.Quantity % 1 != 0)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Quantity must be greater than 0 and an integer.");
-            }
-
-            Products product = await _unitOfWork.GetRepository<Products>().Entities
-                .FirstOrDefaultAsync(p => p.Id == model.ProductID)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Product not found!");
-
-            int availableQuantity = product.QuantityInStock;
-            int requestedQuantity = model.Quantity;
-
-            OrderDetailResponseDTO response = new OrderDetailResponseDTO
-            {
-                ProductID = product.Id,
-                ProductName = product.ProductName,
-                RequestedQuantity = requestedQuantity,
-                AvailableQuantity = availableQuantity,
-                UnitPrice = product.Price
-            };
-
-            if (availableQuantity < requestedQuantity)
-            {
-                response.PurchasedQuantity = availableQuantity;
-                response.PreOrderQuantity = requestedQuantity - availableQuantity;
-                response.Message = $"Only {availableQuantity} units are available. {response.PreOrderQuantity} units have been preordered. Please confirm to proceed.";
-                response.IsConfirmationRequired = true;
-                return response;
-            }
-            else
-            {
-                await CreateOrUpdateOrderDetails(model.OrderID, model.ProductID, requestedQuantity, product.Price, userID);
-                response.PurchasedQuantity = requestedQuantity;
-                response.Message = "Order processed successfully.";
-                response.IsConfirmationRequired = false;
-            }
-
-            await _orderService.UpdateToTalAmount(model.OrderID);
-            return response;
-        }
-        public async Task<OrderDetailResponseDTO> ConfirmOrderDetails(OrderDetailsConfirmationModel model)
-        {
-            string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrWhiteSpace(userID))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
-            }
-
-            Products product = await _unitOfWork.GetRepository<Products>().Entities
-                .FirstOrDefaultAsync(p => p.Id == model.ProductID)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Product not found!");
-
-            int availableQuantity = product.QuantityInStock;
-            int requestedQuantity = model.Quantity;
-
-            if (requestedQuantity > availableQuantity)
-            {
-                await CreateOrUpdateOrderDetails(model.OrderID, model.ProductID, availableQuantity, product.Price, userID);
-                await CreatePreOrders(model.ProductID, requestedQuantity - availableQuantity, userID);
-
-                return new OrderDetailResponseDTO
+                string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrWhiteSpace(userID))
                 {
-                    ProductID = product.Id,
-                    ProductName = product.ProductName,
-                    RequestedQuantity = requestedQuantity,
-                    PurchasedQuantity = availableQuantity,
-                    PreOrderQuantity = requestedQuantity - availableQuantity,
-                    UnitPrice = product.Price,
-                    Message = $"Only {availableQuantity} units are available. {requestedQuantity - availableQuantity} units have been preordered."
-                };
-            }
-            else
-            {
-                await CreateOrUpdateOrderDetails(model.OrderID, model.ProductID, requestedQuantity, product.Price, userID);
-
-                return new OrderDetailResponseDTO
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
+                }
+                // Kiểm tra xem số lượng có hợp lệ không
+                if (model.Quantity <= 0 || model.Quantity % 1 != 0)
                 {
-                    ProductID = product.Id,
-                    ProductName = product.ProductName,
-                    RequestedQuantity = requestedQuantity,
-                    PurchasedQuantity = requestedQuantity,
-                    UnitPrice = product.Price,
-                    Message = "Order confirmed and processed successfully."
-                };
-            }
-        }
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Quantity must be greater than 0 and an integer.");
+                }
 
-        private async Task CreatePreOrders(string productId, int quantity, string userID)
-        {
-            PreOrdersModelView preOrdersModelView = new PreOrdersModelView
-            {
-                ProductID = productId,
-                Quantity = quantity,
-                Status = PreOrderStatus.Pending,
-                UserID = Guid.Parse(userID)
-            };
-
-            await _preOrdersService.CreatePreOrders(preOrdersModelView);
-        }
-
-
-        private async Task CreateOrUpdateOrderDetails(string orderId, string productId, int quantity, double price, string userID)
-        {
-            OrderDetails? existingOrderDetail = await _unitOfWork.GetRepository<OrderDetails>().Entities
-                .FirstOrDefaultAsync(od => od.OrderID == orderId && od.ProductID == productId && od.DeletedTime == null);
-
-            if (existingOrderDetail != null)
-            {
-                existingOrderDetail.Quantity += quantity;
-                existingOrderDetail.UnitPrice = price;
-                existingOrderDetail.LastUpdatedBy = userID;
-                existingOrderDetail.LastUpdatedTime = CoreHelper.SystemTimeNow;
-            }
-            else
-            {
-                OrderDetails newOrderDetails = new OrderDetails
+                // Truy cập trực tiếp để tìm sản phẩm
+                Products product = await _unitOfWork.GetRepository<Products>().Entities
+                    .FirstOrDefaultAsync(p => p.Id == model.ProductID)
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Product is not found!");
+                //PreOrder
+                if (product.QuantityInStock < model.Quantity)
                 {
-                    OrderID = orderId,
-                    ProductID = productId,
-                    Quantity = quantity,
-                    UnitPrice = price,
-                    CreatedBy = userID,
-                    CreatedTime = CoreHelper.SystemTimeNow
-                };
+                    //PreOrdersModelView preOrdersModelView = new PreOrdersModelView
+                    //{
+                    //    ProductID = model.ProductID,
+                    //    Quantity = model.Quantity,
+                    //    Status = PreOrderStatus.Pending,
+                    //    UserID = userID
+                    //};
+                    //await _preOrdersService.CreatePreOrders(preOrdersModelView);
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Product {product.ProductName} does not have sufficient quantity. Please check your email for more information!");
+                }
+                // Kiểm tra xem OrderDetails đã tồn tại hay chưa dựa trên OrderID và ProductID
+                OrderDetails? existingOrderDetail = await _unitOfWork.GetRepository<OrderDetails>().Entities
+                    .FirstOrDefaultAsync(od => od.OrderID == model.OrderID && od.ProductID == model.ProductID && od.DeletedTime == null);
 
-                await _unitOfWork.GetRepository<OrderDetails>().InsertAsync(newOrderDetails);
+                if (existingOrderDetail != null)
+                {
+                    // Nếu đã tồn tại, cập nhật số lượng và tính lại tổng tiền
+                    existingOrderDetail.Quantity += model.Quantity;
+                    existingOrderDetail.UnitPrice = product.Price;
+                    existingOrderDetail.CreatedBy = userID;
+                }
+                else
+                {
+                    // Nếu chưa tồn tại, tạo OrderDetails mới
+                    OrderDetails orderDetails = _mapper.Map<OrderDetails>(model);
+                    orderDetails.UnitPrice = product.Price;
+                    orderDetails.CreatedBy = userID;
+                    orderDetails.Status = OrderDetailStatus.InCart;
+                    // Thêm mới OrderDetails
+                    await _unitOfWork.GetRepository<OrderDetails>().InsertAsync(orderDetails);
+                    existingOrderDetail = orderDetails;
+                }
+                await _unitOfWork.SaveAsync();
+
+                // Cập nhật tổng giá trị đơn hàng
+                await _orderService.UpdateToTalAmount(model.OrderID);
+                return existingOrderDetail;
             }
-
-            await _unitOfWork.SaveAsync();
+            catch (Exception ex)
+            {
+                string innerExceptionMessage = ex.InnerException?.Message ?? ex.Message;
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"An error occurred: {innerExceptionMessage}");
+            }
         }
 
 

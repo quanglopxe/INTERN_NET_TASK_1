@@ -76,6 +76,7 @@ namespace MilkStore.Services.Service
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
             }
+            var user = await _userManager.FindByIdAsync(userID);
             // Sử dụng mapper để ánh xạ từ OrderModelView sang Order
             Order item = _mapper.Map<Order>(ord);
             item.UserId = Guid.Parse(userID);
@@ -84,6 +85,7 @@ namespace MilkStore.Services.Service
             DateTimeOffset d1 = item.OrderDate.AddDays(3);
             DateTimeOffset d2 = item.OrderDate.AddDays(5);
             item.estimatedDeliveryDate = $"từ {d1:dd/MM/yyyy} đến {d2:dd/MM/yyyy}";
+            
 
             // Đảm bảo gán các giá trị khác không được ánh xạ từ model view
             item.TotalAmount = 0;
@@ -94,7 +96,30 @@ namespace MilkStore.Services.Service
             await _unitOfWork.GetRepository<Order>().InsertAsync(item);
             await _unitOfWork.SaveAsync();                    
         }
+        public async Task Checkout (OrderModelView ord)
+        {
+            string? userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userID))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
+            }
+            // Kiểm tra xem có giỏ hàng hiện tại không
+            var cartItems = await _unitOfWork.GetRepository<OrderDetails>().Entities
+                .Where(od => od.CreatedBy == userID && od.Status == OrderDetailStatus.InCart && od.DeletedTime == null)
+                .ToListAsync();
 
+            if (!cartItems.Any())
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Your cart is empty. Please add items to cart before checkout.");
+            }
+            
+            // Tạo order từ các orderDetail trong giỏ hàng
+            var order = await _orderService.CreateOrderFromCart(userID);
+
+            // Cập nhật trạng thái của orderDetails từ 'cart' sang 'ordered'
+            await _orderDetailService.UpdateOrderDetailsStatus(cartItems, OrderDetailStatus.Ordered);
+            
+        }
         public async Task UpdateAsync(string id, OrderModelView ord, OrderStatus orderStatus, PaymentStatus paymentStatus, PaymentMethod paymentMethod)
         {
             string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier).Value;
