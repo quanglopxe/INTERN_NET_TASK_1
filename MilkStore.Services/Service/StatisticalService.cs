@@ -16,11 +16,23 @@ namespace MilkStore.Services.Service
         {
             _unitOfWork = unitOfWork;
         }
-        public async Task<double> GetRevenueStats(DateTime? startDate, DateTime? endDate)
+        public async Task<double> GetRevenueStats(int? day, int? month, int? year, DateTime? startDate, DateTime? endDate)
         {
             var query = _unitOfWork.GetRepository<Order>().Entities
                 .Where(o => o.OrderStatuss == OrderStatus.Delivered);
 
+            if(day.HasValue)
+            {
+                query = query.Where(o => o.OrderDate.Day == day.Value);
+            }
+            if(month.HasValue)
+            {
+                query = query.Where(o => o.OrderDate.Month == month.Value);
+            }
+            if(year.HasValue)
+            {
+                query = query.Where(o => o.OrderDate.Year == year.Value);
+            }
             if (startDate.HasValue)
             {
                 query = query.Where(o => o.OrderDate >= startDate.Value);
@@ -36,12 +48,24 @@ namespace MilkStore.Services.Service
 
             return totalRevenue;
         }
-        public async Task<List<EmployeeRevenueDTO>> GetRevenueByEmployee(DateTime? startDate, DateTime? endDate)
+        public async Task<List<EmployeeRevenueDTO>> GetRevenueByEmployee(int? day, int? month, int? year, DateTime? startDate, DateTime? endDate)
         {
             var query = from o in _unitOfWork.GetRepository<Order>().Entities
                         where o.OrderStatuss == OrderStatus.Delivered
                         select new { o.CreatedBy, o.TotalAmount, o.OrderDate };
 
+            if (day.HasValue)
+            {
+                query = query.Where(o => o.OrderDate.Day == day.Value);
+            }
+            if (month.HasValue)
+            {
+                query = query.Where(o => o.OrderDate.Month == month.Value);
+            }
+            if (year.HasValue)
+            {
+                query = query.Where(o => o.OrderDate.Year == year.Value);
+            }
             if (startDate.HasValue)
             {
                 query = query.Where(o => o.OrderDate >= startDate.Value);
@@ -63,7 +87,7 @@ namespace MilkStore.Services.Service
 
             return revenueByEmployee;
         }
-        public async Task<List<ProductRevenueDTO>> GetRevenueByProduct(DateTime? startDate, DateTime? endDate)
+        public async Task<List<ProductRevenueDTO>> GetRevenueByProduct(int? day, int? month, int? year, DateTime? startDate, DateTime? endDate)
         {
             var query = from od in _unitOfWork.GetRepository<OrderDetails>().Entities
                         join o in _unitOfWork.GetRepository<Order>().Entities
@@ -71,6 +95,18 @@ namespace MilkStore.Services.Service
                         where o.OrderStatuss == OrderStatus.Delivered
                         select new { od.ProductID, od.Quantity, od.UnitPrice, o.OrderDate };
 
+            if (day.HasValue)
+            {
+                query = query.Where(x => x.OrderDate.Day == day.Value);
+            }
+            if(month.HasValue)
+            {
+                query = query.Where(x => x.OrderDate.Month == month.Value);
+            }
+            if(year.HasValue)
+            {
+                query = query.Where(x => x.OrderDate.Year == year.Value);
+            }
             if (startDate.HasValue)
             {
                 query = query.Where(x => x.OrderDate >= startDate.Value);
@@ -94,7 +130,7 @@ namespace MilkStore.Services.Service
             return revenueByProduct;
         }
 
-        public async Task<List<CategoryRevenueDTO>> GetRevenueByCategory(DateTime? startDate, DateTime? endDate)
+        public async Task<List<CategoryRevenueDTO>> GetRevenueByCategory(int? day, int? month, int? year, DateTime? startDate, DateTime? endDate)
         {
             var query = from od in _unitOfWork.GetRepository<OrderDetails>().Entities
                         join p in _unitOfWork.GetRepository<Products>().Entities on od.ProductID equals p.Id
@@ -103,6 +139,18 @@ namespace MilkStore.Services.Service
                         where o.OrderStatuss == OrderStatus.Delivered
                         select new { c.CategoryName, od.Quantity, od.UnitPrice, o.OrderDate };
 
+            if (day.HasValue)
+            {
+                query = query.Where(x => x.OrderDate.Day == day.Value);
+            }
+            if (month.HasValue)
+            {
+                query = query.Where(x => x.OrderDate.Month == month.Value);
+            }
+            if (year.HasValue)
+            {
+                query = query.Where(x => x.OrderDate.Year == year.Value);
+            }
             if (startDate.HasValue)
             {
                 query = query.Where(x => x.OrderDate >= startDate.Value);

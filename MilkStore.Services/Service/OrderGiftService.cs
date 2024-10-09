@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using MailKit;
+using Microsoft.AspNetCore.Http;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
@@ -15,9 +16,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-
+using OrderGiftStatus = MilkStore.Contract.Repositories.Entity.OrderGiftStatus;
 namespace MilkStore.Services.Service
 {
     public class OrderGiftService : IOrderGiftService
@@ -26,23 +28,27 @@ namespace MilkStore.Services.Service
         private readonly DatabaseContext context;
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
-        public OrderGiftService(DatabaseContext context, IUnitOfWork unitOfWork, IMapper mapper, IEmailService mailService)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public OrderGiftService(DatabaseContext context, IUnitOfWork unitOfWork, IMapper mapper, IEmailService mailService, IHttpContextAccessor httpContextAccessor)
         {
             this.context = context;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _emailService = mailService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task CreateOrderGift(OrderGiftModel orderGiftModel)
         {
-            OrderGift newOG = _mapper.Map<OrderGift>(orderGiftModel);
-            if (newOG.Id == null || newOG.Id == "")
+            string? userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userID))
             {
-                newOG.Id = Guid.NewGuid().ToString("N");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
             }
+            OrderGift newOG = _mapper.Map<OrderGift>(orderGiftModel);
             newOG.CreatedTime = DateTime.UtcNow;
-
+            newOG.UserID = Guid.Parse(userID);
+            newOG.Status = OrderGiftStatus.Pending;
             await _unitOfWork.GetRepository<OrderGift>().InsertAsync(newOG);
             await _unitOfWork.SaveAsync();
         }
@@ -93,8 +99,13 @@ namespace MilkStore.Services.Service
         }
 
 
-        public async Task UpdateOrderGift(string id, OrderGiftModel orderGiftModel)
+        public async Task UpdateOrderGift(string id, OrderGiftModel orderGiftModel, OrderGiftStatus ordergiftstatus)
         {
+            string? userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userID))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
+            }
             if (string.IsNullOrWhiteSpace(id))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
@@ -104,10 +115,13 @@ namespace MilkStore.Services.Service
             DateTime futureDate2 = currentDate.AddDays(5);
             string temp = "Thời gian giao dự kiến từ " + futureDate.ToString("dd/MM/yyyy") + " đến " + futureDate2.ToString("dd/MM/yyyy");
             string productname = ""; // lấy thông tin theo id
-            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(orderGiftModel.UserId) 
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! User null");
+            
             int dem = 0;
-
+            OrderGift newOG = _mapper.Map<OrderGift>(orderGiftModel);
+            newOG.UserID = Guid.Parse(userID);
+            newOG.Status = ordergiftstatus;
+            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(newOG.UserID)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! User null");
             IEnumerable<OrderDetailGift> ODG = await _unitOfWork.GetRepository<OrderDetailGift>().GetAllAsync();
             foreach (var item in ODG)
             {
@@ -120,7 +134,7 @@ namespace MilkStore.Services.Service
                 }
             }
             string temp1 = " Quà tặng gồm: " + productname;
-            if (orderGiftModel.Status == "Confirmed")
+            if (newOG.Status == OrderGiftStatus.Confirmed)
             {
                 _emailService.SendEmailAsync(user.Email, "ĐỔI ĐIỂM LẤY QUÀ - MILKSTORE", temp + temp1);
                 user.Points = user.Points - dem;

@@ -38,9 +38,10 @@ namespace MilkStore.Services.Service
             ApplicationUser? user = await userManager.FindByIdAsync(userID)
               ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, "NotFound", $"User with ID {userID} was not found.");
 
-            _mapper.Map<ApplicationUser>(userUpdateModelView);
+            _mapper.Map(userUpdateModelView, user);
             user.LastUpdatedTime = CoreHelper.SystemTimeNow;
             user.LastUpdatedBy = userID;
+            user.UserName = userUpdateModelView.Email;
 
             await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
             await _unitOfWork.SaveAsync();
@@ -97,6 +98,7 @@ namespace MilkStore.Services.Service
                 Id = user.Id,
                 UserName = user.UserName,
                 Email = user.Email,
+                Name = user.Name,
                 Points = user.Points,
                 CreatedBy = user.CreatedBy,
                 DeletedBy = user.DeletedBy,
@@ -165,6 +167,7 @@ namespace MilkStore.Services.Service
             ApplicationUser? newUser = _mapper.Map<ApplicationUser>(userModel);
             newUser.CreatedBy = handleBy;
             newUser.EmailConfirmed = true;
+            newUser.Name = userModel.Name;
             newUser.UserName = userModel.Email;
             string passwordChars = GenerateRandomPassword();
             IdentityResult? result = await userManager.CreateAsync(newUser, passwordChars);
@@ -193,7 +196,7 @@ namespace MilkStore.Services.Service
 
             ApplicationUser user = await userManager.FindByIdAsync(userId)
              ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, "NotFound", "User not found");
-            
+
             // Tính điểm thưởng: 10 điểm cho mỗi 10.000 VND
             int earnedPoints = (int)(totalAmount / 10000) * 10;
 
@@ -203,7 +206,59 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
         }
 
+
+        public async Task<UserProfileResponseModelView> GetUserProfile()
+        {
+            string? userIdToken = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Token is invalid.");
+
+            ApplicationUser? user = await userManager.FindByIdAsync(userIdToken)
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found.");
+
+            UserProfileResponseModelView? userResponse = _mapper.Map<UserProfileResponseModelView>(user);
+
+            return userResponse;
+        }
+
+
+        public Task<BasePaginatedList<UserResponeseDTO>> GetUserByRole(string roleId, int index, int pageSize)
+        {
+            Task<ApplicationRole?>? roleExists = roleManager.FindByIdAsync(roleId)
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Role not found.");
+            Task<IList<ApplicationUser>>? users = userManager.GetUsersInRoleAsync(roleExists.Result.Name);
+            return Task.FromResult(new BasePaginatedList<UserResponeseDTO>(
+                users.Result.Select(MapToUserResponseDto).ToList(),
+                users.Result.Count(),
+                index,
+                pageSize
+            ));
+        }
+        public async Task UpdateUserByAdmin(string userID, UserUpdateByAdminModel model)
+        {
+            if (string.IsNullOrWhiteSpace(userID))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "User ID cannot be null, empty, or contain only whitespace.");
+            }
+            string? handleBy = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Token is invalid.");
+            ApplicationUser? userExists = await userManager.FindByIdAsync(userID)
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User does not exist or has already been deleted.");
+            _mapper.Map(model, userExists);
+            userExists.UserName = model.Email;
+            if (!string.IsNullOrEmpty(model.Password))
+            {
+                string? passwordResetToken = await userManager.GeneratePasswordResetTokenAsync(userExists);
+                IdentityResult? result = await userManager.ResetPasswordAsync(userExists, passwordResetToken, model.Password);
+                if (!result.Succeeded)
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Failed to update password.");
+                }
+            }
+            IdentityResult? updateResult = await userManager.UpdateAsync(userExists);
+            if (!updateResult.Succeeded)
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Failed to update user.");
+            }
+        }
     }
-
-
 }
