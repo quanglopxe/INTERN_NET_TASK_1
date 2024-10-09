@@ -25,11 +25,16 @@ namespace MilkStore.Services.Mapping
     {
         public MappingProfile()
         {
+            CreateMap<UserUpdateByAdminModel, ApplicationUser>()
+                .ForMember(x => x.PasswordHash, option => option.Ignore());
+
+
+            CreateMap<ApplicationUser, UserProfileResponseModelView>().ReverseMap();
 
             CreateMap<ApplicationUser, RegisterModelView>().ReverseMap();
 
             CreateMap<OrderDetailGiftModel, OrderDetailGift>();
-            CreateMap<OrderDetailGift,OrderDetailGiftResponseDTO>();
+            CreateMap<OrderDetailGift, OrderDetailGiftResponseDTO>();
             CreateMap<GiftModel, Gift>();
             CreateMap<Gift, GiftResponseDTO>();
             CreateMap<OrderGiftModel, OrderGift>();

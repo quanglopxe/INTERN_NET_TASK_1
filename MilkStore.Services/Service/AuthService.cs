@@ -75,10 +75,13 @@ public class AuthService(UserManager<ApplicationUser> userManager, SignInManager
         string? refreshToken = Guid.NewGuid().ToString();
 
         string? initToken = await userManager.GetAuthenticationTokenAsync(user, "Default", "RefreshToken");
-        if (initToken is not null)
+        if (initToken != null)
         {
+
             await userManager.RemoveAuthenticationTokenAsync(user, "Default", "RefreshToken");
+
         }
+
         await userManager.SetAuthenticationTokenAsync(user, "Default", "RefreshToken", refreshToken);
         return refreshToken;
     }
@@ -120,42 +123,38 @@ public class AuthService(UserManager<ApplicationUser> userManager, SignInManager
     #region Implementation Interface
     public async Task<AuthResponse> Login(LoginModelView loginModel)
     {
-        ApplicationUser? user = await userManager.FindByEmailAsync(loginModel.Email);
-        if (user != null)
+        ApplicationUser? user = await userManager.FindByEmailAsync(loginModel.Email)
+         ?? throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found.");
+
+        if (user.DeletedTime.HasValue)
         {
-            if (user.DeletedTime.HasValue)
-            {
-                throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Account have been deleted");
-            }
-            if (!await userManager.IsEmailConfirmedAsync(user))
-            {
-                throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Account have not been confirmed");
-            }
-            SignInResult result = await signInManager.PasswordSignInAsync(loginModel.Email, loginModel.Password, false, false);
-            if (!result.Succeeded)
-            {
-                throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Invalid password");
-            }
-            (string token, IEnumerable<string> roles) = GenerateJwtToken(user);
-            string refreshToken = await GenerateRefreshToken(user);
-            return new AuthResponse
-            {
-                AccessToken = token,
-                RefreshToken = refreshToken,
-                TokenType = "JWT",
-                AuthType = "Bearer",
-                ExpiresIn = DateTime.UtcNow.AddHours(1),
-                User = new UserInfo
-                {
-                    Email = user.Email,
-                    Roles = roles.ToList()
-                }
-            };
+            throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Account have been deleted");
         }
-        else
+        if (!await userManager.IsEmailConfirmedAsync(user))
         {
-            throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found.");
+            throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Account have not been confirmed");
         }
+        SignInResult result = await signInManager.PasswordSignInAsync(loginModel.Email, loginModel.Password, false, false);
+        if (!result.Succeeded)
+        {
+            throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Invalid password");
+        }
+        (string token, IEnumerable<string> roles) = GenerateJwtToken(user);
+        string refreshToken = await GenerateRefreshToken(user);
+        return new AuthResponse
+        {
+            AccessToken = token,
+            RefreshToken = refreshToken,
+            TokenType = "JWT",
+            AuthType = "Bearer",
+            ExpiresIn = DateTime.UtcNow.AddHours(1),
+            User = new UserInfo
+            {
+                Email = user.Email,
+                Roles = roles.ToList()
+            }
+        };
+
     }
     public async Task Register(RegisterModelView registerModelView)
     {
@@ -238,26 +237,20 @@ public class AuthService(UserManager<ApplicationUser> userManager, SignInManager
     {
         string? userId = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
             throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Token is invalid.");
-        ApplicationUser? admin = await userManager.FindByIdAsync(userId);
-        if (admin is null)
+        ApplicationUser? admin = await userManager.FindByIdAsync(userId) ?? throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found.");
+        if (admin.DeletedTime.HasValue)
         {
-            throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found.");
+            throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Accont have been locked.");
         }
         else
         {
-            if (admin.DeletedTime.HasValue)
+            IdentityResult result = await userManager.ChangePasswordAsync(admin, model.OldPassword, model.NewPassword);
+            if (!result.Succeeded)
             {
-                throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Accont have been locked.");
-            }
-            else
-            {
-                IdentityResult result = await userManager.ChangePasswordAsync(admin, model.OldPassword, model.NewPassword);
-                if (!result.Succeeded)
-                {
-                    throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.ServerError, ErrorCode.ServerError, result.Errors.FirstOrDefault()?.Description);
-                }
+                throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.ServerError, ErrorCode.ServerError, result.Errors.FirstOrDefault()?.Description);
             }
         }
+
     }
     public async Task<AuthResponse> RefreshToken(RefreshTokenModel refreshTokenModel)
     {

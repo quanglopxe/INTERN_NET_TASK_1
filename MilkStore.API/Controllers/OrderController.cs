@@ -59,9 +59,9 @@ namespace MilkStore.API.Controllers
 
         [HttpPut("Update{id}")]
         //[Authorize(Roles = "Guest, Member")]
-        public async Task<IActionResult> Update(string id, OrderModelView item)
+        public async Task<IActionResult> Update(string id, OrderModelView item, [FromQuery] OrderStatus orderStatus, [FromQuery] PaymentStatus paymentStatus, [FromQuery] PaymentMethod paymentMethod)
         {            
-            await _orderService.UpdateAsync(id, item);
+            await _orderService.UpdateAsync(id, item, orderStatus, paymentStatus, paymentMethod);
             await _orderService.UpdateInventoryQuantity(id);
             await _orderService.UpdateUserPoint(id);
             await _orderService.SendingPaymentStatus_Mail(id);

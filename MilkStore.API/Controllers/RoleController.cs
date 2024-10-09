@@ -12,7 +12,7 @@ using MilkStore.ModelViews.RoleModelView;
 public class RoleController(IRoleService roleService) : ControllerBase
 {
     private readonly IRoleService _roleService = roleService;
-    [HttpGet("GetRoles")]
+    [HttpGet("Get_Roles")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetRoles()
     {

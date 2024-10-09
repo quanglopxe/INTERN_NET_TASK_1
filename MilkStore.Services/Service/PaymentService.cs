@@ -30,7 +30,7 @@ public class PaymentService(IHttpContextAccessor httpContextAccessor, IUnitOfWor
         vnpay.AddRequestData("vnp_OrderInfo", "Thanh toan hoa don " + request.InvoiceCode);
         vnpay.AddRequestData("vnp_OrderType", "other");
         vnpay.AddRequestData("vnp_ReturnUrl", Environment.GetEnvironmentVariable("CLIENT_DOMAIN") ?? throw new Exception("CLIENT_DOMAIN is not set"));
-        vnpay.AddRequestData("vnp_TxnRef", request.InvoiceCode);
+        vnpay.AddRequestData("vnp_TxnRef", DateTime.Now.ToString("yyyyMMddHHmmssfff"));
         vnpay.AddRequestData("vnp_ExpireDate", DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmmss"));
 
         string paymentUrl = vnpay.CreateRequestUrl(Environment.GetEnvironmentVariable("VNPAY_URL") ??
@@ -50,7 +50,7 @@ public class PaymentService(IHttpContextAccessor httpContextAccessor, IUnitOfWor
         }
         if (request.vnp_ResponseCode == "00")
         {
-            Order? order = await unitOfWork.GetRepository<Order>().GetByIdAsync(request.vnp_TxnRef)
+            Order? order = await unitOfWork.GetRepository<Order>().GetByIdAsync(request.vnp_OrderInfo[(request.vnp_OrderInfo.IndexOf(" ") + 1)..])
                  ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
             order.PaymentStatuss = PaymentStatus.Paid;
             unitOfWork.GetRepository<Order>().Update(order);
