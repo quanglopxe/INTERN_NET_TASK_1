@@ -24,6 +24,7 @@ namespace MilkStore.Services.Service
     {
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IEmailService emailService = emailService;
+        private readonly IUnitOfWork unitOfWork = unitOfWork;
         private readonly UserManager<ApplicationUser> userManager = userManager;
         private readonly RoleManager<ApplicationRole> roleManager = roleManager;
         private readonly SignInManager<ApplicationUser> signInManager = signInManager;
@@ -239,12 +240,17 @@ namespace MilkStore.Services.Service
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "User ID không được để trống, trống hoặc chỉ chứa các ký tự không hợp lệ");
             }
+
             string? handleBy = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
              ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Token không hợp lệ");
             ApplicationUser? userExists = await userManager.FindByIdAsync(userID)
              ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Người dùng không tồn tại hoặc đã bị xóa");
+
             _mapper.Map(model, userExists);
+
             userExists.UserName = model.Email;
+            userExists.LastUpdatedBy = handleBy;
+
             if (!string.IsNullOrEmpty(model.Password))
             {
                 string? passwordResetToken = await userManager.GeneratePasswordResetTokenAsync(userExists);
@@ -254,11 +260,46 @@ namespace MilkStore.Services.Service
                     throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Không thể cập nhật mật khẩu");
                 }
             }
+
             IdentityResult? updateResult = await userManager.UpdateAsync(userExists);
             if (!updateResult.Succeeded)
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Không thể cập nhật người dùng");
             }
+        }
+
+        public async Task<BasePaginatedList<UserResponeseDTO>> SearchUser(string keySearch, SearchUserCode search, int index, int pageSize)
+        {
+            IQueryable<ApplicationUser> usersQuery = userManager.Users;
+            switch (search)
+            {
+                case SearchUserCode.phoneNumber:
+                    {
+                        usersQuery = usersQuery.Where(u => u.PhoneNumber.Contains(keySearch) && u.DeletedTime == null);
+                    }
+                    break;
+                case SearchUserCode.name:
+                    {
+                        usersQuery = usersQuery.Where(u => u.Name.Contains(keySearch) && u.DeletedTime == null);
+                    }
+                    break;
+                case SearchUserCode.email:
+                    {
+                        usersQuery = usersQuery.Where(u => u.Email.Contains(keySearch) && u.DeletedTime == null);
+                    }
+                    break;
+                default: break;
+            }
+
+            int totalUsers = await usersQuery.CountAsync();
+            List<ApplicationUser>? users = await usersQuery
+                .Skip((index - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            List<UserResponeseDTO>? usersResponse = users.Select(MapToUserResponseDto).ToList();
+
+            return new BasePaginatedList<UserResponeseDTO>(usersResponse, totalUsers, index, pageSize);
         }
     }
 }

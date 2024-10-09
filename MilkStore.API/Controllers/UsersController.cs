@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core;
 using MilkStore.Core.Base;
+using MilkStore.Core.Constants;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
 
@@ -68,6 +69,13 @@ namespace MilkStore.API.Controllers
         public async Task<IActionResult> GetUserByRole(string roleId, int index = 1, int pageSize = 10)
         {
             BasePaginatedList<UserResponeseDTO>? users = await _userService.GetUserByRole(roleId, index, pageSize);
+            return Ok(BaseResponse<BasePaginatedList<UserResponeseDTO>>.OkResponse(users));
+        }
+        [HttpGet("Search_User")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> SearchUser(string keySearch, SearchUserCode search, int index = 1, int pageSize = 10)
+        {
+            BasePaginatedList<UserResponeseDTO>? users = await _userService.SearchUser(keySearch, search, index, pageSize);
             return Ok(BaseResponse<BasePaginatedList<UserResponeseDTO>>.OkResponse(users));
         }
     }
