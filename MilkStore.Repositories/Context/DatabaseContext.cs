@@ -28,6 +28,7 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<Gift> Gifts => Set<Gift>();
         public virtual DbSet<OrderGift> OrderGifts => Set<OrderGift>();
         public virtual DbSet<OrderDetailGift> OrderDetailGifts => Set<OrderDetailGift>();
+        public virtual DbSet<OrderVoucher> OrderVouchers => Set<OrderVoucher>();
         #endregion
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -104,11 +105,18 @@ namespace MilkStore.Repositories.Context
 
 
             //Add FK_Order_Voucher
-            modelBuilder.Entity<Order>()
-                .HasOne(o => o.Voucher)
-                .WithMany(v => v.Orders)
-                .HasForeignKey(o => o.VoucherId)
-                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<OrderVoucher>()
+         .HasKey(ov => new { ov.OrderId, ov.VoucherId }); // Đặt khóa chính kép
+
+            modelBuilder.Entity<OrderVoucher>()
+                .HasOne(ov => ov.Order)
+                .WithMany(o => o.OrderVouchers)
+                .HasForeignKey(ov => ov.OrderId);
+
+            modelBuilder.Entity<OrderVoucher>()
+                .HasOne(ov => ov.Voucher)
+                .WithMany(v => v.OrderVouchers)
+                .HasForeignKey(ov => ov.VoucherId);
 
             //Add FK_Order_OrderDetails
             modelBuilder.Entity<Order>()
