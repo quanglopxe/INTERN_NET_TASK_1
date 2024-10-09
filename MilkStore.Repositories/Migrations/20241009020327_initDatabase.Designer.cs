@@ -12,8 +12,8 @@ using MilkStore.Repositories.Context;
 namespace MilkStore.Repositories.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20241007084254_InitDB")]
-    partial class InitDB
+    [Migration("20241009020327_initDatabase")]
+    partial class initDatabase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -886,6 +886,9 @@ namespace MilkStore.Repositories.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ShippingAddress")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("TwoFactorEnabled")
