@@ -69,29 +69,30 @@ namespace MilkStore.Services.Service
             );
         }
 
-        public async Task AddAsync(OrderModelView ord)
+        public async Task AddAsync()
         {
             string? userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrWhiteSpace(userID))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
             }
-            var user = await _userManager.FindByIdAsync(userID);
+            var user = await _userManager.FindByIdAsync(userID) ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
             // Sử dụng mapper để ánh xạ từ OrderModelView sang Order
-            Order item = _mapper.Map<Order>(ord);
-            item.UserId = Guid.Parse(userID);
-            item.CreatedBy = userID;            
-            item.OrderDate = CoreHelper.SystemTimeNow;
-            DateTimeOffset d1 = item.OrderDate.AddDays(3);
-            DateTimeOffset d2 = item.OrderDate.AddDays(5);
-            item.estimatedDeliveryDate = $"từ {d1:dd/MM/yyyy} đến {d2:dd/MM/yyyy}";
-            
 
-            // Đảm bảo gán các giá trị khác không được ánh xạ từ model view
-            item.TotalAmount = 0;
-            item.DiscountedAmount = 0;
-            item.PaymentStatuss = PaymentStatus.Unpaid;
-            item.OrderStatuss = OrderStatus.Pending;
+            Order item = new Order
+            {
+                UserId = Guid.Parse(userID),
+                CreatedBy = userID, 
+                OrderDate = CoreHelper.SystemTimeNow,
+                estimatedDeliveryDate = $"từ {CoreHelper.SystemTimeNow.AddDays(3):dd/MM/yyyy} đến {CoreHelper.SystemTimeNow.AddDays(5):dd/MM/yyyy}",
+                ShippingAddress = user.ShippingAddress, 
+                TotalAmount = 0, 
+                DiscountedAmount = 0,
+                PaymentStatuss = PaymentStatus.Unpaid, 
+                OrderStatuss = OrderStatus.Pending,   
+                PaymentMethod = PaymentMethod.COD,
+            };
+
 
             await _unitOfWork.GetRepository<Order>().InsertAsync(item);
             await _unitOfWork.SaveAsync();                    
