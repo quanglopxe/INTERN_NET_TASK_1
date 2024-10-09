@@ -9,6 +9,7 @@ using MilkStore.ModelViews.CategoryModelViews;
 using MilkStore.ModelViews.ProductsModelViews;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.Repositories.Context;
+using Org.BouncyCastle.Math.Field;
 
 namespace MilkStore.Services.Service
 {
@@ -25,6 +26,14 @@ namespace MilkStore.Services.Service
         }
         public async Task CreateCategory(CategoryModel CategoryModel)
         {                        
+            IEnumerable<Category> Cte = await _unitOfWork.GetRepository<Category>().GetAllAsync();
+            foreach (Category c in Cte)
+            {
+                if (c.CategoryName.Equals(CategoryModel.CategoryName, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Same category name");
+                }
+            }
             Category newCategory = _mapper.Map<Category>(CategoryModel);
             newCategory.CreatedTime = DateTime.UtcNow;
 
@@ -78,6 +87,14 @@ namespace MilkStore.Services.Service
 
         public async Task UpdateCategory(string id, CategoryModel CategoryModel)
         {
+            IEnumerable<Category> Cte = await _unitOfWork.GetRepository<Category>().GetAllAsync();
+            foreach (Category c in Cte)
+            {
+                if (c.CategoryName.Equals(CategoryModel.CategoryName, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Same category name");
+                }
+            }
             if (string.IsNullOrWhiteSpace(id))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");

@@ -53,7 +53,15 @@ namespace MilkStore.Services.Service
             return _mapper.Map<IEnumerable<ProductResponseDTO>>(products);
         }
         public async Task CreateProducts(ProductsModel productsModel)
-        {   
+        {
+            IEnumerable<Products> pd = await _unitOfWork.GetRepository<Products>().GetAllAsync();
+            foreach (Products p in pd)
+            {
+                if(p.ProductName.Equals(productsModel.ProductName, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Same product name");
+                }    
+            }
             Products newProduct = _mapper.Map<Products>(productsModel);
             newProduct.CreatedTime = DateTime.UtcNow;
 
@@ -132,6 +140,14 @@ namespace MilkStore.Services.Service
 
         public async Task UpdateProducts(string id, ProductsModel productsModel)
         {
+            IEnumerable<Products> pd = await _unitOfWork.GetRepository<Products>().GetAllAsync();
+            foreach (Products p in pd)
+            {
+                if (p.ProductName.Equals(productsModel.ProductName, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Same product name");
+                }
+            }
             Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id)
                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist{id}");
             var oldQuantityInStock = product.QuantityInStock;
