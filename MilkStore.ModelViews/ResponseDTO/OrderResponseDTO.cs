@@ -27,5 +27,6 @@ namespace MilkStore.ModelViews.ResponseDTO
         public required string LastUpdatedBy { get; set; }
         public required string DeletedBy { get; set; }
         public IList<OrderDetailResponseDTO> OrderDetailss { get; set; } = new List<OrderDetailResponseDTO>();
+        public IList<VoucherResponseDTO> Vouchers { get; set; } = new List<VoucherResponseDTO>();
     }
 }
