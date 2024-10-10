@@ -63,7 +63,7 @@ namespace MilkStore.Services.Service
                     PreOrdersModelView preOrdersModelView = new PreOrdersModelView
                     {
                         ProductID = model.ProductID,
-                        Quantity = model.Quantity,
+                        //Quantity = model.Quantity,
                         Status = PreOrderStatus.Pending,
                         UserID = Guid.Parse(userID)
                     };
