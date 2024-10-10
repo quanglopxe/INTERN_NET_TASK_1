@@ -74,7 +74,7 @@ namespace MilkStore.Services.Service
             string? userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrWhiteSpace(userID))
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Hãy đăng nhập trước!");
             }
 
             // Sử dụng mapper để ánh xạ từ OrderModelView sang Order
@@ -95,12 +95,12 @@ namespace MilkStore.Services.Service
             // Kiểm tra các mặt hàng mà người dùng nhập
             if (orderItems == null || !orderItems.Any())
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Product list cannot be empty.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Không được để trống danh sách sản phẩm.");
             }
             // Kiểm tra giới hạn số lượng voucher (tối đa 3)
             if (ord.VoucherIds is not null && ord.VoucherIds.Count > 3)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "You can apply a maximum of 3 vouchers to an order.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Bạn chỉ được áp dụng 3 mã voucher cho một đơn hàng.");
             }
 
             // Tính tổng tiền dựa trên danh sách sản phẩm từ orderItems
@@ -109,11 +109,11 @@ namespace MilkStore.Services.Service
                 // Lấy sản phẩm từ bảng Sản phẩm
                 Products product = await _unitOfWork.GetRepository<Products>().Entities
                     .FirstOrDefaultAsync(p => p.Id == orderItem.ProductId && !p.DeletedTime.HasValue)
-                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderItem.ProductId} not found.");
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy Sản phẩm với ID: {orderItem.ProductId} .");
 
                 if (orderItem.Quantity <= 0)
                 {
-                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Quantity for product {orderItem.ProductId} must be greater than zero.");
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Số lượng của sản phẩm {orderItem.ProductId} phải lớn hơn 0.");
                 }
 
                 // Tính tổng tiền cho từng sản phẩm
@@ -130,18 +130,18 @@ namespace MilkStore.Services.Service
                 {
                     Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
                         .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
-                        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Voucher with ID {voucherId} not found.");
+                        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy Voucher có ID: {voucherId}.");
 
                     if (vch.ExpiryDate < item.OrderDate)
                     {
-                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher with ID {voucherId} has expired.");
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Voucher có ID {voucherId} đã hết hạn.");
                         continue;
                     }
 
                     // Kiểm tra điều kiện áp dụng voucher
                     if (discountedTotal < Convert.ToDouble(vch.LimitSalePrice)) 
                     {
-                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The total amount does not meet the requirements to apply voucher {voucherId}.");
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Tổng số tiền không đáp ứng yêu cầu để áp dụng voucher với ID: {voucherId}.");
                         continue;
                     }
                     // Tính toán giảm giá nếu voucher hợp lệ
@@ -259,12 +259,12 @@ namespace MilkStore.Services.Service
             string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier).Value;
             if (string.IsNullOrWhiteSpace(userID))
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Hãy đăng nhập trước!");
             }
             // Lấy đối tượng hiện tại từ cơ sở dữ liệu
             Order orderss = await _unitOfWork.GetRepository<Order>().Entities
                 .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID  {id}  not found or has already been deleted."); 
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy đơn hàng có ID {id} hoặc đã bị xóa."); 
 
             // Sử dụng AutoMapper để ánh xạ những thay đổi
             _mapper.Map(ord, orderss);  // Chỉ ánh xạ những thuộc tính có giá trị khác biệt
