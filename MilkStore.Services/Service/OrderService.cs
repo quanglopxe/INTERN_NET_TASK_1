@@ -21,6 +21,8 @@ using PaymentMethod = MilkStore.Contract.Repositories.Entity.PaymentMethod;
 using OrderStatus = MilkStore.Contract.Repositories.Entity.OrderStatus;
 using MilkStore.ModelViews.PreOrdersModelView;
 using System;
+using Microsoft.VisualBasic;
+using MilkStore.ModelViews;
 
 namespace MilkStore.Services.Service
 {
@@ -31,7 +33,7 @@ namespace MilkStore.Services.Service
         private readonly IUserService _userService;
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IHttpContextAccessor _httpContextAccessor;                    
         public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService, UserManager<ApplicationUser> userManager, IHttpContextAccessor httpContextAccessor, IUserService userService)
         {
             _unitOfWork = unitOfWork;
@@ -39,7 +41,7 @@ namespace MilkStore.Services.Service
             _emailService = emailService;
             _userManager = userManager;
             _httpContextAccessor = httpContextAccessor;
-            _userService = userService;
+            _userService = userService;                        
         }
 
         public async Task<BasePaginatedList<OrderResponseDTO>> GetAsync(string? id, int pageIndex, int pageSize)
@@ -70,16 +72,19 @@ namespace MilkStore.Services.Service
             );
         }
 
-        public async Task AddAsync(OrderModelView ord, List<OrderItemResponseDTO> orderItems)
+        public async Task AddAsync(List<string>? voucherCode, List<OrderDetails> orderItems, PaymentMethod paymentMethod)
         {
-            string? userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrWhiteSpace(userID))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
             }
             var user = await _userManager.FindByIdAsync(userID) ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
-
-            Order item = new Order
+            if(string.IsNullOrWhiteSpace(user.ShippingAddress))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please update your shipping address before checkout!");
+            }
+            Order order = new Order
             {
                 UserId = Guid.Parse(userID),
                 CreatedBy = userID, 
@@ -90,61 +95,45 @@ namespace MilkStore.Services.Service
                 DiscountedAmount = 0,
                 PaymentStatuss = PaymentStatus.Unpaid, 
                 OrderStatuss = OrderStatus.Pending,   
-                PaymentMethod = PaymentMethod.COD,
+                PaymentMethod = paymentMethod              
             };
 
 
-            // Kiểm tra các mặt hàng mà người dùng nhập
+            // Kiểm tra các mặt hàng mà người dùng mua
             if (orderItems == null || !orderItems.Any())
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Product list cannot be empty.");
             }
             // Kiểm tra giới hạn số lượng voucher (tối đa 3)
-            if (ord.VoucherIds is not null && ord.VoucherIds.Count > 3)
+            if (voucherCode is not null && voucherCode.Count > 3)
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "You can apply a maximum of 3 vouchers to an order.");
             }
 
             // Tính tổng tiền dựa trên danh sách sản phẩm từ orderItems
-            foreach (var orderItem in orderItems)
-            {
-                // Lấy sản phẩm từ bảng Sản phẩm
-                Products product = await _unitOfWork.GetRepository<Products>().Entities
-                    .FirstOrDefaultAsync(p => p.Id == orderItem.ProductId && !p.DeletedTime.HasValue)
-                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderItem.ProductId} not found.");
-
-                if (orderItem.Quantity <= 0)
-                {
-                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Quantity for product {orderItem.ProductId} must be greater than zero.");
-                }
-
-                // Tính tổng tiền cho từng sản phẩm
-                item.TotalAmount += product.Price * orderItem.Quantity;
-            }
+            order.TotalAmount = orderItems.Sum(o => o.TotalAmount);            
 
             double totalDiscount = 0;
-            double discountedTotal = item.TotalAmount;
+            double discountedTotal = order.TotalAmount;
             List<string> invalidVouchers = new List<string>();
             // Xử lý danh sách voucher nếu có
-            if (ord.VoucherIds is not null && ord.VoucherIds.Any())
+            if (voucherCode is not null && voucherCode.Any())
             {
-                foreach (var voucherId in ord.VoucherIds)
+                foreach (var voucherId in voucherCode)
                 {
                     Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
                         .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
                         ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Voucher with ID {voucherId} not found.");
 
-                    if (vch.ExpiryDate < item.OrderDate)
+                    if (vch.ExpiryDate < order.OrderDate)
                     {
                         throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher with ID {voucherId} has expired.");
-                        continue;
                     }
 
                     // Kiểm tra điều kiện áp dụng voucher
                     if (discountedTotal < Convert.ToDouble(vch.LimitSalePrice)) 
                     {
-                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The total amount does not meet the requirements to apply voucher {voucherId}.");
-                        continue;
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The total amount does not meet the requirements to apply voucher {voucherId}.");                        
                     }
                     // Tính toán giảm giá nếu voucher hợp lệ
                     double discountAmount = (discountedTotal * vch.SalePercent) / 100.0;
@@ -154,7 +143,7 @@ namespace MilkStore.Services.Service
                     // Tạo bản ghi trong bảng OrderVoucher
                     var orderVoucher = new OrderVoucher
                     {
-                        OrderId = item.Id,
+                        OrderId = order.Id,
                         VoucherId = vch.Id
                     };
                     await _unitOfWork.GetRepository<OrderVoucher>().InsertAsync(orderVoucher);
@@ -170,55 +159,28 @@ namespace MilkStore.Services.Service
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, string.Join(", ", invalidVouchers));
             }
 
-            await _unitOfWork.GetRepository<Order>().InsertAsync(item);
+            await _unitOfWork.GetRepository<Order>().InsertAsync(order);
             await _unitOfWork.SaveAsync();
 
-            // Thêm chi tiết đơn hàng
-            foreach (var product in orderItems)
-            {
-                var orderDetails = new OrderDetails
-                {
-                    OrderID = item.Id,
-                    ProductID = product.ProductId,
-                    Quantity = product.Quantity,
-                    UnitPrice = (await _unitOfWork.GetRepository<Products>().Entities
-                        .FirstAsync(p => p.Id == product.ProductId)).Price
-                };
+            // Gán OrderID cho mỗi OrderDetail và lưu chúng vào cơ sở dữ liệu
+            orderItems.ForEach(item => item.OrderID = order.Id);
+            await _unitOfWork.GetRepository<OrderDetails>().UpdateRangeAsync(orderItems);
 
-                await _unitOfWork.GetRepository<OrderDetails>().InsertAsync(orderDetails);
-            }
-
-            await _unitOfWork.SaveAsync();
             // Cập nhật lại tổng tiền sau khi đã áp dụng voucher
-            await UpdateToTalAmount(item.Id);
+            await UpdateToTalAmount(order.Id);
         }
-        public async Task Checkout (OrderModelView ord)
+
+        public async Task UpdateOrder(string id, OrderModelView ord, OrderStatus orderStatus, PaymentStatus paymentStatus, PaymentMethod paymentMethod)
         {
-            string? userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrWhiteSpace(userID))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
-            }
-            // Kiểm tra xem có giỏ hàng hiện tại không
-            var cartItems = await _unitOfWork.GetRepository<OrderDetails>().Entities
-                .Where(od => od.CreatedBy == userID && od.Status == OrderDetailStatus.InCart && od.DeletedTime == null)
-                .ToListAsync();
-
-            if (!cartItems.Any())
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Your cart is empty. Please add items to cart before checkout.");
-            }
-            
-            // Tạo order từ các orderDetail trong giỏ hàng
-            var order = await _orderService.CreateOrderFromCart(userID);
-
-            // Cập nhật trạng thái của orderDetails từ 'cart' sang 'ordered'
-            await _orderDetailService.UpdateOrderDetailsStatus(cartItems, OrderDetailStatus.Ordered);
-            
+            await UpdateAsync(id, ord, orderStatus, paymentStatus, paymentMethod);
+            await UpdateInventoryQuantity(id);
+            await UpdateUserPoint(id);
+            await SendingPaymentStatus_Mail(id);
+            await SendingOrderStatus_Mail(id);
         }
         public async Task UpdateAsync(string id, OrderModelView ord, OrderStatus orderStatus, PaymentStatus paymentStatus, PaymentMethod paymentMethod)
         {
-            string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier).Value;
+            string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrWhiteSpace(userID))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in!");
@@ -311,31 +273,6 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
         }
 
-
-        //public async Task AddVoucher(string id, string voucherId)
-        //{
-        //    Order orderss = await _unitOfWork.GetRepository<Order>().Entities
-        //        .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
-        //        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID  {id}  not found or has already been deleted.");
-
-        //    // Kiểm tra sự tồn tại của Voucher
-        //    Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
-        //            .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
-        //            ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Voucher with ID {voucherId} not found."); 
-
-        //    if (vch.ExpiryDate < orderss.OrderDate)
-        //    {
-        //        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher has expired.");
-        //    }
-        //    vch.UsedCount++;
-        //    await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
-
-        //    orderss.VoucherId = vch.Id;
-        //    await _unitOfWork.GetRepository<Order>().UpdateAsync(orderss);
-        //    await _unitOfWork.SaveAsync();
-        //    await UpdateToTalAmount(orderss.Id);       
-        //}
-
         public async Task DeleteAsync(string id)
         {
             Order orderss = await _unitOfWork.GetRepository<Order>().Entities
@@ -375,7 +312,7 @@ namespace MilkStore.Services.Service
                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
             }
 
-            if (order.PaymentMethod == PaymentMethod.Online && order.PaymentStatuss == PaymentStatus.Paid)
+            if (order.PaymentMethod == PaymentMethod.Online && order.PaymentStatuss == PaymentStatus.Paid && order.OrderStatuss == OrderStatus.Confirmed)
             {
                 await _emailService.SendEmailAsync(user.Email, "Đơn hàng " + order.Id + " đã thanh toán thành công.", "Thời gian giao hàng dự kiến " + order.estimatedDeliveryDate + ". Cảm ơn quý khách đã mua hàng tại MilkStore");                        
             }

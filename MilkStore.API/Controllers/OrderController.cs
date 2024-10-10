@@ -34,19 +34,18 @@ namespace MilkStore.API.Controllers
             BasePaginatedList<OrderResponseDTO> ord = await _orderService.GetAsync(id,index,pageSize);
             return  Ok(BaseResponse<BasePaginatedList<OrderResponseDTO>>.OkResponse(ord));
         }
-        
-
-        [HttpPost]
-        //[Authorize(Roles = "Member")]
-        public async Task<IActionResult> Add([FromBody] CreateOrderDTO request)
-        {
-            if (request == null || request.OrderItems == null || !request.OrderItems.Any())
-            {
-                return BadRequest("Order data or order items are missing.");
-            }
-            await _orderService.AddAsync(request.Order, request.OrderItems);
-            return Ok(BaseResponse<string>.OkResponse("Order added successfully!"));            
-        }
+      
+        //[HttpPost]
+        ////[Authorize(Roles = "Member")]
+        //public async Task<IActionResult> Add([FromBody] CreateOrderDTO request)
+        //{
+        //    if (request == null || request.OrderItems == null || !request.OrderItems.Any())
+        //    {
+        //        return BadRequest("Order data or order items are missing.");
+        //    }
+        //    await _orderService.AddAsync(request.Order, request.OrderItems);
+        //    return Ok(BaseResponse<string>.OkResponse("Order added successfully!"));            
+        //}
 
         //[HttpPut("AddVoucher{id}")]
         ////[Authorize(Roles = "Guest, Member")]
@@ -61,11 +60,7 @@ namespace MilkStore.API.Controllers
         //[Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Update(string id, OrderModelView item, [FromQuery] OrderStatus orderStatus, [FromQuery] PaymentStatus paymentStatus, [FromQuery] PaymentMethod paymentMethod)
         {            
-            await _orderService.UpdateAsync(id, item, orderStatus, paymentStatus, paymentMethod);
-            await _orderService.UpdateInventoryQuantity(id);
-            await _orderService.UpdateUserPoint(id);
-            await _orderService.SendingPaymentStatus_Mail(id);
-            await _orderService.SendingOrderStatus_Mail(id);
+            await _orderService.UpdateOrder(id, item, orderStatus, paymentStatus, paymentMethod);
             return Ok(BaseResponse<string>.OkResponse("Order was updated successfully!"));           
         }
 
