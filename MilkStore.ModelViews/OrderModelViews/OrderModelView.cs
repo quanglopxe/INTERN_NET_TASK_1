@@ -8,6 +8,11 @@ using System.Threading.Tasks;
 
 namespace MilkStore.ModelViews.OrderModelViews
 {    
+    public enum ShippingType
+    {
+        InStore,
+        UserAddress
+    }
     public class OrderModelView
     {     
         //public ICollection<string>? VoucherIds { get; set; }

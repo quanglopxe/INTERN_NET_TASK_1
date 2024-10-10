@@ -7,6 +7,7 @@ using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
 using MilkStore.Core.Constants;
 using MilkStore.ModelViews;
+using MilkStore.ModelViews.OrderModelViews;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,7 +30,7 @@ namespace MilkStore.Services.Service
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<string> Checkout(PaymentMethod paymentMethod, List<string>? voucherCode)
+        public async Task<string> Checkout(PaymentMethod paymentMethod, List<string>? voucherCode, ShippingType shippingAddress)
         {
             string userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "User not found");
@@ -47,18 +48,17 @@ namespace MilkStore.Services.Service
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Your cart is empty. Please add items to cart before checkout.");
             }
 
-            Order order = await _unitOfWork.GetRepository<Order>().Entities
+            
+            if (paymentMethod == PaymentMethod.Online)
+            {
+                
+                // Tạo đơn hàng
+                await _orderService.AddAsync(voucherCode, cartItems, paymentMethod, shippingAddress);
+                
+                Order order = await _unitOfWork.GetRepository<Order>().Entities
                     .FirstOrDefaultAsync(o => o.CreatedBy == userID && o.OrderStatuss == OrderStatus.Pending && o.PaymentStatuss == PaymentStatus.Unpaid)
                     ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
 
-            if (paymentMethod == PaymentMethod.Online)
-            {
-                List<string> orderIds = cartItems.Select(od => od.OrderID).ToList();
-                if (!orderIds.Contains(order.Id))
-                {
-                    // Tạo đơn hàng
-                    await _orderService.AddAsync(voucherCode, cartItems, paymentMethod);
-                }                
                 // Tính tổng giá trị đơn hàng               
                 double totalAmount = order.DiscountedAmount;
 
@@ -79,7 +79,24 @@ namespace MilkStore.Services.Service
             else
             {
                 // Tạo đơn hàng
-                await _orderService.AddAsync(voucherCode, cartItems, paymentMethod);
+                await _orderService.AddAsync(voucherCode, cartItems, paymentMethod, shippingAddress);
+                Order order = await _unitOfWork.GetRepository<Order>().Entities
+                    .FirstOrDefaultAsync(o => o.CreatedBy == userID && o.OrderStatuss == OrderStatus.Pending && o.PaymentStatuss == PaymentStatus.Unpaid)
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
+
+                OrderModelView ord = new OrderModelView
+                {
+                    ShippingAddress = order.ShippingAddress,
+                };
+                
+                await _orderService.UpdateOrder(order.Id, ord, OrderStatus.Delivered, PaymentStatus.Paid, paymentMethod);
+                await _unitOfWork.SaveAsync();
+                List<OrderDetails>? orderDetails = _unitOfWork.GetRepository<OrderDetails>().Entities
+                    .Where(od => od.OrderID == order.Id && od.DeletedTime == null).ToList();
+                //cập nhật trạng thái của các order detail
+                orderDetails.ForEach(od => od.Status = OrderDetailStatus.Ordered);
+                await _unitOfWork.GetRepository<OrderDetails>().UpdateRangeAsync(orderDetails);
+                await _unitOfWork.SaveAsync();
                 return "Order has been created successfully!";
             }
         }

@@ -20,9 +20,9 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Checkout([FromQuery] PaymentMethod paymentMethod, [FromQuery] List<string>? voucherCode)
+        public async Task<IActionResult> Checkout([FromQuery] PaymentMethod paymentMethod, [FromQuery] List<string>? voucherCode, [FromQuery] ShippingType shippingAddress)
         {
-            string result = await _transactionService.Checkout(paymentMethod, voucherCode);
+            string result = await _transactionService.Checkout(paymentMethod, voucherCode, shippingAddress);
             return Ok(BaseResponse<string>.OkResponse(result));
         }
     }
