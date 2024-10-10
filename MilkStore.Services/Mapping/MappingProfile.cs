@@ -79,9 +79,10 @@ namespace MilkStore.Services.Mapping
                 .ForMember(dest => dest.OrderDetailss, opt => opt.MapFrom(src => src.OrderDetailss))
                 .ForMember(dest => dest.Vouchers, opt => opt.MapFrom(src => src.OrderVouchers.Select(ov => ov.Voucher)));
 
-            CreateMap<OrderDetailsModelView, OrderDetails>();
+            CreateMap<OrderDetailsModelView, OrderDetails>()
+                .ForMember(dest => dest.OrderID, opt => opt.Ignore());
             CreateMap<OrderDetails, OrderDetailResponseDTO>()
-            .ForMember(dest => dest.UnitPrice, opt => opt.Ignore()); //
+            .ForMember(dest => dest.UnitPrice, opt => opt.Ignore()); 
 
             CreateMap<OrderDetails, OrderDetailResponseDTO>();
 

@@ -13,6 +13,7 @@ using System.Security.Claims;
 using MilkStore.ModelViews.PreOrdersModelView;
 using MilkStore.Core.Constants;
 using PreOrderStatus = MilkStore.ModelViews.PreOrdersModelView.PreOrderStatus;
+using MilkStore.Core;
 
 namespace MilkStore.Services.Service
 {
@@ -37,95 +38,165 @@ namespace MilkStore.Services.Service
         //    return _mapper.Map<OrderDetailResponseDTO>(details);
         //}
 
-        // Create OrderDetails
+        // Create OrderDetails check PreOrder
         public async Task<OrderDetails> CreateOrderDetails(OrderDetailsModelView model)
         {
-            try
+            string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userID))
             {
-                string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier).Value;
-                if (string.IsNullOrWhiteSpace(userID))
-                {
-                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Hãy đăng nhập trước!");
-                }
-                // Kiểm tra xem số lượng có hợp lệ không
-                if (model.Quantity <= 0 || model.Quantity % 1 != 0)
-                {
-                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Số lượng phải lớn hơn 0 và là số nguyên.");
-                }
-
-                // Truy cập trực tiếp để tìm sản phẩm
-                Products product = await _unitOfWork.GetRepository<Products>().Entities
-                    .FirstOrDefaultAsync(p => p.Id == model.ProductID)
-                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Không tìm thấy sản phẩm!");
-                //PreOrder
-                if (product.QuantityInStock < model.Quantity)
-                {
-                    PreOrdersModelView preOrdersModelView = new PreOrdersModelView
-                    {
-                        ProductID = model.ProductID,
-                        Quantity = model.Quantity,
-                        Status = PreOrderStatus.Pending,
-                        UserID = Guid.Parse(userID)
-                    };
-                    await _preOrdersService.CreatePreOrders(preOrdersModelView);
-                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"{product.ProductName} không đủ số lượng bán. Hãy kiểm tra email để có thêm thông tin!");
-                }
-                // Kiểm tra xem OrderDetails đã tồn tại hay chưa dựa trên OrderID và ProductID
-                OrderDetails? existingOrderDetail = await _unitOfWork.GetRepository<OrderDetails>().Entities
-                    .FirstOrDefaultAsync(od => od.OrderID == model.OrderID && od.ProductID == model.ProductID && od.DeletedTime == null);
-
-                if (existingOrderDetail != null)
-                {
-                    // Nếu đã tồn tại, cập nhật số lượng và tính lại tổng tiền
-                    existingOrderDetail.Quantity += model.Quantity;
-                    existingOrderDetail.UnitPrice = product.Price;
-                    existingOrderDetail.CreatedBy = userID;                    
-                }
-                else
-                {
-                    // Nếu chưa tồn tại, tạo OrderDetails mới
-                    OrderDetails orderDetails = _mapper.Map<OrderDetails>(model);
-                    orderDetails.UnitPrice = product.Price;
-
-                    // Thêm mới OrderDetails
-                    _unitOfWork.GetRepository<OrderDetails>().InsertAsync(orderDetails);
-                    existingOrderDetail = orderDetails;
-                }
-                await _unitOfWork.SaveAsync();
-
-                // Cập nhật tổng giá trị đơn hàng
-                await _orderService.UpdateToTalAmount(model.OrderID);
-                return existingOrderDetail;
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
             }
-            catch (Exception ex)
+            // Kiểm tra xem số lượng có hợp lệ không
+            if (model.Quantity <= 0 || model.Quantity % 1 != 0)
             {
-                string innerExceptionMessage = ex.InnerException?.Message ?? ex.Message;
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Đã xảy ra lỗi: {innerExceptionMessage}");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Quantity must be greater than 0 and an integer.");
             }
-        }
 
-        //Read OrderDetails
-        public async Task<IEnumerable<OrderDetails>> ReadOrderDetails(string? id, int page, int pageSize)
-        {
-            if (string.IsNullOrWhiteSpace(id))
+            // Truy cập trực tiếp để tìm sản phẩm
+            Products product = await _unitOfWork.GetRepository<Products>().Entities
+                .FirstOrDefaultAsync(p => p.Id == model.ProductID)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Product is not found!");
+            //PreOrder
+            if (product.QuantityInStock < model.Quantity)
             {
-                IQueryable<OrderDetails> query = _unitOfWork.GetRepository<OrderDetails>().Entities
-                    .Where(detail => detail.DeletedTime == null)
-                    .OrderBy(detail => detail.OrderID);
+                //PreOrdersModelView preOrdersModelView = new PreOrdersModelView
+                //{
+                //    ProductID = model.ProductID,
+                //    Quantity = model.Quantity,
+                //    Status = PreOrderStatus.Pending,
+                //    UserID = userID
+                //};
+                //await _preOrdersService.CreatePreOrders(preOrdersModelView);
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Product {product.ProductName} does not have sufficient quantity. Please check your email for more information!");
+            }
+            // Kiểm tra xem OrderDetails đã tồn tại hay chưa dựa trên OrderID và ProductID
+            OrderDetails? existingOrderDetail = await _unitOfWork.GetRepository<OrderDetails>().Entities
+                .FirstOrDefaultAsync(od => od.CreatedBy == userID && od.ProductID == model.ProductID && od.DeletedTime == null && od.Status == OrderDetailStatus.InCart);
 
-                var paginated = await _unitOfWork.GetRepository<OrderDetails>()
-                    .GetPagging(query, page, pageSize);
-
-                return paginated.Items;
+            if (existingOrderDetail != null)
+            {
+                // Nếu đã tồn tại, cập nhật số lượng và tính lại tổng tiền
+                existingOrderDetail.Quantity += model.Quantity;
+                existingOrderDetail.UnitPrice = product.Price;
             }
             else
             {
-                OrderDetails? od = await _unitOfWork.GetRepository<OrderDetails>().Entities
-                    .FirstOrDefaultAsync(or => or.Id == id && or.DeletedTime == null) 
-                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Không tìm thấy Chi tiết đơn hàng có ID: {id} !");
-                
-                return new List<OrderDetails> { od };
+                // Nếu chưa tồn tại, tạo OrderDetails mới
+                OrderDetails orderDetails = _mapper.Map<OrderDetails>(model);
+                orderDetails.UnitPrice = product.Price;
+                orderDetails.CreatedBy = userID;
+                orderDetails.Status = OrderDetailStatus.InCart;
+                orderDetails.CreatedTime = CoreHelper.SystemTimeNow;
+
+                // Thêm mới OrderDetails
+                await _unitOfWork.GetRepository<OrderDetails>().InsertAsync(orderDetails);
+                existingOrderDetail = orderDetails;
             }
+            await _unitOfWork.SaveAsync();
+
+            return existingOrderDetail;
+
+
+        }
+
+
+        public async Task<BasePaginatedList<OrderDetails>> ReadPersonalOrderDetails(string? orderId, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize)
+        {
+            string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userID))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
+            }
+
+            // Lọc dữ liệu cơ bản: không có DeletedTime và CreatedBy
+            IQueryable<OrderDetails>? query = _unitOfWork.GetRepository<OrderDetails>().Entities
+                .Where(od => od.DeletedTime == null && od.CreatedBy == userID);
+
+            // Lọc theo OrderId nếu có
+            if (!string.IsNullOrWhiteSpace(orderId))
+            {
+                query = query.Where(od => od.OrderID == orderId);
+            }
+
+            // Lọc theo OrderDetailStatus nếu có
+            if (orderDetailStatus.HasValue)
+            {
+                query = query.Where(od => od.Status == orderDetailStatus);
+            }
+
+            // Thực hiện phân trang với query hiện tại
+            BasePaginatedList<OrderDetails>? paginatedOrderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetPagging(query, pageIndex, pageSize);
+
+            // Trả về danh sách kết quả đã phân trang
+            List<OrderDetails>? odDtosResult = _mapper.Map<List<OrderDetails>>(paginatedOrderDetails.Items);
+            return new BasePaginatedList<OrderDetails>(
+                odDtosResult,
+                paginatedOrderDetails.TotalItems,
+                paginatedOrderDetails.CurrentPage,
+                paginatedOrderDetails.PageSize
+            );
+        }
+
+
+        public async Task<BasePaginatedList<OrderDetails>> ReadAllOrderDetails(string? orderId, string? userID, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize)
+        {   
+            // Lọc dữ liệu cơ bản: không có DeletedTime
+            IQueryable<OrderDetails>? query = _unitOfWork.GetRepository<OrderDetails>().Entities
+                .Where(od => od.DeletedTime == null);
+
+            // Lọc theo OrderId nếu có
+            if (!string.IsNullOrWhiteSpace(orderId))
+            {
+                query = query.Where(od => od.OrderID == orderId);
+            }
+
+            // Lọc theo UserID nếu có
+            if (!string.IsNullOrWhiteSpace(userID))
+            {
+                query = query.Where(od => od.CreatedBy == userID);
+            }
+
+            // Lọc theo OrderDetailStatus nếu có
+            if (orderDetailStatus.HasValue)
+            {
+                query = query.Where(od => od.Status == orderDetailStatus);
+            }
+
+            // Thực hiện phân trang với query hiện tại
+            BasePaginatedList<OrderDetails>? paginatedOrderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetPagging(query, pageIndex, pageSize);
+            //if (!paginatedOrderDetails.Items.Any())
+            //{
+            //    if (!string.IsNullOrWhiteSpace(orderId))
+            //    {
+            //        OrderDetails? odById = await _unitOfWork.GetRepository<OrderDetails>().Entities
+            //            .FirstOrDefaultAsync(od => od.Id == orderId && od.DeletedTime == null);
+            //        if (odById != null)
+            //        {
+            //            OrderDetails? odDto = _mapper.Map<OrderDetails>(odById);
+            //            return new BasePaginatedList<OrderDetails>(new List<OrderDetails> { odDto }, 1, 1, 1);
+            //        }
+            //    }
+
+            //    if (!string.IsNullOrWhiteSpace(userID))
+            //    {
+            //        List<OrderDetails>? odsByUserID = await _unitOfWork.GetRepository<OrderDetails>().Entities
+            //            .Where(od => od.CreatedBy.Contains(userID) && od.DeletedTime == null)
+            //            .ToListAsync();
+            //        if (odsByUserID.Any())
+            //        {
+            //            List<OrderDetails>? paginatedOrderDetailsDtos = _mapper.Map<List<OrderDetails>>(odsByUserID);
+            //            return new BasePaginatedList<OrderDetails>(paginatedOrderDetailsDtos, 1, 1, odsByUserID.Count());
+            //        }
+            //    }
+            //}
+            // Trả về danh sách kết quả đã phân trang
+            List<OrderDetails>? odDtosResult = _mapper.Map<List<OrderDetails>>(paginatedOrderDetails.Items);
+            return new BasePaginatedList<OrderDetails>(
+                odDtosResult,
+                paginatedOrderDetails.TotalItems,
+                paginatedOrderDetails.CurrentPage,
+                paginatedOrderDetails.PageSize
+            );
         }
 
         // Update OrderDetails

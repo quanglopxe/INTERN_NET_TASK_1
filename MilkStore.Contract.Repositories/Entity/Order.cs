@@ -19,6 +19,7 @@ namespace MilkStore.Contract.Repositories.Entity
     }
     public enum PaymentMethod
     {
+        Cash,
         Online,
         COD
     }
@@ -32,7 +33,7 @@ namespace MilkStore.Contract.Repositories.Entity
     public class Order : BaseEntity
     {
         public required Guid UserId { get; set; }
-        public string? VoucherId { get; set; }
+        //public string? VoucherId { get; set; }
         public DateTimeOffset OrderDate { get; set; }
         public required OrderStatus OrderStatuss { get; set; }
         public required PaymentStatus PaymentStatuss { get; set; }

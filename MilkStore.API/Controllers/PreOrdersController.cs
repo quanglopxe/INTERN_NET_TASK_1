@@ -19,17 +19,18 @@ namespace MilkStore.API.Controllers
             _preOrdersService = preOrdersService;
         }
         [HttpGet]
-        [Authorize(Roles = "Member")]
+                //[Authorize(Roles = "Member")]
         public async Task<IActionResult> GetPreOrders(string? id, int page = 1, int pageSize = 10)
         {
             IList<PreOrders> preords = (IList<PreOrders>)await _preOrdersService.GetPreOrders(id, page, pageSize);
             return Ok(BaseResponse<IList<PreOrders>>.OkResponse(preords));
         }
         [HttpPost()]
-        [Authorize(Roles = "Member")]
+                //[Authorize(Roles = "Member")]
         public async Task<IActionResult> CreatePreOrders(PreOrdersModelView preOrdersModel)
         {
             await _preOrdersService.CreatePreOrders(preOrdersModel);
+
             return Ok(BaseResponse<string>.OkResponse("Đặt hàng trước thành công!"));
         }
         //[HttpPut("{id}")]
@@ -40,7 +41,7 @@ namespace MilkStore.API.Controllers
         //    return Ok(BaseResponse<string>.OkResponse("Đã sửa đơn hàng đặt trước!"));
         //}
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Member")]
+                //[Authorize(Roles = "Member")]
         public async Task<IActionResult> DeletePreOrder(string id)
         {
             await _preOrdersService.DeletePreOrders(id);
