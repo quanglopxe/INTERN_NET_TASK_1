@@ -13,8 +13,7 @@ namespace MilkStore.Contract.Services.Interface
 {
     public interface IOrderService
     {
-        Task<BasePaginatedList<OrderResponseDTO>> GetAsync(string? id, int pageIndex, int pageSize);
-        //Task<string> Checkout(PaymentMethod paymentMethod, List<string>? voucherCode);
+        Task<BasePaginatedList<OrderResponseDTO>> GetAsync(string? id, int pageIndex, int pageSize);        
         Task AddAsync(List<string>? voucherCode, List<OrderDetails> cartItems, PaymentMethod paymentMethod);
         Task UpdateAsync(string id, OrderModelView ord, OrderStatus orderStatus, PaymentStatus paymentStatus, PaymentMethod paymentMethod);
         Task UpdateToTalAmount(string id);

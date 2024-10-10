@@ -45,14 +45,15 @@ namespace MilkStore.Services.Service
 
             if (product == null)
             {
-                throw new KeyNotFoundException($"Product with ID {preOrdersModel.ProductID} was not found.");
+                throw new KeyNotFoundException($"Sản phẩm với mã {preOrdersModel.ProductID} không tìm thấy.");
             }
             //Check sản phẩm còn hàng thì không lên pre-order
-            //if (product.QuantityInStock > 0)
-            //{
-            //    throw new InvalidOperationException($"The product {product.ProductName} is currently available." +
-            //        $" Please check and purchase the product on our product page.");
-            //}
+
+            if (product.QuantityInStock > 0)
+            {
+                throw new InvalidOperationException($"Sản phẩm {product.ProductName} bạn muốn đặt trước hiện vẫn còn." +
+                    $" Vui lòng tham khảo và đặt hàng tại trang sản phẩm của chúng tôi.");
+            }
 
             PreOrders newPreOrder = _mapper.Map<PreOrders>(preOrdersModel);
             newPreOrder.CreatedTime = DateTime.UtcNow;
@@ -63,7 +64,7 @@ namespace MilkStore.Services.Service
             var user = await _userService.GetUser(userID);
             if (!user.Any())
             {
-                throw new KeyNotFoundException($"User with ID {userID} was not found.");
+                throw new KeyNotFoundException($"Người dùng với mã {userID} không tìm thấy.");
             }
             string toEmail = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Email).Value;
             string subject = "Xác nhận đặt hàng trước";
@@ -76,7 +77,6 @@ namespace MilkStore.Services.Service
                 Thông tin đơn hàng:
                 - Mã sản phẩm: {product.Id}
                 - Tên sản phẩm: {product.ProductName}
-                - Số lượng đặt trước: {preOrdersModel.Quantity}
     
                 Trân trọng,
                 Đội ngũ MilkStore";
@@ -88,13 +88,13 @@ namespace MilkStore.Services.Service
         {
             if (string.IsNullOrWhiteSpace(id))
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please enter postID!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Vui lòng nhập PreOrderID!");
             }
             PreOrders? preOrder = await _unitOfWork.GetRepository<PreOrders>().GetByIdAsync(id)
-                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"No pre-order found with {id}");
+                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy pre-order nào với mã {id}");
             if (preOrder.DeletedTime != null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "This pre-order has already been deleted!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Pre-order này đã bị xóa!");
             }
             preOrder.DeletedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<PreOrders>().UpdateAsync(preOrder);
@@ -124,29 +124,29 @@ namespace MilkStore.Services.Service
                     .FirstOrDefaultAsync(r => r.Id == id && r.DeletedTime == null);
                 if (preord == null)
                 {
-                    throw new KeyNotFoundException($"Pre-order have ID: {id} was not found.");
+                    throw new KeyNotFoundException($"Pre-order với mã: {id} không tìm thấy.");
                 }
                 return _mapper.Map<List<PreOrders>>(preord);
             }
         }
 
-        public async Task UpdatePreOrders(string id, PreOrdersModelView preOrdersModel)
-        {
-            string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
-            if (!string.IsNullOrWhiteSpace(userID))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please log in!");
-            }
-            PreOrders? preOrders = await _unitOfWork.GetRepository<PreOrders>().GetByIdAsync(id)
-             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"No pre-order found with {id}!");
+        //public async Task UpdatePreOrders(string id, PreOrdersModelView preOrdersModel)
+        //{
+        //    string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        //    if (!string.IsNullOrWhiteSpace(userID))
+        //    {
+        //        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Vui lòng đăng nhập vào tài khoản!");
+        //    }
+        //    PreOrders? preOrders = await _unitOfWork.GetRepository<PreOrders>().GetByIdAsync(id)
+        //     ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không có pre-order nào được tìm thấy với mã {id}!");
 
-            _mapper.Map(preOrdersModel, preOrders);
+        //    _mapper.Map(preOrdersModel, preOrders);
 
-            preOrders.LastUpdatedTime = CoreHelper.SystemTimeNow;
-            preOrders.LastUpdatedBy = userID;
+        //    preOrders.LastUpdatedTime = CoreHelper.SystemTimeNow;
+        //    preOrders.LastUpdatedBy = userID;
 
-            await _unitOfWork.GetRepository<PreOrders>().UpdateAsync(preOrders);
-            await _unitOfWork.SaveAsync();
-        }
+        //    await _unitOfWork.GetRepository<PreOrders>().UpdateAsync(preOrders);
+        //    await _unitOfWork.SaveAsync();
+        //}
     }
 }
