@@ -132,6 +132,7 @@ namespace MilkStore.Services.Service
             foreach (var preOrder in preOrders)
             {
                 preOrder.DeletedTime = CoreHelper.SystemTimeNow;
+                preOrder.Status = PreOrderStatus.Available;
                 await _unitOfWork.GetRepository<PreOrders>().UpdateAsync(preOrder);
             }
 

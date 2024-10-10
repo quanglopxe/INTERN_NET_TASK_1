@@ -30,21 +30,21 @@ namespace MilkStore.API.Controllers
         public async Task<IActionResult> CreatePreOrders(PreOrdersModelView preOrdersModel)
         {
             await _preOrdersService.CreatePreOrders(preOrdersModel);
-            return Ok(BaseResponse<string>.OkResponse("Add pre-order successfully!"));
+            return Ok(BaseResponse<string>.OkResponse("Đặt hàng trước thành công!"));
         }
-        [HttpPut("{id}")]
-        [Authorize(Roles = "Member")]
-        public async Task<IActionResult> UpdatePreOrder(string id, [FromBody] PreOrdersModelView preOrdersModel)
-        {
-            await _preOrdersService.UpdatePreOrders(id, preOrdersModel);
-            return Ok(BaseResponse<string>.OkResponse("Update pre-order successfully"));
-        }
+        //[HttpPut("{id}")]
+        //[Authorize(Roles = "Member")]
+        //public async Task<IActionResult> UpdatePreOrder(string id, [FromBody] PreOrdersModelView preOrdersModel)
+        //{
+        //    await _preOrdersService.UpdatePreOrders(id, preOrdersModel);
+        //    return Ok(BaseResponse<string>.OkResponse("Đã sửa đơn hàng đặt trước!"));
+        //}
         [HttpDelete("{id}")]
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> DeletePreOrder(string id)
         {
             await _preOrdersService.DeletePreOrders(id);
-            return Ok(BaseResponse<string>.OkResponse("Delete pre-order successfully!"));
+            return Ok(BaseResponse<string>.OkResponse("Xóa đơn hàng đặt trước thành công!"));
         }
     }
 }
