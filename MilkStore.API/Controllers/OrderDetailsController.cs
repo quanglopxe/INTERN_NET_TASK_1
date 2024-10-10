@@ -27,7 +27,7 @@ namespace MilkStore.API.Controllers
             BasePaginatedList<OrderDetails> detail = await _orderDetailsService.ReadPersonalOrderDetails(orderId, orderDetailStatus, page, pageSize);
             return Ok(BaseResponse<BasePaginatedList<OrderDetails>>.OkResponse(detail));
         }
-
+        //[Authorize(Roles = "Admin")]
         // GET ALL
         [HttpGet("Get_all_order_detail")]
         public async Task<IActionResult> GetAllOrderDetails(string? orderId, string? userID, OrderDetailStatus? orderDetailStatus, int page = 1, int pageSize = 10)
