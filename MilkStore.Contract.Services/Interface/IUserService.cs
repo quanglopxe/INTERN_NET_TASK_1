@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Core;
+using MilkStore.Core.Constants;
 using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
@@ -20,6 +21,7 @@ namespace MilkStore.Contract.Services.Interface
         Task<UserProfileResponseModelView> GetUserProfile();
         Task<BasePaginatedList<UserResponeseDTO>> GetUserByRole(string roleId, int index, int pageSize);
         Task UpdateUserByAdmin(string userID, UserUpdateByAdminModel model);
+        Task<BasePaginatedList<UserResponeseDTO>> SearchUser(string keySearch, SearchUserCode search, int index, int pageSize);
 
     }
 }

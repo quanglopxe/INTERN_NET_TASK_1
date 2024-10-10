@@ -17,6 +17,8 @@ namespace MilkStore.Contract.Services.Interface
         //Task AddAsync(OrderModelView ord, List);
         Task AddAsync(OrderModelView ord, List<OrderItemResponseDTO> orderItems);
         Task UpdateAsync(string id, OrderModelView item, OrderStatus orderStatus, PaymentStatus paymentStatus, PaymentMethod paymentMethod);
+
+        //Task UpdateAsync(string id, OrderModelView item);
         Task UpdateToTalAmount(string id);
         Task DeleteAsync(string id);     
         Task SendingPaymentStatus_Mail(string? id);
