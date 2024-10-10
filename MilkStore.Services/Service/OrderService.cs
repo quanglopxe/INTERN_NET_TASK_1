@@ -23,6 +23,7 @@ using MilkStore.ModelViews.PreOrdersModelView;
 using System;
 using Microsoft.VisualBasic;
 using MilkStore.ModelViews;
+using ShippingType = MilkStore.ModelViews.OrderModelViews.ShippingType;
 
 namespace MilkStore.Services.Service
 {
@@ -72,7 +73,7 @@ namespace MilkStore.Services.Service
             );
         }
 
-        public async Task AddAsync(List<string>? voucherCode, List<OrderDetails> orderItems, PaymentMethod paymentMethod)
+        public async Task AddAsync(List<string>? voucherCode, List<OrderDetails> orderItems, PaymentMethod paymentMethod, ShippingType shippingAddress)
         {
             string userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrWhiteSpace(userID))
@@ -84,13 +85,23 @@ namespace MilkStore.Services.Service
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please update your shipping address before checkout!");
             }
+            string shipMethod = shippingAddress.ToString();
+            if(shippingAddress == ShippingType.InStore)
+            {
+                shipMethod = "Milk Store";
+            }
+            else
+            {
+                shipMethod = user.ShippingAddress;
+            }
             Order order = new Order
             {
                 UserId = Guid.Parse(userID),
                 CreatedBy = userID,
                 OrderDate = CoreHelper.SystemTimeNow,
                 estimatedDeliveryDate = $"từ {CoreHelper.SystemTimeNow.AddDays(3):dd/MM/yyyy} đến {CoreHelper.SystemTimeNow.AddDays(5):dd/MM/yyyy}",
-                ShippingAddress = user.ShippingAddress,
+                
+                ShippingAddress = shipMethod,
                 TotalAmount = 0,
                 DiscountedAmount = 0,
                 PaymentStatuss = PaymentStatus.Unpaid,

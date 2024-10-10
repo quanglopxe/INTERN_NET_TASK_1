@@ -69,7 +69,7 @@ public class PaymentService : IPaymentService
                 ShippingAddress = order.ShippingAddress,
             };
             //gọi đến service để cập nhật order
-            await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Confirmed, PaymentStatus.Paid, PaymentMethod.Online);            
+            await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Delivered, PaymentStatus.Paid, PaymentMethod.Online);            
             await _unitOfWork.SaveAsync();
             List<OrderDetails>? orderDetails = _unitOfWork.GetRepository<OrderDetails>().Entities
                 .Where(od => od.OrderID == order.Id && od.DeletedTime == null).ToList();  
