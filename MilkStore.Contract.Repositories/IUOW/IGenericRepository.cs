@@ -22,6 +22,7 @@ namespace MilkStore.Contract.Repositories.Interface
         Task<T?> GetByIdAsync(object id);
         Task InsertAsync(T obj);
         Task UpdateAsync(T obj);
+        Task UpdateRangeAsync(IEnumerable<T> entities);
         Task DeleteAsync(object id);
         Task SaveAsync();
     }

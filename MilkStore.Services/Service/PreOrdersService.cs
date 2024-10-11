@@ -48,6 +48,7 @@ namespace MilkStore.Services.Service
                 throw new KeyNotFoundException($"Sản phẩm với mã {preOrdersModel.ProductID} không tìm thấy.");
             }
             //Check sản phẩm còn hàng thì không lên pre-order
+
             if (product.QuantityInStock > 0)
             {
                 throw new InvalidOperationException($"Sản phẩm {product.ProductName} bạn muốn đặt trước hiện vẫn còn." +
