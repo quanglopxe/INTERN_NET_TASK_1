@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core;
@@ -32,7 +32,7 @@ namespace MilkStore.API.Controllers
         public async Task<IActionResult> CreateVoucher(VoucherModelView voucherModel)
         {
             await _voucherService.CreateVoucher(voucherModel);
-            return Ok(BaseResponse<string>.OkResponse("Voucher created successfully!"));
+            return Ok(BaseResponse<string>.OkResponse("Tạo voucher thành công!"));
         }
 
         [Authorize(Roles = "Staff")]
@@ -40,7 +40,7 @@ namespace MilkStore.API.Controllers
         public async Task<IActionResult> UpdateVoucher(string id, VoucherModelView voucherModel)
         {
             await _voucherService.UpdateVoucher(id, voucherModel);
-            return Ok(BaseResponse<string>.OkResponse("Voucher updated successfully!"));
+            return Ok(BaseResponse<string>.OkResponse("Cập nhật voucher thành công!"));
         }
 
         [Authorize(Roles = "Staff")]
@@ -48,7 +48,7 @@ namespace MilkStore.API.Controllers
         public async Task<IActionResult> DeleteVoucher(string id)
         {
             await _voucherService.DeleteVoucher(id);
-            return Ok(BaseResponse<string>.OkResponse("Voucher deleted successfully!"));
+            return Ok(BaseResponse<string>.OkResponse("Xóa voucher thành công!"));
         }
     }
 }
