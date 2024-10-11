@@ -28,9 +28,17 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<Gift> Gifts => Set<Gift>();
         public virtual DbSet<OrderGift> OrderGifts => Set<OrderGift>();
         public virtual DbSet<OrderDetailGift> OrderDetailGifts => Set<OrderDetailGift>();
+        public virtual DbSet<OrderVoucher> OrderVouchers => Set<OrderVoucher>();
         #endregion
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
+            modelBuilder.Entity<ApplicationUser>()
+                .HasOne(u => u.Manager)
+                .WithMany(u => u.Members)
+                .HasForeignKey(u => u.ManagerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<ApplicationUser>(entity =>
             {
                 entity.ToTable("Users");
@@ -142,13 +150,13 @@ namespace MilkStore.Repositories.Context
 
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.OrderDetails)
-                .WithMany() 
+                .WithMany()
                 .HasForeignKey(r => r.OrderDetailID)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.User)
-                .WithMany() 
+                .WithMany()
                 .HasForeignKey(r => r.UserID)
                 .OnDelete(DeleteBehavior.NoAction);
 

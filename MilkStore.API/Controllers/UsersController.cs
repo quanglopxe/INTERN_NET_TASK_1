@@ -1,102 +1,82 @@
-﻿// using Microsoft.AspNetCore.Authorization;
-// using Microsoft.AspNetCore.Identity;
-// using Microsoft.AspNetCore.Mvc;
-// using MilkStore.Contract.Services.Interface;
-// using MilkStore.Core.Base;
-// using MilkStore.ModelViews.ResponseDTO;
-// using MilkStore.ModelViews.UserModelViews;
-// using MilkStore.Repositories.Entity;
-// using System.Security.Claims;
-// namespace MilkStore.API.Controllers
-// {
-//     [Route("api/[controller]")]
-//     [ApiController]
-//     public class UsersController : ControllerBase
-//     {
-//         private readonly IUserService _userService;
-//         private readonly UserManager<ApplicationUser> _userManager;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using MilkStore.Contract.Services.Interface;
+using MilkStore.Core;
+using MilkStore.Core.Base;
+using MilkStore.Core.Constants;
+using MilkStore.ModelViews.ResponseDTO;
+using MilkStore.ModelViews.UserModelViews;
 
-//         public UsersController(IUserService userService, UserManager<ApplicationUser> userManager)
-//         {
-//             _userService = userService;
-//             _userManager = userManager;
+namespace MilkStore.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class UsersController(IUserService userService) : ControllerBase
+    {
+        private readonly IUserService _userService = userService;
 
-//         }
-//         [HttpGet()]
-//         public async Task<IActionResult> GetUsers(string? id, int index = 1, int pageSize = 10)
-//         {
-//             try
-//             {
-//                 IEnumerable<UserResponeseDTO> users = await _userService.GetUser(id, index, pageSize);
-//                 return Ok(BaseResponse<IEnumerable<UserResponeseDTO>>.OkResponse(users));
-//             }
-//             catch (BaseException.ErrorException e)
-//             {
-//                 return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
-//             }
-//         }
-//         [HttpPost("add")]
-//         //[Authorize(Roles = "Admin")]
-//         public async Task<IActionResult> AddUser(UserModelView userModel)
-//         {
-//             string createdBy = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "System";
-//             try
-//             {
-//                 ApplicationUser newUser = await _userService.AddUser(userModel, createdBy);
-//                 if (newUser is null)
-//                 {
-//                     return BadRequest(new { message = "Failed to create user" });
-//                 }
-//                 return Ok(new { message = "Successfully created user" });
-//             }
-//             catch (BaseException.ErrorException e)
-//             {
-//                 return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
-//             }
-//         }
+        [HttpGet("Get_User")]
+        [Authorize]
+        public async Task<IActionResult> GetUsers(string? id, int index = 1, int pageSize = 10)
+        {
 
-//         //[HttpGet()]
-//         //public async Task<IActionResult> Login(int index = 1, int pageSize = 10)
-//         //{
-//         //    // IList<UserResponseModel> a = await _userService.GetAll();
-//         //    // return Ok(BaseResponse<IList<UserResponseModel>>.OkResponse(a));
-//         //    return Ok("ok");
-//         //}
-//         [HttpPut("update/{id}")]
-//         [Authorize(Roles = "Admin")]
-//         public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserModelView userModel)
-//         {
-//             if (!ModelState.IsValid)
-//             {
-//                 return BadRequest(ModelState);
-//             }
-//             try
-//             {
-//                 string updatedBy = User.Identity?.Name ?? "System";
-//                 ApplicationUser updatedUser = await _userService.UpdateUser(id, userModel, updatedBy);
-//                 return Ok(new { message = "Successfully update user" });
-//             }
-//             catch (BaseException.ErrorException e)
-//             {
-//                 return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
-//             }
-//         }
+            IEnumerable<UserResponeseDTO> users = await _userService.GetUser(id, index, pageSize);
+            return Ok(BaseResponse<IEnumerable<UserResponeseDTO>>.OkResponse(users));
+        }
 
-//         [HttpDelete("delete/{userId}")]
-//         [Authorize(Roles = "Admin")]
-//         public async Task<IActionResult> Delete1User(Guid userId)
-//         {
+        [HttpPost("Add_User_With_Role_Async")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AddUserWithRoleAsync(UserModelView userModel)
+        {
+            await _userService.AddUserWithRoleAsync(userModel);
+            return Ok(BaseResponse<object>.OkResponse("Create user successfully"));
+        }
 
-//             try
-//             {
-//                 string deleteby = User.Identity?.Name ?? "System";
-//                 ApplicationUser deletedUser = await _userService.DeleteUser(userId, deleteby);
-//                 return Ok(new { message = "Successfully deleted user" });
-//             }
-//             catch (BaseException.ErrorException e)
-//             {
-//                 return StatusCode(e.StatusCode, new BaseException.ErrorException(e.StatusCode, e.ErrorDetail.ErrorCode, e.ErrorDetail.ErrorMessage.ToString()));
-//             }
-//         }
-//     }
-// }
+        [HttpPut("User_Update")]
+        [Authorize]
+        public async Task<IActionResult> UpdateUser([FromBody] UserUpdateModelView userModel)
+        {
+            await _userService.UpdateUser(userModel);
+            return Ok(BaseResponse<object>.OkResponse("Update user successfully"));
+        }
+        [HttpPatch("User_Update_By_Admin")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateUserByAdmin([FromQuery] string userId, [FromBody] UserUpdateByAdminModel userModel)
+        {
+            await _userService.UpdateUserByAdmin(userId, userModel);
+            return Ok(BaseResponse<object>.OkResponse("Update user successfully"));
+        }
+
+        [HttpDelete("Delete_One_User")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteOneUser([FromQuery] string userId)
+        {
+
+            await _userService.DeleteUser(userId);
+            return Ok(BaseResponse<object>.OkResponse("Delete user successfully"));
+        }
+
+
+        [HttpGet("Get_User_Profile")]
+        [Authorize]
+        public async Task<IActionResult> GetUserProfile()
+        {
+            UserProfileResponseModelView? userProfile = await _userService.GetUserProfile();
+            return Ok(BaseResponse<UserProfileResponseModelView>.OkResponse(userProfile));
+        }
+        [HttpGet("Get_User_By_Role")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> GetUserByRole(string roleId, int index = 1, int pageSize = 10)
+        {
+            BasePaginatedList<UserResponeseDTO>? users = await _userService.GetUserByRole(roleId, index, pageSize);
+            return Ok(BaseResponse<BasePaginatedList<UserResponeseDTO>>.OkResponse(users));
+        }
+        [HttpGet("Search_User")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> SearchUser(string keySearch, SearchUserCode search, int index = 1, int pageSize = 10)
+        {
+            BasePaginatedList<UserResponeseDTO>? users = await _userService.SearchUser(keySearch, search, index, pageSize);
+            return Ok(BaseResponse<BasePaginatedList<UserResponeseDTO>>.OkResponse(users));
+        }
+    }
+}

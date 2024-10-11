@@ -1,91 +1,89 @@
-using System.Net.Http.Json;
-using System.Security.Cryptography;
-using System.Text;
+﻿using Microsoft.AspNetCore.Http;
+using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
+using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
 using MilkStore.Core.Constants;
-using Newtonsoft.Json;
+using MilkStore.ModelViews;
+using MilkStore.ModelViews.OrderModelViews;
+using MilkStore.Services.Service.lib;
 
-public class PaymentService
+
+namespace MilkStore.Services.Service;
+public class PaymentService : IPaymentService
 {
-    private readonly IUnitOfWork unitOfWork;
-    public PaymentService(IUnitOfWork unitOfWork)
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly HttpContext _httpContext;
+    private readonly IOrderService _orderService;
+    public PaymentService(IHttpContextAccessor httpContextAccessor, IUnitOfWork unitOfWork, IOrderService orderService)
     {
-        this.unitOfWork = unitOfWork;
+        _unitOfWork = unitOfWork;
+        _httpContext = httpContextAccessor.HttpContext ?? throw new ArgumentNullException(nameof(httpContextAccessor.HttpContext));
+        _orderService = orderService;
     }
-
-    public async Task<string> PaymentMoMoURL(string orderId, decimal amount)
+    public string CreatePayment(PaymentRequest request)
     {
+        VnPayLibrary vnpay = new VnPayLibrary(_httpContext);
+        vnpay.AddRequestData("vnp_Version", "2.1.0");
+        vnpay.AddRequestData("vnp_Command", "pay");
+        vnpay.AddRequestData("vnp_TmnCode", "262XSFHX");
+        vnpay.AddRequestData("vnp_Amount", (request.TotalAmount * 100).ToString());
+        vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
+        vnpay.AddRequestData("vnp_CurrCode", "VND");
 
-        string partnerCode = "MOMOBKUN20180529";
-        string accessKey = "klm05TvNBzhg7h7j";
-        string endpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
-        string redirectUrl = Environment.GetEnvironmentVariable("CLIENT_DOMAIN") ?? throw new Exception("CLIENT_DOMAIN is not set");
-        string ipnUrl = $"{Environment.GetEnvironmentVariable("SERVER_DOMAIN") ?? throw new Exception("SERVER_DOMAIN is not set")}/api/payment/MomoIPN";
-        string? requestId = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        string? orderInfo = "Thanh toán qua MoMo";
-        string? requestType = "payWithATM";
-        string? extraData = "";
+        string clientIp = vnpay.GetClientIpAddress();        
+        vnpay.AddRequestData("vnp_IpAddr", clientIp);
 
-        string secretKey = "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa";
+        vnpay.AddRequestData("vnp_Locale", "vn");
+        vnpay.AddRequestData("vnp_OrderInfo", request.InvoiceCode);
+        vnpay.AddRequestData("vnp_OrderType", "other");
+        string returnUrl = $"{Environment.GetEnvironmentVariable("SERVER_DOMAIN")}/api/payment/ipn";
+        vnpay.AddRequestData("vnp_ReturnUrl", returnUrl ?? throw new Exception("SERVER_DOMAIN is not set"));
+        vnpay.AddRequestData("vnp_TxnRef", DateTime.Now.ToString("yyyyMMddHHmmssfff"));
+        vnpay.AddRequestData("vnp_ExpireDate", DateTime.Now.AddMinutes(30).ToString("yyyyMMddHHmmss"));
 
-        // tạo chữ ký
-        string? rawHash = $"accessKey={accessKey}&amount={amount}&extraData={extraData}&ipnUrl={ipnUrl}&orderId={orderId}&orderInfo={orderInfo}&partnerCode={partnerCode}&redirectUrl={redirectUrl}&requestId={requestId}&requestType={requestType}";
-        string? signature = CreateSignature(rawHash, secretKey);
+        string paymentUrl = vnpay.CreateRequestUrl(Environment.GetEnvironmentVariable("VNPAY_URL") ??
+            throw new Exception("VNPAY_URL is not set"), Environment.GetEnvironmentVariable("VNPAY_KEY") ??
+            throw new Exception("VNPAY_KEY is not set"));
 
-        PaymentMoMoModel? paymentRequest = new PaymentMoMoModel
-        {
-            PartnerCode = partnerCode,
-            PartnerName = "Test",
-            StoreId = "MomoTestStore",
-            RequestId = requestId,
-            Amount = amount,
-            OrderId = orderId,
-            OrderInfo = orderInfo,
-            RedirectUrl = redirectUrl,
-            IpnUrl = ipnUrl,
-            Lang = "vi",
-            ExtraData = extraData,
-            RequestType = requestType,
-            Signature = signature
-        };
-
-        using HttpClient? client = new HttpClient();
-        HttpResponseMessage? response = await client.PostAsJsonAsync(endpoint, paymentRequest);
-        string? result = await response.Content.ReadAsStringAsync();
-        dynamic jsonResult = JsonConvert.DeserializeObject(result);
-
-        // Trả về URL thanh toán từ MoMo
-        if (jsonResult != null && jsonResult.payUrl != null)
-        {
-            return jsonResult.payUrl.toString();
-        }
-
-        throw new BaseException.ErrorException(StatusCodes.BadRequest, "BadRequest", "Error Payment");
-
+        return paymentUrl;
     }
-    private string CreateSignature(string rawData, string secretKey)
+    public async Task HandleIPN(VNPayIPNRequest request)
     {
-        using HMACSHA256? hmacsha256 = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
-        byte[]? hash = hmacsha256.ComputeHash(Encoding.UTF8.GetBytes(rawData));
-        return BitConverter.ToString(hash).Replace("-", "").ToLower();
-    }
-
-    public async Task ReceiveMoMoIPN(MoMoIPNRequest request)
-    {
-        string partnerCode = "MOMOBKUN20180529";
-        string accessKey = "klm05TvNBzhg7h7j";
-        string secretKey = "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa";
-        string? rawHash = $"accessKey={accessKey}&amount={request.Amount}&extraData={request.ExtraData}&message={request.Message}&orderId={request.OrderId}&orderInfo={request.OrderInfo}&partnerCode={partnerCode}&payType={request.PayType}&requestId={request.RequestId}&responseTime={request.ResponseTime}&resultCode={request.ResultCode}&transId={request.TransId}";
-        string? signature = CreateSignature(rawHash, secretKey);
-        if (signature != request.Signature)
+        VnPayLibrary vnpay = new VnPayLibrary(_httpContext);
+        
+        //bool isValidSignature = vnpay.ValidateSignature(request.vnp_SecureHash, Environment.GetEnvironmentVariable("VNPAY_KEY") ?? throw new Exception("VNPAY_KEY is not set"));
+        //if (!isValidSignature)
+        //{
+        //    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Signature is not valid");
+        //}
+        if (request.vnp_ResponseCode == "00")
         {
-            throw new BaseException.ErrorException(StatusCodes.BadRequest, "BadRequest", "Invalid signature");
+            //string invoiceCode = request.vnp_OrderInfo[(request.vnp_OrderInfo.IndexOf(" ") + 1)..];
+            string invoiceCode = request.vnp_OrderInfo.Split("+")[^1];
+            Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(invoiceCode)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
+            
+            OrderModelView ord = new OrderModelView
+            {                
+                ShippingAddress = order.ShippingAddress,
+            };
+            //gọi đến service để cập nhật order
+            await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Delivered, PaymentStatus.Paid, PaymentMethod.Online);            
+            await _unitOfWork.SaveAsync();
+            List<OrderDetails>? orderDetails = _unitOfWork.GetRepository<OrderDetails>().Entities
+                .Where(od => od.OrderID == order.Id && od.DeletedTime == null).ToList();  
+            //cập nhật trạng thái của các order detail
+            orderDetails.ForEach(od => od.Status = OrderDetailStatus.Ordered);
+            await _unitOfWork.GetRepository<OrderDetails>().UpdateRangeAsync(orderDetails);
+            await _unitOfWork.SaveAsync();
 
         }
-        // xử lý nghiệp vụ tại đây
-
-        await unitOfWork.SaveAsync();
+        else
+        {
+            throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "ErrorCode: " + request.vnp_ResponseCode);
+        }
 
     }
+
 }

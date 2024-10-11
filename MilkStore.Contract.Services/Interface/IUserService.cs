@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using MilkStore.Contract.Repositories.Entity;
+using MilkStore.Core;
+using MilkStore.Core.Constants;
 using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
@@ -11,11 +13,15 @@ namespace MilkStore.Contract.Services.Interface
     public interface IUserService
     {
 
-        Task<ApplicationUser> UpdateUser(Guid id, UserModelView userModel, string updatedBy);
-        Task<ApplicationUser> DeleteUser(Guid userId, string deleteby);
+        Task UpdateUser(UserUpdateModelView userUpdateModelView);
+        Task DeleteUser(string userId);
         Task<IEnumerable<UserResponeseDTO>> GetUser(string? id, int index = 1, int pageSize = 10);
-        Task<ApplicationUser> AddUser(UserModelView userModel, string createdBy);
-        Task AccumulatePoints(Guid userId, double totalAmount);
+        Task AddUserWithRoleAsync(UserModelView userModel);
+        Task AccumulatePoints(string userId, double totalAmount);
+        Task<UserProfileResponseModelView> GetUserProfile();
+        Task<BasePaginatedList<UserResponeseDTO>> GetUserByRole(string roleId, int index, int pageSize);
+        Task UpdateUserByAdmin(string userID, UserUpdateByAdminModel model);
+        Task<BasePaginatedList<UserResponeseDTO>> SearchUser(string keySearch, SearchUserCode search, int index, int pageSize);
 
     }
 }

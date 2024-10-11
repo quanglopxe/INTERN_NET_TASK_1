@@ -30,69 +30,38 @@ namespace MilkStore.API.Controllers
 
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAll(string? id, int index = 1, int pageSize = 10)
-        {
-            try
-            {
-                IList<OrderResponseDTO> ord = (IList<OrderResponseDTO>)await _orderService.GetAsync(id);
-                int totalItems = ord.Count;
-                List<OrderResponseDTO> pagedOrder = ord.Skip((index - 1) * pageSize).Take(pageSize).ToList();
-
-                // Tạo danh sách phân trang
-                BasePaginatedList<OrderResponseDTO> paginatedList = new BasePaginatedList<OrderResponseDTO>(
-                    pagedOrder, totalItems, index, pageSize);
-                return Ok(BaseResponse<BasePaginatedList<OrderResponseDTO>>.OkResponse(paginatedList));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);  // Trả về 400 BadRequest nếu có lỗi do dữ liệu
-            }
-            catch (ApplicationException ex)
-            {
-                return StatusCode(500, "Lỗi máy chủ. Vui lòng thử lại sau.");  // Trả về 500 nếu có lỗi server
-            }
+        {            
+            BasePaginatedList<OrderResponseDTO> ord = await _orderService.GetAsync(id,index,pageSize);
+            return  Ok(BaseResponse<BasePaginatedList<OrderResponseDTO>>.OkResponse(ord));
         }
-        //[HttpGet("SendMail")]
-        //public async Task<IActionResult> SendMail(string ?id)
+      
+        //[HttpPost]
+        ////[Authorize(Roles = "Member")]
+        //public async Task<IActionResult> Add([FromBody] CreateOrderDTO request)
         //{
-        //    IEnumerable<OrderModelView> order = new List<OrderModelView>();
-        //    try
+        //    if (request == null || request.OrderItems == null || !request.OrderItems.Any())
         //    {
-        //        order = await _orderService.GetStatus_Mail(id);
+        //        return BadRequest("Order data or order items are missing.");
         //    }
-        //    catch (ArgumentException ex)
-        //    {
-        //        return BadRequest("Lỗi !!!!");
-        //    }
-        //    return Ok(order);
-
+        //    await _orderService.AddAsync(request.Order, request.OrderItems);
+        //    return Ok(BaseResponse<string>.OkResponse("Order added successfully!"));            
         //}
 
-        [HttpPost]
-        //[Authorize(Roles = "Member")]
-        public async Task<IActionResult> Add(OrderModelView item)
-        {            
-            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            await _orderService.AddAsync(item, userId);
-            return Ok(BaseResponse<string>.OkResponse("Order added successfully!"));            
-        }
-
-        [HttpPut("AddVoucher{id}")]
-        //[Authorize(Roles = "Guest, Member")]
-        public async Task<IActionResult> AddVoucher(string id, string item)
-        {            
-            await _orderService.AddVoucher(id, item);
-            return Ok(BaseResponse<string>.OkResponse("Voucher added successfully!"));           
-        }
+        //[HttpPut("AddVoucher{id}")]
+        ////[Authorize(Roles = "Guest, Member")]
+        //public async Task<IActionResult> AddVoucher(string id, string item)
+        //{            
+        //    await _orderService.AddVoucher(id, item);
+        //    return Ok(BaseResponse<string>.OkResponse("Voucher added successfully!"));           
+        //}
 
 
         [HttpPut("Update{id}")]
         //[Authorize(Roles = "Guest, Member")]
-        public async Task<IActionResult> Update(string id, OrderModelView item)
+        public async Task<IActionResult> Update(string id, OrderModelView item, [FromQuery] OrderStatus orderStatus, [FromQuery] PaymentStatus paymentStatus, [FromQuery] PaymentMethod paymentMethod)
         {            
-            await _orderService.UpdateAsync(id, item);
-            await _orderService.GetStatus_Mail(id);
-            await _orderService.GetNewStatus_Mail(id);
-            return Ok(BaseResponse<string>.OkResponse("Order update successfully!"));           
+            await _orderService.UpdateOrder(id, item, orderStatus, paymentStatus, paymentMethod);
+            return Ok(BaseResponse<string>.OkResponse("Order was updated successfully!"));           
         }
 
         [HttpDelete("{id}")]
@@ -100,36 +69,8 @@ namespace MilkStore.API.Controllers
         public async Task<IActionResult> Delete(string id)
         {            
             await _orderService.DeleteAsync(id);
-            return Ok(new { message = "Order delete successfully!" });
+            return Ok(BaseResponse<string>.OkResponse("Order was deleted successfully!"));
             
         }
-
-        [HttpPut("UpdateQuantity{id}")]
-        //[Authorize(Roles = "Guest, Member")]
-        public async Task<IActionResult> UpdateQuantity(string id, OrderModelView item)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(new BaseException.BadRequestException("BadRequest", ModelState.ToString()));
-                }
-                // Call the regular update method
-                await _orderService.UpdateAsync(id, item);
-                // If status is "Confirmed", deduct stock
-                if (item.Status == "Confirmed")
-                {
-                    await _orderService.DeductStockOnDelivery(id);
-                }
-                return Ok(new { message = "Update Order thành công" });
-            }
-            catch (ArgumentException ex)
-            {
-                await _orderService.DeductStockOnDelivery(id);
-            }
-
-            return Ok(new { message = "Order update added successfully!" });           
-        }
-
     }
 }

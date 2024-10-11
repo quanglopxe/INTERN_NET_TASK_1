@@ -90,5 +90,20 @@ namespace MilkStore.Repositories.UOW
         {
             return Task.FromResult(_dbSet.Update(obj));
         }
+        public async Task UpdateRangeAsync(IEnumerable<T> entities)
+        {
+            if (entities == null || !entities.Any())
+            {
+                throw new ArgumentException("The entity collection cannot be null or empty.");
+            }
+
+            foreach (var entity in entities)
+            {
+                _dbSet.Update(entity); 
+            }
+
+            await _context.SaveChangesAsync(); 
+        }
+
     }
 }

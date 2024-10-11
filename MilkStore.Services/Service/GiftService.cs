@@ -6,6 +6,7 @@ using MilkStore.Core;
 using MilkStore.Core.Base;
 using MilkStore.Core.Constants;
 using MilkStore.ModelViews.GiftModelViews;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.Repositories.Context;
 
 namespace MilkStore.Services.Service
@@ -22,18 +23,17 @@ namespace MilkStore.Services.Service
             _mapper = mapper;
         }
         public async Task CreateGift(GiftModel GiftModel)
-        {
-            if(GiftModel.Id.Contains(" "))
+        {  
+            IEnumerable<Gift> g = await _unitOfWork.GetRepository<Gift>().GetAllAsync();
+            foreach (var iem in g)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
-            }    
-            Gift newGift = _mapper.Map<Gift>(GiftModel);
-            if (newGift.Id == "")
-            {
-                newGift.Id = Guid.NewGuid().ToString("N");
+                if(iem.ProductId.Equals(GiftModel.ProductId, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Same gift");
+                }    
             }
+            Gift newGift = _mapper.Map<Gift>(GiftModel);
             newGift.CreatedTime = DateTime.UtcNow;
-
             await _unitOfWork.GetRepository<Gift>().InsertAsync(newGift);
             await _unitOfWork.SaveAsync();
         }
@@ -44,7 +44,7 @@ namespace MilkStore.Services.Service
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
             }    
-            Gift Gift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(id);
+            Gift Gift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(id) ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Gift null");
 
             if (Gift.DeletedTime != null)
             {
@@ -55,30 +55,40 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
         }
 
-        public async Task<IEnumerable<GiftModel>> GetGift(string? id)
+        public async Task<BasePaginatedList<GiftResponseDTO>> GetGift(string? id, int pageIndex, int pageSize)
         {
+            if (pageIndex == 0 || pageSize == 0)
+            {
+                pageSize = 5;
+                pageIndex = 1;
+            }
+            // Kiểm tra nếu không truyền ID thì thực hiện phân trang
             if (id == null)
             {
-                // Lấy tất cả sản phẩm
-                IEnumerable<Gift> Gift = await _unitOfWork.GetRepository<Gift>().GetAllAsync();
+                // Lấy toàn bộ danh sách quà tặng chưa bị xóa
+                IQueryable<Gift> query = _unitOfWork.GetRepository<Gift>().Entities;
+                query = query.Where(p => p.DeletedTime == null);
 
-                // Lọc sản phẩm có DeleteTime == null
-                Gift = Gift.Where(p => p.DeletedTime == null);
+                // Thực hiện phân trang
+                BasePaginatedList<Gift> paginatedList = await _unitOfWork.GetRepository<Gift>().GetPagging(query, pageIndex, pageSize);
 
-                return _mapper.Map<IEnumerable<GiftModel>>(Gift);
+                // Chuyển đổi sang DTO và trả về danh sách phân trang
+                var giftModel = _mapper.Map<IEnumerable<GiftResponseDTO>>(paginatedList.Items);
+                return new BasePaginatedList<GiftResponseDTO>(giftModel.ToList(), paginatedList.TotalPages, pageIndex, pageSize);
             }
             else
             {
-                // Lấy sản phẩm theo ID
-                Gift Gift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(id);
+                // Lấy quà tặng theo ID
+                Gift gift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(id)?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Gift null");
 
-                if (Gift != null && Gift.DeletedTime == null) // Kiểm tra DeleteTime
+                // Nếu quà tặng tồn tại và chưa bị xóa, trả về kết quả
+                if (gift != null && gift.DeletedTime == null)
                 {
-                    return new List<GiftModel> { _mapper.Map<GiftModel>(Gift) };
+                    return new BasePaginatedList<GiftResponseDTO>(new List<GiftResponseDTO> { _mapper.Map<GiftResponseDTO>(gift) }, 1, 1, 1); // Trả về 1 kết quả
                 }
                 else
                 {
-                    return new List<GiftModel>();
+                    return new BasePaginatedList<GiftResponseDTO>(new List<GiftResponseDTO>(), 0, 1, 1); // Trả về rỗng nếu không tìm thấy
                 }
             }
         }
@@ -94,16 +104,20 @@ namespace MilkStore.Services.Service
 
         public async Task UpdateGift(string id, GiftModel GiftModel)
         {
-            if(string.IsNullOrWhiteSpace(id))
+            IEnumerable<Gift> g = await _unitOfWork.GetRepository<Gift>().GetAllAsync();
+            foreach (var iem in g)
+            {
+                if (iem.ProductId.Equals(GiftModel.ProductId, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Same gift");
+                }
+            }
+            if (string.IsNullOrWhiteSpace(id))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
             }    
-            Gift existingGift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(id);
+            Gift existingGift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(id) ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
 
-            if (existingGift == null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist:{id}");
-            }
 
             // Cập nhật thông tin sản phẩm bằng cách ánh xạ từ DTO
             _mapper.Map(GiftModel, existingGift);

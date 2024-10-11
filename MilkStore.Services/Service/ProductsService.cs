@@ -8,7 +8,9 @@ using MilkStore.Core.Base;
 using MilkStore.Core.Constants;
 using MilkStore.Core.Utils;
 using MilkStore.ModelViews.ProductsModelViews;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.Repositories.Context;
+using Org.BouncyCastle.Math.Field;
 
 namespace MilkStore.Services.Service
 {
@@ -23,52 +25,71 @@ namespace MilkStore.Services.Service
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        public async Task<IEnumerable<ProductsModel>> GetProductsName(string? ProductdName, string? CategoryName)
+        public async Task<BasePaginatedList<ProductResponseDTO>> GetProductsName(string ProductdName, string CategoryName)
         {
-            IEnumerable<Products> products = await _unitOfWork.GetRepository<Products>().GetAllAsync();
+            IQueryable<Products> products = _unitOfWork.GetRepository<Products>().Entities;
+
+            if (CategoryName == null && ProductdName == null)
+            {
+                // Retrieve the list of products and map to DTO
+                var productsList = await products.ToListAsync();
+                var productsModel = _mapper.Map<List<ProductResponseDTO>>(productsList);
+                return new BasePaginatedList<ProductResponseDTO>(productsModel, productsModel.Count, 1, 1);
+            }
+
             if (CategoryName == null)
             {
-                products = products.Where(p => p.ProductName.Contains(ProductdName, StringComparison.OrdinalIgnoreCase) && p.DeletedTime == null);
+                products = products.Where(p => p.ProductName.ToLower().Contains(ProductdName.ToLower()) && p.DeletedTime == null);
             }
+
             if (ProductdName == null)
             {
                 string temp = "";
                 IEnumerable<Category> cte = await _unitOfWork.GetRepository<Category>().GetAllAsync();
                 foreach (Category c in cte)
                 {
-                    if (c.CategoryName == CategoryName)
+                    if (c.CategoryName.Equals(CategoryName, StringComparison.OrdinalIgnoreCase) && c.DeletedTime == null)
                     {
                         temp = c.Id;
+                        break;
                     }
                 }
-                products = products.Where(p => p.CategoryId.Contains(temp, StringComparison.OrdinalIgnoreCase) && p.DeletedTime == null);
+
+                products = products.Where(p => p.CategoryId.ToLower().Contains(temp.ToLower()) && p.DeletedTime == null);
             }
-            return _mapper.Map<IEnumerable<ProductsModel>>(products);
+
+
+            // Retrieve the filtered list and map it to the DTO list
+            var filteredProductsList = await products.ToListAsync();
+            var productModels = _mapper.Map<List<ProductResponseDTO>>(filteredProductsList);
+            return new BasePaginatedList<ProductResponseDTO>(productModels, productModels.Count, 1, 1);
         }
+
         public async Task CreateProducts(ProductsModel productsModel)
         {
-            if(productsModel.Id.Contains(" "))
+            IEnumerable<Products> pd = await _unitOfWork.GetRepository<Products>().GetAllAsync();
+            foreach (Products p in pd)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
-            }    
-            if (productsModel.Id == "" || productsModel.Id == null)
-            {
-                productsModel.Id = Guid.NewGuid().ToString("N");
+                if (p.ProductName.Equals(productsModel.ProductName, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Same product name");
+                }
             }
             Products newProduct = _mapper.Map<Products>(productsModel);
             newProduct.CreatedTime = DateTime.UtcNow;
 
             await _unitOfWork.GetRepository<Products>().InsertAsync(newProduct);
             await _unitOfWork.SaveAsync();
-            
+
         }
         public async Task DeleteProducts(string id)
         {
-            if(string.IsNullOrWhiteSpace(id))
+            if (string.IsNullOrWhiteSpace(id))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
-            }    
-            Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id);
+            }
+            Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Product null");
 
             if (product.DeletedTime != null)
             {
@@ -80,45 +101,64 @@ namespace MilkStore.Services.Service
 
         }
 
+        public async Task<BasePaginatedList<ProductResponseDTO>> GetProductByNameId(string id, int pageIndex, int pageSize, string ProductdName, string CategoryName)
+        {
+            if (pageIndex == 0 || pageSize == 0)
+            {
+                pageIndex = 1;
+                pageSize = 5;
+            }
 
-        public async Task<BasePaginatedList<ProductsModel>> GetProducts(string? id, int pageIndex, int pageSize)
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                if (!string.IsNullOrEmpty(ProductdName) && string.IsNullOrEmpty(CategoryName))
+                {
+                    return await GetProductsName(ProductdName, CategoryName);
+                }
+                if (string.IsNullOrEmpty(ProductdName) && !string.IsNullOrEmpty(CategoryName))
+                {
+                    return await GetProductsName(ProductdName, CategoryName);
+                }
+            }
+            return await GetProducts(id, pageIndex, pageSize);
+        }
+
+        public async Task<BasePaginatedList<ProductResponseDTO>> GetProducts(string? id, int pageIndex, int pageSize)
         {
             IQueryable<Products> query = _unitOfWork.GetRepository<Products>().Entities;
-
-            // Kiểm tra xem có truyền id hay không
-            if (!string.IsNullOrEmpty(id))
+            if (pageIndex == 0 || pageSize == 0)
             {
-                // Lấy sản phẩm theo id
+                pageSize = 5;
+                pageIndex = 1;
+            }
+            if (!string.IsNullOrWhiteSpace(id))
+            {
                 query = query.Where(p => p.Id == id && p.DeletedTime == null);
 
-                // Nếu chỉ cần tìm kiếm theo id thì không cần phân trang, trả về 1 kết quả hoặc rỗng
                 var product = await query.FirstOrDefaultAsync();
                 if (product != null)
                 {
-                    var productModel = _mapper.Map<ProductsModel>(product);
-                    return new BasePaginatedList<ProductsModel>(new List<ProductsModel> { productModel }, 1, 1, 1); // Chỉ trả về 1 sản phẩm
+                    var productModel = _mapper.Map<ProductResponseDTO>(product);
+                    return new BasePaginatedList<ProductResponseDTO>(new List<ProductResponseDTO> { productModel }, 1, 1, 1);
                 }
                 else
                 {
-                    return new BasePaginatedList<ProductsModel>(new List<ProductsModel>(), 0, pageIndex, pageSize); // Trả về rỗng
+                    return new BasePaginatedList<ProductResponseDTO>(new List<ProductResponseDTO>(), 0, pageIndex, pageSize);
                 }
             }
-
-            // Nếu không có id thì lấy tất cả sản phẩm và áp dụng phân trang
             query = query.Where(p => p.DeletedTime == null);
 
-            // Lấy danh sách phân trang
             BasePaginatedList<Products> paginatedList = await _unitOfWork.GetRepository<Products>().GetPagging(query, pageIndex, pageSize);
 
-            // Ánh xạ sang ProductsModel và trả về kết quả phân trang
-            var productsModel = _mapper.Map<IEnumerable<ProductsModel>>(paginatedList.Items);
-            return new BasePaginatedList<ProductsModel>(productsModel.ToList(), paginatedList.TotalPages, pageIndex, pageSize);
+            var productsModel = _mapper.Map<IEnumerable<ProductResponseDTO>>(paginatedList.Items);
+            return new BasePaginatedList<ProductResponseDTO>(productsModel.ToList(), paginatedList.TotalPages, pageIndex, pageSize);
         }
+
 
 
         private async Task UpdatePreOrdersDeletedTime(string productId)
         {
-              
+
             var preOrders = await _unitOfWork.GetRepository<PreOrders>()
                 .Entities
                 .Where(p => p.ProductID == productId && p.DeletedTime == null)
@@ -127,6 +167,7 @@ namespace MilkStore.Services.Service
             foreach (var preOrder in preOrders)
             {
                 preOrder.DeletedTime = CoreHelper.SystemTimeNow;
+                preOrder.Status = PreOrderStatus.Available;
                 await _unitOfWork.GetRepository<PreOrders>().UpdateAsync(preOrder);
             }
 
@@ -135,15 +176,16 @@ namespace MilkStore.Services.Service
 
         public async Task UpdateProducts(string id, ProductsModel productsModel)
         {
-            if (string.IsNullOrWhiteSpace(id))
+            IEnumerable<Products> pd = await _unitOfWork.GetRepository<Products>().GetAllAsync();
+            foreach (Products p in pd)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Input wrong id");
+                if (p.ProductName.Equals(productsModel.ProductName, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Same product name");
+                }
             }
-            Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id);
-            if (product == null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist{id}");
-            }
+            Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(id)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Doesn't exist{id}");
             var oldQuantityInStock = product.QuantityInStock;
 
             _mapper.Map(productsModel, product);

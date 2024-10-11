@@ -28,10 +28,10 @@ namespace MilkStore.Services.Service
         }
         public async Task CreatePost(PostModelView postModel)
         {
-            string? userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier).Value;
             if (string.IsNullOrWhiteSpace(userID))
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please log in!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in!");
             }
             Post newPost = _mapper.Map<Post>(postModel);
             newPost.CreatedTime = CoreHelper.SystemTimeNow;
@@ -56,11 +56,11 @@ namespace MilkStore.Services.Service
                     }
                     else if (product == null)
                     {
-                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Product with {productId} not found!");
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with {productId} not found!");
                     }
                     else
                     {
-                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Product has been deleted or does not exist!");
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Product has been deleted or does not exist!");
                     }
                 }
             }
@@ -75,10 +75,10 @@ namespace MilkStore.Services.Service
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please enter postID!");
             }
             Post? post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id)
-                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"No products found with {id}");
+                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"No products found with {id}");
             if (post.DeletedTime != null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "This review has already been deleted!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "This post has already been deleted!");
             }
             post.DeletedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<Post>().UpdateAsync(post);
@@ -138,14 +138,14 @@ namespace MilkStore.Services.Service
             string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
             if (!string.IsNullOrWhiteSpace(userID))
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please log in!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in!");
             }
             if (string.IsNullOrWhiteSpace(id))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please enter postID!");
             }
             Post? post = await _unitOfWork.GetRepository<Post>().GetByIdAsync(id)
-             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"No review found with {id}!");
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"No review found with {id}!");
 
             //map từ PostModelView sang Post (chỉ cập nhật các trường thay đổi)
             _mapper.Map(postModel, post);
@@ -171,7 +171,7 @@ namespace MilkStore.Services.Service
                     }
                     else
                     {
-                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"No product found with {productId}!");
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"No product found with {productId}!");
                     }
                 }
             }

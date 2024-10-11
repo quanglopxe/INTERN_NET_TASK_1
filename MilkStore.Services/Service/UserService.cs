@@ -1,5 +1,8 @@
-﻿using System.Security.Policy;
+﻿using System.Security.Claims;
+using System.Security.Policy;
+using System.Text.RegularExpressions;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MilkStore.Contract.Repositories.Entity;
@@ -9,7 +12,6 @@ using MilkStore.Core;
 using MilkStore.Core.Base;
 using MilkStore.Core.Constants;
 using MilkStore.Core.Utils;
-using MilkStore.ModelViews.AuthModelViews;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
 using MilkStore.Repositories.Entity;
@@ -17,72 +19,50 @@ using MilkStore.Repositories.Entity;
 
 namespace MilkStore.Services.Service
 {
-    public class UserService : IUserService
+    public class UserService(IEmailService emailService, UserManager<ApplicationUser> userManager, IHttpContextAccessor httpContextAccessor,
+     RoleManager<ApplicationRole> roleManager, IUnitOfWork unitOfWork, SignInManager<ApplicationUser> signInManager, IMapper mapper) : IUserService
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly UserManager<ApplicationUser> userManager;
-        private readonly RoleManager<ApplicationRole> roleManager;
-        private readonly SignInManager<ApplicationUser> signInManager;
-        private readonly IMapper _mapper;
-        public UserService(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IUnitOfWork unitOfWork, SignInManager<ApplicationUser> signInManager, IMapper mapper)
-        {
-            this.userManager = userManager;
-            this.roleManager = roleManager;
-            this.signInManager = signInManager;
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
-        }
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
+        private readonly IEmailService emailService = emailService;
+        private readonly IUnitOfWork unitOfWork = unitOfWork;
+        private readonly UserManager<ApplicationUser> userManager = userManager;
+        private readonly RoleManager<ApplicationRole> roleManager = roleManager;
+        private readonly SignInManager<ApplicationUser> signInManager = signInManager;
+        private readonly IMapper _mapper = mapper;
+        private readonly IHttpContextAccessor httpContextAccessor = httpContextAccessor;
 
         // Cập nhật thông tin người dùng
-        public async Task<ApplicationUser> UpdateUser(Guid id, UserModelView userModel, string updatedBy)
+        public async Task UpdateUser(UserUpdateModelView userUpdateModelView)
         {
-            if (string.IsNullOrWhiteSpace(id.ToString()))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "ID không hợp lệ");
-            }
+            string? userID = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Token không hợp lệ");
+            ApplicationUser? user = await userManager.FindByIdAsync(userID)
+              ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, "NotFound", $"Người dùng với id {userID} không tồn tại");
 
-            ApplicationUser? user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(id)
-              ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, "NotFound", $"User with ID {id} was not found.");
-
-            _mapper.Map(userModel, user);
-
-            // Gán các trường không được ánh xạ bởi AutoMapper
+            _mapper.Map(userUpdateModelView, user);
             user.LastUpdatedTime = CoreHelper.SystemTimeNow;
-            user.LastUpdatedBy = updatedBy;
-
+            user.LastUpdatedBy = userID;
+            user.UserName = userUpdateModelView.Email;
 
             await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
             await _unitOfWork.SaveAsync();
-
-            return user;
         }
 
-
-
-
         // Xóa người dùng
-        public async Task<ApplicationUser> DeleteUser(Guid userId, string deleteby)
+        public async Task DeleteUser(string userId)
         {
-            if (string.IsNullOrWhiteSpace(userId.ToString()))
+            if (string.IsNullOrWhiteSpace(userId))
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "User ID cannot be null, empty, or contain only whitespace.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "User ID không được để trống, trống hoặc chỉ chứa các ký tự không hợp lệ");
             }
-            var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "User does not exist or has already been deleted.");
-
-            if (user.DeletedTime.HasValue)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "User does not exist or has already been deleted.");
-            }
-
-
-            user.DeletedTime = DateTimeOffset.UtcNow;
-            user.DeletedBy = deleteby;
-
-            await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
+            string? handleBy = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Token không hợp lệ");
+            ApplicationUser? userExists = await userManager.FindByIdAsync(userId)
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Người dùng không tồn tại hoặc đã bị xóa");
+            userExists.DeletedTime = CoreHelper.SystemTimeNow;
+            userExists.DeletedBy = handleBy;
+            await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(userExists);
             await _unitOfWork.SaveAsync();
-
-            return user;
         }
 
         // Lấy thông tin người dùng theo ID
@@ -105,7 +85,7 @@ namespace MilkStore.Services.Service
             {
                 ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().Entities
                     .FirstOrDefaultAsync(u => u.Id.ToString() == id && u.DeletedTime == null)
-                    ?? throw new KeyNotFoundException($"User with ID {id} was not found.");
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Người dùng với id {id} không tồn tại");
 
                 return new List<UserResponeseDTO> { MapToUserResponseDto(user) };
             }
@@ -119,6 +99,7 @@ namespace MilkStore.Services.Service
                 Id = user.Id,
                 UserName = user.UserName,
                 Email = user.Email,
+                Name = user.Name,
                 Points = user.Points,
                 CreatedBy = user.CreatedBy,
                 DeletedBy = user.DeletedBy,
@@ -127,33 +108,86 @@ namespace MilkStore.Services.Service
 
             };
         }
-        public async Task<ApplicationUser> AddUser(UserModelView userModel, string createdBy)
+        private readonly Random random = new Random();
+
+        private string GenerateRandomPassword(int length = 8)
         {
-            bool emailExists = await _unitOfWork.GetRepository<ApplicationUser>().Entities
-                .AnyAsync(u => u.Email == userModel.Email);
+            const string upperCaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const string lowerCaseChars = "abcdefghijklmnopqrstuvwxyz";
+            const string numbers = "0123456789";
+            const string specialChars = "@$!%*?&.";
 
-            if (emailExists)
+
+            if (length < 8)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "Email already exists");
+                length = 8;
             }
 
-            bool userNameExists = await _unitOfWork.GetRepository<ApplicationUser>().Entities
-                .AnyAsync(u => u.UserName == userModel.UserName);
 
-            if (userNameExists)
+            char[] passwordChars = new char[length];
+            passwordChars[0] = upperCaseChars[random.Next(upperCaseChars.Length)];
+            passwordChars[1] = lowerCaseChars[random.Next(lowerCaseChars.Length)];
+            passwordChars[2] = numbers[random.Next(numbers.Length)];
+            passwordChars[3] = specialChars[random.Next(specialChars.Length)];
+
+
+            for (int i = 4; i < length; i++)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, "BadRequest", "UserName already exists");
+                string allChars = upperCaseChars + lowerCaseChars + numbers + specialChars;
+                passwordChars[i] = allChars[random.Next(allChars.Length)];
             }
-            ApplicationUser newUser = _mapper.Map<ApplicationUser>(userModel);
-            newUser.CreatedBy = createdBy;
 
-            await _unitOfWork.GetRepository<ApplicationUser>().InsertAsync(newUser);
-            await _unitOfWork.SaveAsync();
+            string password = new string(passwordChars.OrderBy(x => random.Next()).ToArray());
 
-            return newUser;
+
+            if (!IsPasswordValid(password))
+            {
+
+                return GenerateRandomPassword(length);
+            }
+
+            return password;
         }
 
-        public async Task AccumulatePoints(Guid userId, double totalAmount)
+        private bool IsPasswordValid(string password)
+        {
+            Regex? regex = new Regex(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]{8,16}$");
+            return regex.IsMatch(password);
+        }
+
+        public async Task AddUserWithRoleAsync(UserModelView userModel)
+        {
+            string? handleBy = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Token không hợp lệ");
+
+            ApplicationUser? userExists = await userManager.FindByEmailAsync(userModel.Email);
+            if (userExists != null)
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Email đã tồn tại");
+            }
+            ApplicationUser? newUser = _mapper.Map<ApplicationUser>(userModel);
+            newUser.CreatedBy = handleBy;
+            newUser.EmailConfirmed = true;
+            newUser.Name = userModel.Name;
+            newUser.UserName = userModel.Email;
+            string passwordChars = GenerateRandomPassword();
+            IdentityResult? result = await userManager.CreateAsync(newUser, passwordChars);
+            if (result.Succeeded)
+            {
+                ApplicationRole? role = await roleManager.FindByIdAsync(userModel.RoleID);
+                await userManager.AddToRoleAsync(newUser, role.Name);
+                await emailService.SendEmailAsync(userModel.Email, "Tài khoản nhân viên",
+                      $"Mật khẩu của bạn là: {passwordChars}");
+                await _unitOfWork.SaveAsync();
+            }
+            else
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, result.Errors.FirstOrDefault()?.Description);
+            }
+
+        }
+
+        public async Task AccumulatePoints(string userId, double totalAmount)
         {
             // Kiểm tra nếu totalAmount <= 0 thì không cần cộng điểm
             if (totalAmount <= 0)
@@ -161,11 +195,8 @@ namespace MilkStore.Services.Service
                 return;
             }
 
-            ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(userId);
-            if (user == null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, "NotFound", "User not found");
-            }
+            ApplicationUser user = await userManager.FindByIdAsync(userId)
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, "NotFound", "Không tìm thấy người dùng");
 
             // Tính điểm thưởng: 10 điểm cho mỗi 10.000 VND
             int earnedPoints = (int)(totalAmount / 10000) * 10;
@@ -176,7 +207,99 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
         }
 
+
+        public async Task<UserProfileResponseModelView> GetUserProfile()
+        {
+            string? userIdToken = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Token không hợp lệ");
+
+            ApplicationUser? user = await userManager.FindByIdAsync(userIdToken)
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Không tìm thấy người dùng");
+
+            UserProfileResponseModelView? userResponse = _mapper.Map<UserProfileResponseModelView>(user);
+
+            return userResponse;
+        }
+
+
+        public Task<BasePaginatedList<UserResponeseDTO>> GetUserByRole(string roleId, int index, int pageSize)
+        {
+            Task<ApplicationRole?>? roleExists = roleManager.FindByIdAsync(roleId)
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Không tìm thấy vai trò");
+            Task<IList<ApplicationUser>>? users = userManager.GetUsersInRoleAsync(roleExists.Result.Name);
+            return Task.FromResult(new BasePaginatedList<UserResponeseDTO>(
+                users.Result.Select(MapToUserResponseDto).ToList(),
+                users.Result.Count(),
+                index,
+                pageSize
+            ));
+        }
+        public async Task UpdateUserByAdmin(string userID, UserUpdateByAdminModel model)
+        {
+            if (string.IsNullOrWhiteSpace(userID))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "User ID không được để trống, trống hoặc chỉ chứa các ký tự không hợp lệ");
+            }
+
+            string? handleBy = httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Token không hợp lệ");
+            ApplicationUser? userExists = await userManager.FindByIdAsync(userID)
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Người dùng không tồn tại hoặc đã bị xóa");
+
+            _mapper.Map(model, userExists);
+
+            userExists.UserName = model.Email;
+            userExists.LastUpdatedBy = handleBy;
+
+            if (!string.IsNullOrEmpty(model.Password))
+            {
+                string? passwordResetToken = await userManager.GeneratePasswordResetTokenAsync(userExists);
+                IdentityResult? result = await userManager.ResetPasswordAsync(userExists, passwordResetToken, model.Password);
+                if (!result.Succeeded)
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Không thể cập nhật mật khẩu");
+                }
+            }
+
+            IdentityResult? updateResult = await userManager.UpdateAsync(userExists);
+            if (!updateResult.Succeeded)
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Không thể cập nhật người dùng");
+            }
+        }
+
+        public async Task<BasePaginatedList<UserResponeseDTO>> SearchUser(string keySearch, SearchUserCode search, int index, int pageSize)
+        {
+            IQueryable<ApplicationUser> usersQuery = userManager.Users;
+            switch (search)
+            {
+                case SearchUserCode.phoneNumber:
+                    {
+                        usersQuery = usersQuery.Where(u => u.PhoneNumber.Contains(keySearch) && u.DeletedTime == null);
+                    }
+                    break;
+                case SearchUserCode.name:
+                    {
+                        usersQuery = usersQuery.Where(u => u.Name.Contains(keySearch) && u.DeletedTime == null);
+                    }
+                    break;
+                case SearchUserCode.email:
+                    {
+                        usersQuery = usersQuery.Where(u => u.Email.Contains(keySearch) && u.DeletedTime == null);
+                    }
+                    break;
+                default: break;
+            }
+
+            int totalUsers = await usersQuery.CountAsync();
+            List<ApplicationUser>? users = await usersQuery
+                .Skip((index - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            List<UserResponeseDTO>? usersResponse = users.Select(MapToUserResponseDto).ToList();
+
+            return new BasePaginatedList<UserResponeseDTO>(usersResponse, totalUsers, index, pageSize);
+        }
     }
-
-
 }

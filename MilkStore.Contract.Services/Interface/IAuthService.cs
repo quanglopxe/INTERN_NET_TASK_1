@@ -10,7 +10,7 @@ namespace MilkStore.Contract.Repositories.Interface
         Task Register(RegisterModelView registerModelView);
         Task VerifyOtp(ConfirmOTPModel model, bool isResetPassword);
         Task ResendConfirmationEmail(EmailModelView emailModelView);
-        Task ChangePasswordAdmin(ChangePasswordAdminModel model);
+        Task ChangePassword(ChangePasswordModel model);
         Task ForgotPassword(EmailModelView emailModelView);
         Task ResetPassword(ResetPasswordModel resetPassword);
         Task<AuthResponse> LoginGoogle(TokenGoogleModel googleModel);

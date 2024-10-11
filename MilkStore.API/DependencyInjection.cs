@@ -22,9 +22,11 @@ namespace MilkStore.API
     {
         public static void AddConfig(this IServiceCollection services, IConfiguration configuration)
         {
-            services.ConfigRoute();
-            services.AddConfigTimeToken();
+
             services.AddCorsConfig();
+            services.ConfigRoute();
+            services.AddSignalConfig();
+            services.AddConfigTimeToken();
             services.AddSwaggerUIAuthentication();
             services.AddMemoryCache();
             services.AddDatabase(configuration);
@@ -35,6 +37,10 @@ namespace MilkStore.API
             services.AddAuthenticationBearer(configuration);
             services.AddAutoMapperConfig();
             services.AddEmailConfig(configuration);
+        }
+        public static void AddSignalConfig(this IServiceCollection services)
+        {
+            services.AddSignalR();
         }
         public static void AddAuthenticationBearer(this IServiceCollection services, IConfiguration configuration)
         {
@@ -55,7 +61,28 @@ namespace MilkStore.API
                         ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? throw new Exception("JWT_AUDIENCE is not set"),
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new Exception("JWT_KEY is not set")))
                     };
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
+                            {
+                                if (accessToken.ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    context.Token = accessToken.ToString().AsSpan(7).Trim().ToString();
+                                }
+                                else
+                                {
+                                    context.Token = accessToken;
+                                }
+                            }
+                            return Task.CompletedTask;
+                        }
+                    };
                 });
+
         }
         public static void ConfigRoute(this IServiceCollection services)
         {
@@ -82,6 +109,7 @@ namespace MilkStore.API
         }
         public static void AddServices(this IServiceCollection services)
         {
+            services.AddScoped<ChatHubService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();
@@ -96,9 +124,15 @@ namespace MilkStore.API
             services.AddScoped<IOrderGiftService, OrderGiftService>();
             services.AddScoped<IOrderDetailGiftService, OrderDetailGiftService>();
             services.AddScoped<IEmailService, EmailService>();
-
+            services.AddScoped<IPaymentService, PaymentService>();
+            services.AddScoped<IRoleService, RoleService>();
+            services.AddScoped<IStatisticalService, StatisticalService>();
+            services.AddScoped<IStatisticalProductService, StatisticalProductService>();
+            services.AddScoped<ITransactionService, TransactionService>();
             services.AddHttpContextAccessor();
         }
+
+
         public static void AddAutoMapperConfig(this IServiceCollection services)
         {
             services.AddAutoMapper(typeof(MappingProfile));
