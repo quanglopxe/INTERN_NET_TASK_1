@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Services.Interface;
 using MilkStore.Core;
 using MilkStore.Core.Base;
-using MilkStore.Core.Constants;
 using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.UserModelViews;
 
@@ -15,16 +14,7 @@ namespace MilkStore.API.Controllers
     {
         private readonly IUserService _userService = userService;
 
-        [HttpGet("Get_User")]
-        [Authorize]
-        public async Task<IActionResult> GetUsers(string? id, int index = 1, int pageSize = 10)
-        {
-
-            IEnumerable<UserResponeseDTO> users = await _userService.GetUser(id, index, pageSize);
-            return Ok(BaseResponse<IEnumerable<UserResponeseDTO>>.OkResponse(users));
-        }
-
-        [HttpPost("Add_User_With_Role_Async")]
+        [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddUserWithRoleAsync(UserModelView userModel)
         {
@@ -32,14 +22,15 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<object>.OkResponse("Create user successfully"));
         }
 
-        [HttpPut("User_Update")]
+        [HttpPut]
         [Authorize]
         public async Task<IActionResult> UpdateUser([FromBody] UserUpdateModelView userModel)
         {
             await _userService.UpdateUser(userModel);
             return Ok(BaseResponse<object>.OkResponse("Update user successfully"));
         }
-        [HttpPatch("User_Update_By_Admin")]
+
+        [HttpPatch("Admin_Update")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUserByAdmin([FromQuery] string userId, [FromBody] UserUpdateByAdminModel userModel)
         {
@@ -47,7 +38,7 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<object>.OkResponse("Update user successfully"));
         }
 
-        [HttpDelete("Delete_One_User")]
+        [HttpDelete]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteOneUser([FromQuery] string userId)
         {
@@ -57,26 +48,29 @@ namespace MilkStore.API.Controllers
         }
 
 
-        [HttpGet("Get_User_Profile")]
+        [HttpGet("Profile")]
         [Authorize]
         public async Task<IActionResult> GetUserProfile()
         {
             UserProfileResponseModelView? userProfile = await _userService.GetUserProfile();
             return Ok(BaseResponse<UserProfileResponseModelView>.OkResponse(userProfile));
         }
-        [HttpGet("Get_User_By_Role")]
-        [Authorize(Roles = "Admin,Staff")]
-        public async Task<IActionResult> GetUserByRole(string roleId, int index = 1, int pageSize = 10)
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> Get(
+            [FromQuery] int? page = 1,
+            [FromQuery] int? pageSize = 10,
+            [FromQuery] string? SearchByName = null,
+            [FromQuery] string? SearchByPhoneNumber = null,
+            [FromQuery] string? SearchByEmail = null,
+            [FromQuery] SortBy sortBy = SortBy.Name,
+            [FromQuery] SortOrder sortOrder = SortOrder.asc,
+            [FromQuery] string? role = null,
+            [FromQuery] string? id = null
+        )
         {
-            BasePaginatedList<UserResponeseDTO>? users = await _userService.GetUserByRole(roleId, index, pageSize);
-            return Ok(BaseResponse<BasePaginatedList<UserResponeseDTO>>.OkResponse(users));
-        }
-        [HttpGet("Search_User")]
-        [Authorize(Roles = "Admin,Staff")]
-        public async Task<IActionResult> SearchUser(string keySearch, SearchUserCode search, int index = 1, int pageSize = 10)
-        {
-            BasePaginatedList<UserResponeseDTO>? users = await _userService.SearchUser(keySearch, search, index, pageSize);
-            return Ok(BaseResponse<BasePaginatedList<UserResponeseDTO>>.OkResponse(users));
+            BasePaginatedList<UserResponseDTO>? result = await _userService.GetAsync(page, pageSize, SearchByName, SearchByPhoneNumber, SearchByEmail, sortBy, sortOrder, role, id);
+            return Ok(BaseResponse<BasePaginatedList<UserResponseDTO>>.OkResponse(result));
         }
     }
 }
