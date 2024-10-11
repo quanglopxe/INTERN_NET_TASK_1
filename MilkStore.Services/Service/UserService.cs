@@ -1,5 +1,4 @@
 ﻿using System.Security.Claims;
-using System.Security.Policy;
 using System.Text.RegularExpressions;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
@@ -63,50 +62,6 @@ namespace MilkStore.Services.Service
             userExists.DeletedBy = handleBy;
             await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(userExists);
             await _unitOfWork.SaveAsync();
-        }
-
-        // Lấy thông tin người dùng theo ID
-        public async Task<IEnumerable<UserResponeseDTO>> GetUser(string? id, int index = 1, int pageSize = 10)
-        {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                IQueryable<ApplicationUser> usersQuery = _unitOfWork.GetRepository<ApplicationUser>().Entities
-                    .Where(u => u.DeletedTime == null);
-
-                BasePaginatedList<ApplicationUser>? paginatedUsers = await _unitOfWork.GetRepository<ApplicationUser>().GetPagging(usersQuery, index, pageSize);
-
-                List<UserResponeseDTO> userResponseDtos = paginatedUsers.Items
-                    .Select(MapToUserResponseDto)
-                    .ToList();
-
-                return userResponseDtos;
-            }
-            else
-            {
-                ApplicationUser user = await _unitOfWork.GetRepository<ApplicationUser>().Entities
-                    .FirstOrDefaultAsync(u => u.Id.ToString() == id && u.DeletedTime == null)
-                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Người dùng với id {id} không tồn tại");
-
-                return new List<UserResponeseDTO> { MapToUserResponseDto(user) };
-            }
-        }
-
-
-        private UserResponeseDTO MapToUserResponseDto(ApplicationUser user)
-        {
-            return new UserResponeseDTO
-            {
-                Id = user.Id,
-                UserName = user.UserName,
-                Email = user.Email,
-                Name = user.Name,
-                Points = user.Points,
-                CreatedBy = user.CreatedBy,
-                DeletedBy = user.DeletedBy,
-                LastUpdatedTime = user.LastUpdatedTime,
-                CreatedTime = user.CreatedTime,
-
-            };
         }
         private readonly Random random = new Random();
 
@@ -222,18 +177,6 @@ namespace MilkStore.Services.Service
         }
 
 
-        public Task<BasePaginatedList<UserResponeseDTO>> GetUserByRole(string roleId, int index, int pageSize)
-        {
-            Task<ApplicationRole?>? roleExists = roleManager.FindByIdAsync(roleId)
-             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Không tìm thấy vai trò");
-            Task<IList<ApplicationUser>>? users = userManager.GetUsersInRoleAsync(roleExists.Result.Name);
-            return Task.FromResult(new BasePaginatedList<UserResponeseDTO>(
-                users.Result.Select(MapToUserResponseDto).ToList(),
-                users.Result.Count(),
-                index,
-                pageSize
-            ));
-        }
         public async Task UpdateUserByAdmin(string userID, UserUpdateByAdminModel model)
         {
             if (string.IsNullOrWhiteSpace(userID))
@@ -267,39 +210,138 @@ namespace MilkStore.Services.Service
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Không thể cập nhật người dùng");
             }
         }
-
-        public async Task<BasePaginatedList<UserResponeseDTO>> SearchUser(string keySearch, SearchUserCode search, int index, int pageSize)
+        private IQueryable<ApplicationUser> FilterUsers(
+            IQueryable<ApplicationUser> query,
+            string? name,
+            string? phone,
+            string? email,
+            string? role)
         {
-            IQueryable<ApplicationUser> usersQuery = userManager.Users;
-            switch (search)
+            if (!string.IsNullOrEmpty(name))
             {
-                case SearchUserCode.phoneNumber:
-                    {
-                        usersQuery = usersQuery.Where(u => u.PhoneNumber.Contains(keySearch) && u.DeletedTime == null);
-                    }
-                    break;
-                case SearchUserCode.name:
-                    {
-                        usersQuery = usersQuery.Where(u => u.Name.Contains(keySearch) && u.DeletedTime == null);
-                    }
-                    break;
-                case SearchUserCode.email:
-                    {
-                        usersQuery = usersQuery.Where(u => u.Email.Contains(keySearch) && u.DeletedTime == null);
-                    }
-                    break;
-                default: break;
+                query = query.Where(u => u.Name.Contains(name));
             }
 
-            int totalUsers = await usersQuery.CountAsync();
-            List<ApplicationUser>? users = await usersQuery
-                .Skip((index - 1) * pageSize)
-                .Take(pageSize)
+            if (!string.IsNullOrEmpty(phone))
+            {
+                query = query.Where(u => u.PhoneNumber.Contains(phone));
+            }
+
+            if (!string.IsNullOrEmpty(email))
+            {
+                query = query.Where(u => u.Email.Contains(email));
+            }
+
+            if (!string.IsNullOrEmpty(role))
+            {
+                IList<ApplicationUser>? usersInRole = userManager.GetUsersInRoleAsync(role).Result;
+                query = query.Where(u => usersInRole.Contains(u));
+            }
+
+            return query;
+        }
+        private IQueryable<ApplicationUser> SortUsers(IQueryable<ApplicationUser> query,
+            SortBy sortBy,
+            SortOrder sortOrder)
+        {
+
+            switch (sortBy)
+            {
+                case SortBy.Name:
+                    query = sortOrder == SortOrder.asc
+                        ? query.OrderBy(u => u.Name)
+                        : query.OrderByDescending(u => u.Name);
+                    break;
+
+                case SortBy.Email:
+                    query = sortOrder == SortOrder.asc
+                        ? query.OrderBy(u => u.Email)
+                        : query.OrderByDescending(u => u.Email);
+                    break;
+
+                case SortBy.PhoneNumber:
+                    query = sortOrder == SortOrder.asc
+                        ? query.OrderBy(u => u.PhoneNumber)
+                        : query.OrderByDescending(u => u.PhoneNumber);
+                    break;
+
+                case SortBy.RoleName:
+                    query = sortOrder == SortOrder.asc
+                        ? query.OrderBy(u => u.UserRoles.FirstOrDefault().Role.Name)
+                        : query.OrderByDescending(u => u.UserRoles.FirstOrDefault().Role.Name);
+                    break;
+
+                case SortBy.CreatedDate:
+                    query = sortOrder == SortOrder.asc
+                        ? query.OrderBy(u => u.CreatedTime)
+                        : query.OrderByDescending(u => u.CreatedTime);
+                    break;
+
+                default:
+                    break;
+            }
+
+
+            return query;
+        }
+        private async Task<BasePaginatedList<UserResponseDTO>> PaginateUsers(
+        IQueryable<ApplicationUser> query,
+        int? page,
+        int? pageSize)
+        {
+            int currentPage = page ?? 1;
+            int currentPageSize = pageSize ?? 10;
+            int totalItems = await query.CountAsync();
+
+            List<UserResponseDTO>? users = await query
+                .Skip((currentPage - 1) * currentPageSize)
+                .Take(currentPageSize)
+                .Select(u => new UserResponseDTO
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    Email = u.Email,
+                    PhoneNumber = u.PhoneNumber,
+                    RoleName = u.UserRoles.FirstOrDefault().Role.Name,
+                    CreatedBy = u.CreatedBy,
+                    LastUpdatedBy = u.LastUpdatedBy,
+                    DeletedBy = u.DeletedBy,
+                    CreatedTime = u.CreatedTime,
+                    LastUpdatedTime = u.LastUpdatedTime,
+                    DeletedTime = u.DeletedTime
+                })
                 .ToListAsync();
 
-            List<UserResponeseDTO>? usersResponse = users.Select(MapToUserResponseDto).ToList();
-
-            return new BasePaginatedList<UserResponeseDTO>(usersResponse, totalUsers, index, pageSize);
+            return new BasePaginatedList<UserResponseDTO>(users, totalItems, currentPage, currentPageSize);
         }
+
+
+        public async Task<BasePaginatedList<UserResponseDTO>> GetAsync(
+            int? page,
+            int? pageSize,
+            string? name,
+            string? phone,
+            string? email,
+            SortBy sortBy,
+            SortOrder sortOrder,
+            string? role,
+            string? id
+            )
+        {
+            IQueryable<ApplicationUser>? query = userManager.Users.AsQueryable();
+            query = query.Where(u => u.DeletedTime == null);
+            if (!string.IsNullOrEmpty(id))
+            {
+                query = query.Where(u => u.Id == Guid.Parse(id));
+            }
+
+            query = FilterUsers(query, name, phone, email, role);
+            query = SortUsers(query, sortBy, sortOrder);
+
+            return await PaginateUsers(query, page, pageSize);
+        }
+
     }
+
+
 }

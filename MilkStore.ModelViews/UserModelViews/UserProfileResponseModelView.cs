@@ -1,3 +1,4 @@
+namespace MilkStore.ModelViews.UserModelViews;
 public class UserProfileResponseModelView
 {
 
