@@ -1,4 +1,5 @@
 ﻿using MilkStore.Core.Base;
+using System.ComponentModel.DataAnnotations;
 
 namespace MilkStore.Contract.Repositories.Entity
 {
@@ -14,7 +15,12 @@ namespace MilkStore.Contract.Repositories.Entity
         public int Status { get; set; }
         public string Name { get; set; } = string.Empty;
 
+
+        [StringLength(6, ErrorMessage = "Mã voucher phải có đúng 6 ký tự.")]
+        public string Code { get; set; }
+
         //public virtual ICollection<Order> Orders { get; set; }
-        public virtual ICollection<OrderVoucher> OrderVouchers { get; set; }
+        //public virtual ICollection<OrderVoucher> OrderVouchers { get; set; }
+
     }
 }
