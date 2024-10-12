@@ -184,8 +184,8 @@ namespace MilkStore.Services.Service
         public async Task UpdateOrder(string id, OrderModelView ord, OrderStatus orderStatus, PaymentStatus paymentStatus, PaymentMethod paymentMethod)
         {
             await UpdateAsync(id, ord, orderStatus, paymentStatus, paymentMethod);
-            await UpdateInventoryQuantity(id);
-            await UpdateUserPoint(id);
+            await UpdateInventoryQuantity(id);// gộp thành 1 hàm cho staff
+            await UpdateUserPoint(id); // chưa confirm - staff
             await SendingPaymentStatus_Mail(id);
             await SendingOrderStatus_Mail(id);
         }
