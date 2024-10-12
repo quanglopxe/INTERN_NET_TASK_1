@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MilkStore.Contract.Repositories.Entity;
@@ -27,14 +28,15 @@ namespace MilkStore.Services.Service
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IUserService _userService;
-        public PreOrdersService(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService, IHttpContextAccessor httpContextAccessor, IUserService userService)
+
+        private readonly UserManager<ApplicationUser> _userManager;
+        public PreOrdersService(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService, IHttpContextAccessor httpContextAccessor, IUserService userService, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _emailService = emailService;
             _httpContextAccessor = httpContextAccessor;
-            _userService = userService;
+            _userManager = userManager;
         }
 
         public async Task CreatePreOrders(PreOrdersModelView preOrdersModel)
@@ -61,15 +63,15 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
 
             string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
-            var user = await _userService.GetUser(userID);
-            if (!user.Any())
+            ApplicationUser? user = await _userManager.FindByIdAsync(userID);
+            if (user is null)
             {
                 throw new KeyNotFoundException($"Người dùng với mã {userID} không tìm thấy.");
             }
             string toEmail = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Email).Value;
             string subject = "Xác nhận đặt hàng trước";
             string body = $@"
-                Xin chào {user.FirstOrDefault().UserName},
+                Xin chào {user.UserName},
 
                 Cảm ơn bạn đã đặt hàng sản phẩm {product.ProductName}. 
                 Sản phẩm bạn đặt hàng hiện đang hết hàng. Chúng tôi sẽ thông báo cho bạn ngay khi sản phẩm có sẵn trong kho.                
@@ -130,23 +132,23 @@ namespace MilkStore.Services.Service
             }
         }
 
-        //public async Task UpdatePreOrders(string id, PreOrdersModelView preOrdersModel)
-        //{
-        //    string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
-        //    if (!string.IsNullOrWhiteSpace(userID))
-        //    {
-        //        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Vui lòng đăng nhập vào tài khoản!");
-        //    }
-        //    PreOrders? preOrders = await _unitOfWork.GetRepository<PreOrders>().GetByIdAsync(id)
-        //     ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không có pre-order nào được tìm thấy với mã {id}!");
+        public async Task UpdatePreOrders(string id, PreOrdersModelView preOrdersModel)
+        {
+            string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            if (!string.IsNullOrWhiteSpace(userID))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Vui lòng đăng nhập vào tài khoản!");
+            }
+            PreOrders? preOrders = await _unitOfWork.GetRepository<PreOrders>().GetByIdAsync(id)
+             ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không có pre-order nào được tìm thấy với mã {id}!");
 
-        //    _mapper.Map(preOrdersModel, preOrders);
+            _mapper.Map(preOrdersModel, preOrders);
 
-        //    preOrders.LastUpdatedTime = CoreHelper.SystemTimeNow;
-        //    preOrders.LastUpdatedBy = userID;
+            preOrders.LastUpdatedTime = CoreHelper.SystemTimeNow;
+            preOrders.LastUpdatedBy = userID;
 
-        //    await _unitOfWork.GetRepository<PreOrders>().UpdateAsync(preOrders);
-        //    await _unitOfWork.SaveAsync();
-        //}
+            await _unitOfWork.GetRepository<PreOrders>().UpdateAsync(preOrders);
+            await _unitOfWork.SaveAsync();
+        }
     }
 }
