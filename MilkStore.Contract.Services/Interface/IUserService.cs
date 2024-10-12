@@ -16,7 +16,7 @@ namespace MilkStore.Contract.Services.Interface
         Task UpdateUser(UserUpdateModelView userUpdateModelView);
         Task DeleteUser(string userId);
         Task AddUserWithRoleAsync(UserModelView userModel);
-        Task AccumulatePoints(string userId, double totalAmount);
+        Task AccumulatePoints(string userId, double totalAmount, OrderStatus orderStatus);
         Task<UserProfileResponseModelView> GetUserProfile();
 
         Task UpdateUserByAdmin(string userID, UserUpdateByAdminModel model);

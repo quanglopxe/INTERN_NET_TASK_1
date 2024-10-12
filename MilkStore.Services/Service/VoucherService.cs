@@ -40,7 +40,7 @@ namespace MilkStore.Services.Service
 
             // Kiểm tra tính duy nhất của mã voucher
             bool isCodeExisted = await _unitOfWork.GetRepository<Voucher>().Entities
-                .AnyAsync(voucher => voucher.Code == voucherModel.Code && voucher.DeletedTime == null);
+                .AnyAsync(voucher => voucher.VoucherCode == voucherModel.Code && voucher.DeletedTime == null);
 
             if (isCodeExisted)
             {
@@ -139,10 +139,10 @@ namespace MilkStore.Services.Service
             }
 
             // Kiểm tra nếu mã Code bị trùng với mã của các voucher khác (ngoại trừ voucher hiện tại)
-            if (!string.IsNullOrWhiteSpace(voucherModel.Code) && voucherModel.Code != existingVoucher.Code)
+            if (!string.IsNullOrWhiteSpace(voucherModel.Code) && voucherModel.Code != existingVoucher.VoucherCode)
             {
                 bool isCodeExisted = await _unitOfWork.GetRepository<Voucher>().Entities
-                    .AnyAsync(voucher => voucher.Code == voucherModel.Code && voucher.DeletedTime == null && voucher.Id != id);
+                    .AnyAsync(voucher => voucher.VoucherCode == voucherModel.Code && voucher.DeletedTime == null && voucher.Id != id);
 
                 if (isCodeExisted)
                 {

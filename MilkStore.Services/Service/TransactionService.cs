@@ -68,7 +68,8 @@ namespace MilkStore.Services.Service
                 var paymentRequest = new PaymentRequest
                 {
                     TotalAmount = totalAmount,
-                    InvoiceCode = invoiceCode
+                    InvoiceCode = invoiceCode,
+                    OrderType = shippingAddress.ToString(),
                 };
 
                 string paymentUrl = _paymentService.CreatePayment(paymentRequest);
@@ -80,24 +81,27 @@ namespace MilkStore.Services.Service
             {
                 // Tạo đơn hàng
                 await _orderService.AddAsync(voucherCode, cartItems, paymentMethod, shippingAddress);
-                Order order = await _unitOfWork.GetRepository<Order>().Entities
-                    .FirstOrDefaultAsync(o => o.CreatedBy == userID && o.OrderStatuss == OrderStatus.Pending && o.PaymentStatuss == PaymentStatus.Unpaid)
-                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
+                //Order order = await _unitOfWork.GetRepository<Order>().Entities.Include(or => or.OrderDetailss)
+                //    .FirstOrDefaultAsync(o => o.CreatedBy == userID && o.OrderStatuss == OrderStatus.Pending && o.PaymentStatuss == PaymentStatus.Unpaid)
+                //    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
 
-                OrderModelView ord = new OrderModelView
-                {
-                    ShippingAddress = order.ShippingAddress,
-                };
-                
-                await _orderService.UpdateOrder(order.Id, ord, OrderStatus.Delivered, PaymentStatus.Paid, paymentMethod);
-                await _unitOfWork.SaveAsync();
-                List<OrderDetails>? orderDetails = _unitOfWork.GetRepository<OrderDetails>().Entities
-                    .Where(od => od.OrderID == order.Id && od.DeletedTime == null).ToList();
-                //cập nhật trạng thái của các order detail
-                orderDetails.ForEach(od => od.Status = OrderDetailStatus.Ordered);
-                await _unitOfWork.GetRepository<OrderDetails>().UpdateRangeAsync(orderDetails);
-                await _unitOfWork.SaveAsync();
-                return "Order has been created successfully!";
+                //OrderModelView ord = new OrderModelView
+                //{
+                //    ShippingAddress = order.ShippingAddress,
+                //};
+
+                //if(shippingAddress == ShippingType.InStore && )
+                //{
+                //    await _orderService.UpdateOrder(order.Id, ord, OrderStatus.Delivered, PaymentStatus.Paid, paymentMethod);
+                //    await _unitOfWork.SaveAsync();
+                //}
+
+                //List<OrderDetails>? orderDetails = order.OrderDetailss.Where(od => od.DeletedTime == null).ToList();
+                ////cập nhật trạng thái của các order detail
+                //orderDetails.ForEach(od => od.Status = OrderDetailStatus.Ordered);
+                //await _unitOfWork.GetRepository<OrderDetails>().BulkUpdateAsync(orderDetails);
+                //await _unitOfWork.SaveAsync();
+                return "Đặt hàng thành công! Vui lòng kiểm tra email để theo dõi đơn hàng!";
             }
         }
     }

@@ -27,8 +27,7 @@ namespace MilkStore.Repositories.Context
         public virtual DbSet<Category> Category => Set<Category>();
         public virtual DbSet<Gift> Gifts => Set<Gift>();
         public virtual DbSet<OrderGift> OrderGifts => Set<OrderGift>();
-        public virtual DbSet<OrderDetailGift> OrderDetailGifts => Set<OrderDetailGift>();
-        public virtual DbSet<OrderVoucher> OrderVouchers => Set<OrderVoucher>();
+        public virtual DbSet<OrderDetailGift> OrderDetailGifts => Set<OrderDetailGift>();        
         #endregion
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

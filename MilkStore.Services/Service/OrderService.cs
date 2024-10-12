@@ -44,26 +44,40 @@ namespace MilkStore.Services.Service
             _httpContextAccessor = httpContextAccessor;
             _userService = userService;                        
         }
-
+        private string GetCurrentUserId()
+        {
+            string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userID))
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
+            }
+            return userID;
+        }
         public async Task<BasePaginatedList<OrderResponseDTO>> GetAsync(string? id, int pageIndex, int pageSize)
         {
-            IQueryable<Order>? query = _unitOfWork.GetRepository<Order>().Entities.Where(order => order.DeletedTime == null);
+            IQueryable<Order>? query = _unitOfWork.GetRepository<Order>()
+                .Entities
+                .AsNoTracking() // Không cần theo dõi
+                .Where(order => order.DeletedTime == null);
+
             if (!string.IsNullOrWhiteSpace(id))
             {
                 query = query.Where(order => order.Id == id);
-            }            
-            BasePaginatedList<Order>? paginatedOrders = await _unitOfWork.GetRepository<Order>().GetPagging(query, pageIndex, pageSize);
+            }
 
+            BasePaginatedList<Order>? paginatedOrders = await _unitOfWork.GetRepository<Order>()
+                .GetPagging(query, pageIndex, pageSize);
+            
             if (!paginatedOrders.Items.Any() && !string.IsNullOrWhiteSpace(id))
-            {                
+            {
                 Order? orderById = await query.FirstOrDefaultAsync();
                 if (orderById != null)
                 {
                     OrderResponseDTO? orderDto = _mapper.Map<OrderResponseDTO>(orderById);
                     return new BasePaginatedList<OrderResponseDTO>(new List<OrderResponseDTO> { orderDto }, 1, 1, 1);
-                }                
+                }
             }
-            //GetAll
+
             List<OrderResponseDTO>? orderDtosResult = _mapper.Map<List<OrderResponseDTO>>(paginatedOrders.Items);
             return new BasePaginatedList<OrderResponseDTO>(
                 orderDtosResult,
@@ -73,14 +87,12 @@ namespace MilkStore.Services.Service
             );
         }
 
+
         public async Task AddAsync(List<string>? voucherCode, List<OrderDetails> orderItems, PaymentMethod paymentMethod, ShippingType shippingAddress)
         {
-            string userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrWhiteSpace(userID))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
-            }
-            var user = await _userManager.FindByIdAsync(userID) ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
+            string userID = GetCurrentUserId();
+            var user = await _userManager.FindByIdAsync(userID) 
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
             if (string.IsNullOrWhiteSpace(user.ShippingAddress))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please update your shipping address before checkout!");
@@ -99,8 +111,7 @@ namespace MilkStore.Services.Service
                 UserId = Guid.Parse(userID),
                 CreatedBy = userID,
                 OrderDate = CoreHelper.SystemTimeNow,
-                estimatedDeliveryDate = $"từ {CoreHelper.SystemTimeNow.AddDays(3):dd/MM/yyyy} đến {CoreHelper.SystemTimeNow.AddDays(5):dd/MM/yyyy}",
-                
+                estimatedDeliveryDate = $"từ {CoreHelper.SystemTimeNow.AddDays(3):dd/MM/yyyy} đến {CoreHelper.SystemTimeNow.AddDays(5):dd/MM/yyyy}",                
                 ShippingAddress = shipMethod,
                 TotalAmount = 0,
                 DiscountedAmount = 0,
@@ -130,34 +141,28 @@ namespace MilkStore.Services.Service
             // Xử lý danh sách voucher nếu có
             if (voucherCode is not null && voucherCode.Any())
             {
-                foreach (var voucherId in voucherCode)
+                foreach (var voucher in voucherCode)
                 {
                     Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
-                        .FirstOrDefaultAsync(v => v.Id == voucherId && !v.DeletedTime.HasValue)
-                        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Voucher with ID {voucherId} not found.");
+                        .FirstOrDefaultAsync(v => v.VoucherCode == voucher && !v.DeletedTime.HasValue)
+                        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Voucher with ID {voucher} not found.");
 
                     if (vch.ExpiryDate < order.OrderDate)
                     {
-                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher with ID {voucherId} has expired.");
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher with ID {voucher} has expired.");
                     }
 
                     // Kiểm tra điều kiện áp dụng voucher
                     if (discountedTotal < Convert.ToDouble(vch.LimitSalePrice))
                     {
-                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The total amount does not meet the requirements to apply voucher {voucherId}.");
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The total amount does not meet the requirements to apply voucher {voucher}.");
                     }
                     // Tính toán giảm giá nếu voucher hợp lệ
                     double discountAmount = (discountedTotal * vch.SalePercent) / 100.0;
                     discountedTotal -= discountAmount;
                     totalDiscount += discountAmount;
 
-                    // Tạo bản ghi trong bảng OrderVoucher
-                    var orderVoucher = new OrderVoucher
-                    {
-                        OrderId = order.Id,
-                        VoucherId = vch.Id
-                    };
-                    await _unitOfWork.GetRepository<OrderVoucher>().InsertAsync(orderVoucher);
+                    order.VoucherCode.Add(vch.VoucherCode);
 
                     // Cập nhật số lần sử dụng voucher
                     vch.UsedCount++;
@@ -175,27 +180,50 @@ namespace MilkStore.Services.Service
 
             // Gán OrderID cho mỗi OrderDetail và lưu chúng vào cơ sở dữ liệu
             orderItems.ForEach(item => item.OrderID = order.Id);
-            await _unitOfWork.GetRepository<OrderDetails>().UpdateRangeAsync(orderItems);
+            await _unitOfWork.GetRepository<OrderDetails>().BulkUpdateAsync(orderItems);
 
             // Cập nhật lại tổng tiền sau khi đã áp dụng voucher
             await UpdateToTalAmount(order.Id);
         }
 
+        //public async Task UpdateOrder(string id, OrderModelView ord, OrderStatus orderStatus, PaymentStatus paymentStatus, PaymentMethod paymentMethod)
+        //{
+        //    await UpdateAsync(id, ord, orderStatus, paymentStatus, paymentMethod);
+        //    await SendingPaymentStatus_Mail(id);
+        //    await SendingOrderStatus_Mail(id);
+        //    if (orderStatus == OrderStatus.Delivered && paymentStatus == PaymentStatus.Paid || orderStatus == OrderStatus.Refunded)
+        //    {
+        //        await UpdateUserPoint(id);                               
+        //    }            
+        //    if(orderStatus == OrderStatus.Confirmed || orderStatus == OrderStatus.Refunded)
+        //    {
+        //        await UpdateInventoryQuantity(id);
+        //    }            
+        //}
         public async Task UpdateOrder(string id, OrderModelView ord, OrderStatus orderStatus, PaymentStatus paymentStatus, PaymentMethod paymentMethod)
         {
-            await UpdateAsync(id, ord, orderStatus, paymentStatus, paymentMethod);
-            await UpdateInventoryQuantity(id);// gộp thành 1 hàm cho staff
-            await UpdateUserPoint(id); // chưa confirm - staff
-            await SendingPaymentStatus_Mail(id);
-            await SendingOrderStatus_Mail(id);
+            var updateTask = UpdateAsync(id, ord, orderStatus, paymentStatus, paymentMethod);
+            var sendingPaymentMailTask = SendingPaymentStatus_Mail(id);
+            var sendingOrderMailTask = SendingOrderStatus_Mail(id);
+            
+            Task updateUserPointTask = null;
+            if (orderStatus == OrderStatus.Delivered && paymentStatus == PaymentStatus.Paid || orderStatus == OrderStatus.Refunded)
+            {
+                updateUserPointTask = UpdateUserPoint(id);
+            }
+            
+            Task updateInventoryTask = null;
+            if (orderStatus == OrderStatus.Confirmed || orderStatus == OrderStatus.Refunded)
+            {
+                updateInventoryTask = UpdateInventoryQuantity(id);
+            }
+            
+            await Task.WhenAll(updateTask, sendingPaymentMailTask, sendingOrderMailTask, updateUserPointTask, updateInventoryTask);
         }
+
         public async Task UpdateAsync(string id, OrderModelView ord, OrderStatus orderStatus, PaymentStatus paymentStatus, PaymentMethod paymentMethod)
         {
-            string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrWhiteSpace(userID))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Hãy đăng nhập trước!");
-            }
+            string userID = GetCurrentUserId();
             // Lấy đối tượng hiện tại từ cơ sở dữ liệu
             Order orderss = await _unitOfWork.GetRepository<Order>().Entities
                 .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
@@ -226,24 +254,31 @@ namespace MilkStore.Services.Service
             }
             Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id)?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
             ApplicationUser? user = await _userManager.FindByIdAsync(order.UserId.ToString())?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
-            if(order.OrderStatuss == OrderStatus.Delivered && order.PaymentStatuss == PaymentStatus.Paid && !order.IsPointAdded)
+            if(!order.IsPointAdded)
             {
-                await _userService.AccumulatePoints(user.Id.ToString(), order.TotalAmount);
-                order.PointsAdded = (int)(order.TotalAmount / 10000) * 10;
+                await _userService.AccumulatePoints(user.Id.ToString(), order.TotalAmount, order.OrderStatuss);
+                if(order.OrderStatuss == OrderStatus.Refunded)
+                {
+                    order.PointsAdded = 0;
+                }
+                else
+                {
+                    order.PointsAdded = (int)(order.TotalAmount / 10000) * 10;
+                }                
                 order.IsPointAdded = true;
                 await _unitOfWork.GetRepository<Order>().UpdateAsync(order);
                 await _unitOfWork.SaveAsync();
-            }
+            }            
         }
         //Cập nhật TotalAmount
         public async Task UpdateToTalAmount(string id)
         {
             Order ord = await _unitOfWork.GetRepository<Order>().Entities
+                .Include(or => or.OrderDetailss)
                 .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID {id} not found or has already been deleted.");
 
-            List<OrderDetails> lstOrd = await _unitOfWork.GetRepository<OrderDetails>().Entities
-                .Where(ordt => ordt.OrderID == id && !ordt.DeletedTime.HasValue).ToListAsync();
+            List<OrderDetails> lstOrd = ord.OrderDetailss.Where(od => od.DeletedTime == null).ToList();
 
             ord.TotalAmount = lstOrd.Sum(o => o.TotalAmount);
 
@@ -251,31 +286,29 @@ namespace MilkStore.Services.Service
             double discountedTotal = ord.TotalAmount;
 
             // Lấy danh sách các voucher đã áp dụng
-            List<OrderVoucher> orderVouchers = await _unitOfWork.GetRepository<OrderVoucher>().Entities
-                .Where(ov => ov.OrderId == ord.Id)
-                .ToListAsync();
-
-            foreach (var orderVoucher in orderVouchers)
+            if (ord.VoucherCode is not null && ord.VoucherCode.Count > 0)
             {
-                Voucher? vch = await _unitOfWork.GetRepository<Voucher>().Entities
-                    .FirstOrDefaultAsync(v => v.Id == orderVoucher.VoucherId && !v.DeletedTime.HasValue);
+                foreach (var voucher in ord.VoucherCode)
+                {
+                    Voucher? vch = await _unitOfWork.GetRepository<Voucher>().Entities
+                        .FirstOrDefaultAsync(v => v.VoucherCode == voucher && !v.DeletedTime.HasValue);
 
-                if (vch is
+                    if (vch is
+                        {
+                            ExpiryDate: DateTime expiryDate,
+                            LimitSalePrice: int limitSalePrice,
+                            SalePercent: int salePercent,
+                            UsedCount: int usedCount,
+                            UsingLimit: int usingLimit
+                        })
                     {
-                        ExpiryDate: DateTime expiryDate,
-                        LimitSalePrice: int limitSalePrice,
-                        SalePercent: int salePercent,
-                        UsedCount: int usedCount,
-                        UsingLimit: int usingLimit
-                    })
-                {                    
-                    // Tính toán giảm giá nếu voucher hợp lệ
-                    double discountAmount = (discountedTotal * salePercent) / 100.0;
-                    discountedTotal -= discountAmount;
-                    totalDiscount += discountAmount;
+                        // Tính toán giảm giá nếu voucher hợp lệ
+                        double discountAmount = (discountedTotal * salePercent) / 100.0;
+                        discountedTotal -= discountAmount;
+                        totalDiscount += discountAmount;
+                    }
                 }
             }
-            
             // Cập nhật tổng số tiền sau khi giảm giá
             ord.DiscountedAmount = ord.TotalAmount - totalDiscount;
 
@@ -370,22 +403,18 @@ namespace MilkStore.Services.Service
             }
             
             Order order = await _unitOfWork.GetRepository<Order>().Entities
+                .Include(or => or.OrderDetailss)
                 .FirstOrDefaultAsync(o => o.Id == orderId && !o.DeletedTime.HasValue)
                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
+            List<OrderDetails> orderDetailsList = order.OrderDetailss.Where(od => od.DeletedTime == null).ToList()                                 
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order details not found");
 
-            if (order.OrderStatuss == OrderStatus.Confirmed && !order.IsInventoryUpdated)
-            {                
-                List<OrderDetails> orderDetailsList = await _unitOfWork.GetRepository<OrderDetails>().Entities
-                    .Where(od => od.OrderID == order.Id).ToListAsync();
-
-                // Loop through the order details to deduct stock
-                foreach (var orderDetail in orderDetailsList)
+            foreach (var orderDetail in orderDetailsList)
+            {
+                Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(orderDetail.ProductID)
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderDetail.ProductID} not found");
+                if (order.OrderStatuss == OrderStatus.Confirmed && !order.IsInventoryUpdated)
                 {
-                    Products? product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(orderDetail.ProductID);
-                    if(product == null)
-                    {
-                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderDetail.ProductID} not found");
-                    }
                     if (product.QuantityInStock >= orderDetail.Quantity)
                     {
                         product.QuantityInStock -= orderDetail.Quantity; // Deduct quantity                        
@@ -401,10 +430,13 @@ namespace MilkStore.Services.Service
                         throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Not enough stock for product {product.ProductName}");
                     }
                 }
-
-                // Save changes
-                await _unitOfWork.SaveAsync();
-            }
+                if(order.OrderStatuss == OrderStatus.Refunded && order.IsInventoryUpdated)
+                {
+                    product.QuantityInStock += orderDetail.Quantity; // Add quantity
+                    await _unitOfWork.GetRepository<Products>().UpdateAsync(product);
+                    await _unitOfWork.SaveAsync();
+                }
+            }     
         }
     }
 }

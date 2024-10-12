@@ -36,7 +36,7 @@ public class PaymentService : IPaymentService
 
         vnpay.AddRequestData("vnp_Locale", "vn");
         vnpay.AddRequestData("vnp_OrderInfo", request.InvoiceCode);
-        vnpay.AddRequestData("vnp_OrderType", "other");
+        vnpay.AddRequestData("vnp_OrderType", request.OrderType);
         string returnUrl = $"{Environment.GetEnvironmentVariable("SERVER_DOMAIN")}/api/payment/ipn";
         vnpay.AddRequestData("vnp_ReturnUrl", returnUrl ?? throw new Exception("SERVER_DOMAIN is not set"));
         vnpay.AddRequestData("vnp_TxnRef", DateTime.Now.ToString("yyyyMMddHHmmssfff"));
@@ -59,25 +59,32 @@ public class PaymentService : IPaymentService
         //}
         if (request.vnp_ResponseCode == "00")
         {
-            //string invoiceCode = request.vnp_OrderInfo[(request.vnp_OrderInfo.IndexOf(" ") + 1)..];
             string invoiceCode = request.vnp_OrderInfo.Split("+")[^1];
             Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(invoiceCode)
                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
-            
+
             OrderModelView ord = new OrderModelView
-            {                
+            {
                 ShippingAddress = order.ShippingAddress,
             };
-            //gọi đến service để cập nhật order
-            await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Delivered, PaymentStatus.Paid, PaymentMethod.Online);            
-            await _unitOfWork.SaveAsync();
+            if (request.vnp_OrderType == "InStore")
+            {                
+                //gọi đến service để cập nhật order
+                await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Delivered, PaymentStatus.Paid, PaymentMethod.Online);
+                await _unitOfWork.SaveAsync();                
+            }
+            else
+            {
+                //gọi đến service để cập nhật order
+                await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Pending, PaymentStatus.Paid, PaymentMethod.Online);
+                await _unitOfWork.SaveAsync();
+            }
             List<OrderDetails>? orderDetails = _unitOfWork.GetRepository<OrderDetails>().Entities
-                .Where(od => od.OrderID == order.Id && od.DeletedTime == null).ToList();  
+                    .Where(od => od.OrderID == order.Id && od.DeletedTime == null).ToList();
             //cập nhật trạng thái của các order detail
             orderDetails.ForEach(od => od.Status = OrderDetailStatus.Ordered);
-            await _unitOfWork.GetRepository<OrderDetails>().UpdateRangeAsync(orderDetails);
+            await _unitOfWork.GetRepository<OrderDetails>().BulkUpdateAsync(orderDetails);
             await _unitOfWork.SaveAsync();
-
         }
         else
         {
