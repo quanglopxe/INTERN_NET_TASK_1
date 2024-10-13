@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Castle.Components.DictionaryAdapter.Xml;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -35,7 +34,7 @@ namespace MilkStore.Services.Service
             OrderDetails? orderDetail = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(reviewsModel.OrderDetailID);
             if (orderDetail == null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy chi tiết đơn hàng với mã {reviewsModel.OrderDetailID}!!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order details not found with {reviewsModel.OrderDetailID}!!");
             }
                         
             Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(orderDetail.OrderID);
@@ -44,22 +43,16 @@ namespace MilkStore.Services.Service
 
             if(string.IsNullOrWhiteSpace(userID) || string.IsNullOrWhiteSpace(userEmail))
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Vui lòng đăng nhập bằng tài khoản đã xác minh qua email!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in with an email verified account!");
             }
             if (order == null || order.UserId.ToString() != userID)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Bạn không có quyền truy cập để đánh giá sản phẩm này!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "You do not have access to review this product!");
             }
-            //Kiểm tra trạng thái đơn hàng (đã giao) và trạng thái thanh toán(đã thanh toán)
-            if (order.OrderStatuss != OrderStatus.Delivered || order.PaymentStatuss != PaymentStatus.Paid)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.NotFound, "Bạn chỉ có thể đánh giá sản phẩm này sau khi đơn hàng đã được giao và thanh toán!");
-            }
-
             var productInOrder = order.OrderDetailss.Where(od => od.ProductID.Contains(orderDetail.ProductID)).FirstOrDefault();
             if (productInOrder == null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy sản phẩm nào trong đơn hàng với mã {orderDetail.ProductID}!!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order details not found for {orderDetail.ProductID}!!");
             }
             Review newReview = _mapper.Map<Review>(reviewsModel);
             newReview.UserID = Guid.Parse(userID);
@@ -75,16 +68,16 @@ namespace MilkStore.Services.Service
             {
                 var subject = "Cảm ơn bạn đã đánh giá sản phẩm!";
                 var body = $@"
-                <p>Xin chào,</p>
-                <p>Cảm ơn bạn đã đánh giá sản phẩm {productInOrder.Products.ProductName}. Đánh giá của bạn giúp chúng tôi cải thiện dịch vụ.</p>
-                <p>Thông tin đánh giá:</p>
-                <ul>
-                    <li>Sản phẩm: {productInOrder.Products.ProductName}</li>
-                    <li>Đánh giá: {reviewsModel.Rating} sao</li>
-                    <li>Nhận xét: {reviewsModel.Comment}</li>
-                </ul>
-                <p>Trân trọng,<br>MilkStore</p>
-                ";
+            <p>Xin chào,</p>
+            <p>Cảm ơn bạn đã đánh giá sản phẩm {productInOrder.Products.ProductName}. Đánh giá của bạn giúp chúng tôi cải thiện dịch vụ.</p>
+            <p>Thông tin đánh giá:</p>
+            <ul>
+                <li>Sản phẩm: {productInOrder.Products.ProductName}</li>
+                <li>Đánh giá: {reviewsModel.Rating} sao</li>
+                <li>Nhận xét: {reviewsModel.Comment}</li>
+            </ul>
+            <p>Trân trọng,<br>MilkStore</p>
+        ";
                 await _emailService.SendEmailAsync(userEmail, subject, body);
             }
         }
@@ -94,7 +87,7 @@ namespace MilkStore.Services.Service
             Review review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);
             if (review == null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.BadRequest, $"Không tìm thấy đánh giá nào cho mã {id}!!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.BadRequest, $"No reviews found for {id}!!");
             }
             review.DeletedTime = CoreHelper.SystemTimeNow;
             review.DeletedBy = "Admin";
@@ -125,7 +118,7 @@ namespace MilkStore.Services.Service
                     .FirstOrDefaultAsync(r => r.Id == id && r.DeletedTime == null);
                 if (review == null)
                 {
-                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy đánh giá nào cho mã {id}!!");
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"No reviews found for {id}!!");
                 }
                 return _mapper.Map<List<Review>>(review);
             }
@@ -138,12 +131,12 @@ namespace MilkStore.Services.Service
             Review? review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);            
             if (review == null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy đánh giá nào cho mã {id}!!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"No reviews found for {id}!!");
             }
             string userID = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
             if (string.IsNullOrWhiteSpace(userID))
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Vui lòng đăng nhập bằng tài khoản đã xác thực!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in with an authenticated account!");
             }
             _mapper.Map(reviewsModel, review);            
             review.LastUpdatedTime = DateTime.UtcNow;            
