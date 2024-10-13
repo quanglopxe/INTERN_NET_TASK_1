@@ -58,7 +58,7 @@ namespace MilkStore.Services.Service
             }
 
             PreOrders newPreOrder = _mapper.Map<PreOrders>(preOrdersModel);
-            newPreOrder.CreatedTime = DateTime.UtcNow;
+            newPreOrder.CreatedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<PreOrders>().InsertAsync(newPreOrder);
             await _unitOfWork.SaveAsync();
 
