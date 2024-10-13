@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MilkStore.Repositories.Migrations
 {
     /// <inheritdoc />
-    public partial class InitDB : Migration
+    public partial class initDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -124,6 +124,7 @@ namespace MilkStore.Repositories.Migrations
                     UsedCount = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    VoucherCode = table.Column<string>(type: "nvarchar(6)", maxLength: 6, nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -224,7 +225,6 @@ namespace MilkStore.Repositories.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    VoucherId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     OrderDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     OrderStatuss = table.Column<int>(type: "int", nullable: false),
                     PaymentStatuss = table.Column<int>(type: "int", nullable: false),
@@ -237,6 +237,7 @@ namespace MilkStore.Repositories.Migrations
                     IsInventoryUpdated = table.Column<bool>(type: "bit", nullable: false),
                     IsPointAdded = table.Column<bool>(type: "bit", nullable: false),
                     PointsAdded = table.Column<int>(type: "int", nullable: false),
+                    VoucherCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -458,10 +459,11 @@ namespace MilkStore.Repositories.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    OrderID = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProductID = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    OrderID = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ProductID = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     UnitPrice = table.Column<double>(type: "float", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -482,30 +484,6 @@ namespace MilkStore.Repositories.Migrations
                         name: "FK_OrderDetails_Products_ProductID",
                         column: x => x.ProductID,
                         principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "OrderVouchers",
-                columns: table => new
-                {
-                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    VoucherId = table.Column<string>(type: "nvarchar(450)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_OrderVouchers", x => new { x.OrderId, x.VoucherId });
-                    table.ForeignKey(
-                        name: "FK_OrderVouchers_Orders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_OrderVouchers_Vouchers_VoucherId",
-                        column: x => x.VoucherId,
-                        principalTable: "Vouchers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -613,11 +591,6 @@ namespace MilkStore.Repositories.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrderVouchers_VoucherId",
-                table: "OrderVouchers",
-                column: "VoucherId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PostProduct_PostId",
                 table: "PostProduct",
                 column: "PostId");
@@ -680,9 +653,6 @@ namespace MilkStore.Repositories.Migrations
                 name: "OrderDetailGifts");
 
             migrationBuilder.DropTable(
-                name: "OrderVouchers");
-
-            migrationBuilder.DropTable(
                 name: "PostProduct");
 
             migrationBuilder.DropTable(
@@ -707,13 +677,13 @@ namespace MilkStore.Repositories.Migrations
                 name: "UserTokens");
 
             migrationBuilder.DropTable(
+                name: "Vouchers");
+
+            migrationBuilder.DropTable(
                 name: "Gifts");
 
             migrationBuilder.DropTable(
                 name: "OrderGifts");
-
-            migrationBuilder.DropTable(
-                name: "Vouchers");
 
             migrationBuilder.DropTable(
                 name: "Posts");
