@@ -218,8 +218,9 @@ namespace MilkStore.Services.Service
             orderDetails.Quantity = model.Quantity;
             orderDetails.UnitPrice = product.Price;
 
-            await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(orderDetails);            
-            await _orderService.UpdateToTalAmount(orderDetails.OrderID);
+            await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(orderDetails);
+            // Cập nhật tổng tiền cho đơn hàng
+            await UpdateOrderTotal(orderDetails.OrderID);
 
             await _unitOfWork.SaveAsync();
             return orderDetails;
@@ -234,9 +235,24 @@ namespace MilkStore.Services.Service
                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Không tìm thấy Chi tiết đơn hàng có ID: {id} !");
 
             od.DeletedTime = CoreHelper.SystemTimeNow;
-            await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(od);            
-            await _orderService.UpdateToTalAmount(od.OrderID);
+            await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(od);
+            await UpdateOrderTotal(od.OrderID);
             await _unitOfWork.SaveAsync();
+        }
+        private async Task UpdateOrderTotal(string orderId)
+        {
+            var order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(orderId)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID {orderId} not found.");
+
+            // Tính tổng tiền mới
+            var orderDetails = await _unitOfWork.GetRepository<OrderDetails>().Entities
+                .Where(od => od.OrderID == orderId && od.DeletedTime == null)
+                .ToListAsync();
+
+            order.TotalAmount = orderDetails.Sum(od => od.Quantity * od.UnitPrice);
+
+            // Cập nhật đơn hàng với tổng tiền mới
+            await _unitOfWork.GetRepository<Order>().UpdateAsync(order);
         }
     }
 }

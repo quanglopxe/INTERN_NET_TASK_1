@@ -46,7 +46,7 @@ namespace MilkStore.Contract.Repositories.Entity
         public bool IsInventoryUpdated { get; set; } = false;
         public bool IsPointAdded { get; set; } = false;
         public int PointsAdded { get; set; } = 0; // đánh dấu đã đơn hàng đã cộng điểm cho người dùng
-        public ICollection<string>? VoucherCode { get; set; }
+        public IList<string>? VoucherCode { get; set; }
         public virtual ApplicationUser User { get; set; } // Một đơn hàng thuộc về một người dùng
         public virtual ICollection<OrderDetails> OrderDetailss { get; set; }
         

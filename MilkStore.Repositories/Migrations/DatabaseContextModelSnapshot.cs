@@ -383,7 +383,7 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("VoucherId")
+                    b.Property<string>("VoucherCode")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset?>("deliveryDate")
@@ -468,14 +468,15 @@ namespace MilkStore.Repositories.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("OrderID")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ProductID")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<double>("UnitPrice")
@@ -528,21 +529,6 @@ namespace MilkStore.Repositories.Migrations
                     b.HasIndex("UserID");
 
                     b.ToTable("OrderGifts");
-                });
-
-            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.OrderVoucher", b =>
-                {
-                    b.Property<string>("OrderId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("VoucherId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("OrderId", "VoucherId");
-
-                    b.HasIndex("VoucherId");
-
-                    b.ToTable("OrderVouchers");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Post", b =>
@@ -823,6 +809,11 @@ namespace MilkStore.Repositories.Migrations
                     b.Property<int>("UsingLimit")
                         .HasColumnType("int");
 
+                    b.Property<string>("VoucherCode")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Vouchers");
@@ -1020,14 +1011,12 @@ namespace MilkStore.Repositories.Migrations
                     b.HasOne("MilkStore.Contract.Repositories.Entity.Order", "Order")
                         .WithMany("OrderDetailss")
                         .HasForeignKey("OrderID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("MilkStore.Contract.Repositories.Entity.Products", "Products")
                         .WithMany("OrderDetail")
                         .HasForeignKey("ProductID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Order");
 
@@ -1043,25 +1032,6 @@ namespace MilkStore.Repositories.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.OrderVoucher", b =>
-                {
-                    b.HasOne("MilkStore.Contract.Repositories.Entity.Order", "Order")
-                        .WithMany("OrderVouchers")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MilkStore.Contract.Repositories.Entity.Voucher", "Voucher")
-                        .WithMany("OrderVouchers")
-                        .HasForeignKey("VoucherId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-
-                    b.Navigation("Voucher");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.PostProduct", b =>
@@ -1160,8 +1130,6 @@ namespace MilkStore.Repositories.Migrations
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Order", b =>
                 {
                     b.Navigation("OrderDetailss");
-
-                    b.Navigation("OrderVouchers");
                 });
 
             modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.OrderGift", b =>
@@ -1181,11 +1149,6 @@ namespace MilkStore.Repositories.Migrations
                     b.Navigation("OrderDetail");
 
                     b.Navigation("PostProducts");
-                });
-
-            modelBuilder.Entity("MilkStore.Contract.Repositories.Entity.Voucher", b =>
-                {
-                    b.Navigation("OrderVouchers");
                 });
 
             modelBuilder.Entity("MilkStore.Repositories.Entity.ApplicationUser", b =>

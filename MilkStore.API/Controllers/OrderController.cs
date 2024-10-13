@@ -29,10 +29,10 @@ namespace MilkStore.API.Controllers
         [HttpGet()]
 
         //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAll(string? id, int index = 1, int pageSize = 10)
+        public async Task<IActionResult> GetAll(string? id, OrderStatus? orderStatus, PaymentStatus? paymentStatus, int index = 1, int pageSize = 10)
         {            
-            BasePaginatedList<OrderResponseDTO> ord = await _orderService.GetAsync(id,index,pageSize);
-            return  Ok(BaseResponse<BasePaginatedList<OrderResponseDTO>>.OkResponse(ord));
+            BasePaginatedList<OrderResponseDTO> ord = await _orderService.GetAsync(id, orderStatus, paymentStatus, index, pageSize);
+            return Ok(BaseResponse<BasePaginatedList<OrderResponseDTO>>.OkResponse(ord));
         }
       
         //[HttpPost]
