@@ -104,7 +104,7 @@ namespace MilkStore.Services.Service
         }
 
 
-        public async Task<BasePaginatedList<OrderDetails>> ReadPersonalOrderDetails(string? orderId, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize)
+        public async Task<BasePaginatedList<OrderDetailResponseDTO>> ReadPersonalOrderDetails(string? orderId, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize)
         {
             string userID = GetCurrentUserId();
 
@@ -127,9 +127,9 @@ namespace MilkStore.Services.Service
             // Thực hiện phân trang với query hiện tại
             BasePaginatedList<OrderDetails>? paginatedOrderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetPagging(query, pageIndex, pageSize);
 
-            // Trả về danh sách kết quả đã phân trang
-            List<OrderDetails>? odDtosResult = _mapper.Map<List<OrderDetails>>(paginatedOrderDetails.Items);
-            return new BasePaginatedList<OrderDetails>(
+            // Ánh xạ sang OrderDetailResponseDTO
+            List<OrderDetailResponseDTO> odDtosResult = _mapper.Map<List<OrderDetailResponseDTO>>(paginatedOrderDetails.Items);
+            return new BasePaginatedList<OrderDetailResponseDTO>(
                 odDtosResult,
                 paginatedOrderDetails.TotalItems,
                 paginatedOrderDetails.CurrentPage,
@@ -137,9 +137,8 @@ namespace MilkStore.Services.Service
             );
         }
 
-
-        public async Task<BasePaginatedList<OrderDetails>> ReadAllOrderDetails(string? orderId, string? userID, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize)
-        {   
+        public async Task<BasePaginatedList<OrderDetailResponseDTO>> ReadAllOrderDetails(string? orderId, string? userID, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize)
+        {
             // Lọc dữ liệu cơ bản: không có DeletedTime
             IQueryable<OrderDetails>? query = _unitOfWork.GetRepository<OrderDetails>().Entities.AsNoTracking()
                 .Where(od => od.DeletedTime == null);
@@ -164,34 +163,10 @@ namespace MilkStore.Services.Service
 
             // Thực hiện phân trang với query hiện tại
             BasePaginatedList<OrderDetails>? paginatedOrderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetPagging(query, pageIndex, pageSize);
-            //if (!paginatedOrderDetails.Items.Any())
-            //{
-            //    if (!string.IsNullOrWhiteSpace(orderId))
-            //    {
-            //        OrderDetails? odById = await _unitOfWork.GetRepository<OrderDetails>().Entities
-            //            .FirstOrDefaultAsync(od => od.Id == orderId && od.DeletedTime == null);
-            //        if (odById != null)
-            //        {
-            //            OrderDetails? odDto = _mapper.Map<OrderDetails>(odById);
-            //            return new BasePaginatedList<OrderDetails>(new List<OrderDetails> { odDto }, 1, 1, 1);
-            //        }
-            //    }
 
-            //    if (!string.IsNullOrWhiteSpace(userID))
-            //    {
-            //        List<OrderDetails>? odsByUserID = await _unitOfWork.GetRepository<OrderDetails>().Entities
-            //            .Where(od => od.CreatedBy.Contains(userID) && od.DeletedTime == null)
-            //            .ToListAsync();
-            //        if (odsByUserID.Any())
-            //        {
-            //            List<OrderDetails>? paginatedOrderDetailsDtos = _mapper.Map<List<OrderDetails>>(odsByUserID);
-            //            return new BasePaginatedList<OrderDetails>(paginatedOrderDetailsDtos, 1, 1, odsByUserID.Count());
-            //        }
-            //    }
-            //}
-            // Trả về danh sách kết quả đã phân trang
-            List<OrderDetails>? odDtosResult = _mapper.Map<List<OrderDetails>>(paginatedOrderDetails.Items);
-            return new BasePaginatedList<OrderDetails>(
+            // Ánh xạ sang OrderDetailResponseDTO
+            List<OrderDetailResponseDTO> odDtosResult = _mapper.Map<List<OrderDetailResponseDTO>>(paginatedOrderDetails.Items);
+            return new BasePaginatedList<OrderDetailResponseDTO>(
                 odDtosResult,
                 paginatedOrderDetails.TotalItems,
                 paginatedOrderDetails.CurrentPage,
