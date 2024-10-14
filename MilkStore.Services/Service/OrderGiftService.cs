@@ -132,7 +132,7 @@ namespace MilkStore.Services.Service
             string temp = "Thời gian giao dự kiến từ " + futureDate.ToString("dd/MM/yyyy") + " đến " + futureDate2.ToString("dd/MM/yyyy");
             string productname = ""; // lấy thông tin theo id
             
-            int dem = 0;
+            //int dem = 0;
             OrderGift newOG = _mapper.Map<OrderGift>(orderGiftModel);
             newOG.UserID = Guid.Parse(userID);
             newOG.Status = ordergiftstatus;
@@ -145,7 +145,7 @@ namespace MilkStore.Services.Service
                 if (item.OrderGiftId == id)
                 {
                     Gift gift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(item.GiftId);
-                    dem += gift.point * item.quantity;
+                    //dem += gift.point * item.quantity;
                     productname += " " + gift.Products.ProductName + " Số lượng: " + item.quantity;
                 }
             }
@@ -153,9 +153,9 @@ namespace MilkStore.Services.Service
             if (newOG.Status == OrderGiftStatus.Confirmed)
             {
                 _emailService.SendEmailAsync(user.Email, "ĐỔI ĐIỂM LẤY QUÀ - MILKSTORE", temp + temp1);
-                user.Points = user.Points - dem;
-                await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
-                await _unitOfWork.SaveAsync();
+                //user.Points = user.Points - dem;
+                //await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
+                //await _unitOfWork.SaveAsync();
             }
             OrderGift existingOGift = await _unitOfWork.GetRepository<OrderGift>().GetByIdAsync(id)
                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! OrderGift null");
