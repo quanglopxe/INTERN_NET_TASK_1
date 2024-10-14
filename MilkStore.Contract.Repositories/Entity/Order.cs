@@ -19,7 +19,7 @@ namespace MilkStore.Contract.Repositories.Entity
     }
     public enum PaymentMethod
     {
-        Cash,
+        Cash, // ví
         Online,
         COD
     }

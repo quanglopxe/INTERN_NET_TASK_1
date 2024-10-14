@@ -109,6 +109,7 @@ namespace MilkStore.Services.Service
 
             string shipMethod = shippingAddress == ShippingType.InStore ? "Milk Store" : user.ShippingAddress;
 
+            // Khởi tạo đơn hàng mới
             Order order = new Order
             {
                 UserId = Guid.Parse(userID),
@@ -124,19 +125,32 @@ namespace MilkStore.Services.Service
                 OrderDetailss = orderItems
             };
 
-            // Kiểm tra giới hạn số lượng voucher (tối đa 3)
+            // Kiểm tra và cập nhật số lượng tồn kho cho từng sản phẩm trong orderItems
+            foreach (var orderDetail in orderItems)
+            {
+                var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(orderDetail.ProductID)
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderDetail.ProductID} not found");
+
+                if (product.QuantityInStock < orderDetail.Quantity)
+                {
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Not enough stock for product {product.ProductName}");
+                }
+                
+                product.QuantityInStock -= orderDetail.Quantity;                
+                await _unitOfWork.GetRepository<Products>().UpdateAsync(product);
+            }
+            order.IsInventoryUpdated = true;
+            // Kiểm tra và xử lý voucher
             if (voucherCode is not null && voucherCode.Count > 3)
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "You can apply a maximum of 3 vouchers to an order.");
             }
 
-            // Tính tổng tiền dựa trên danh sách sản phẩm từ orderItems
             order.TotalAmount = orderItems.Sum(o => o.TotalAmount);
             double totalDiscount = 0;
             double discountedTotal = order.TotalAmount;
             List<string> invalidVouchers = new List<string>();
 
-            // Xử lý danh sách voucher nếu có
             if (voucherCode is not null && voucherCode.Any())
             {
                 foreach (var voucher in voucherCode)
@@ -150,41 +164,35 @@ namespace MilkStore.Services.Service
                         throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher with ID {voucher} has expired.");
                     }
 
-                    // Kiểm tra điều kiện áp dụng voucher
                     if (discountedTotal < Convert.ToDouble(vch.LimitSalePrice))
                     {
                         throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The total amount does not meet the requirements to apply voucher {voucher}.");
                     }
 
-                    // Tính toán giảm giá nếu voucher hợp lệ
                     double discountAmount = (discountedTotal * vch.SalePercent) / 100.0;
                     discountedTotal -= discountAmount;
                     totalDiscount += discountAmount;
 
                     order.VoucherCode.Add(vch.VoucherCode);
-
-                    // Cập nhật số lần sử dụng voucher
                     vch.UsedCount++;
                     await _unitOfWork.GetRepository<Voucher>().UpdateAsync(vch);
                 }
             }
 
-            // Nếu có voucher không hợp lệ, ném exception với danh sách thông báo
             if (invalidVouchers.Any())
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, string.Join(", ", invalidVouchers));
             }
 
-            // Cập nhật tổng số tiền sau khi giảm giá
             order.DiscountedAmount = discountedTotal;
 
             await _unitOfWork.GetRepository<Order>().InsertAsync(order);
             await _unitOfWork.SaveAsync();
 
-            // Gán OrderID cho mỗi OrderDetail và lưu chúng vào cơ sở dữ liệu
             orderItems.ForEach(item => item.OrderID = order.Id);
             await _unitOfWork.GetRepository<OrderDetails>().BulkUpdateAsync(orderItems);
         }
+
 
         //public async Task UpdateOrder(string id, OrderModelView ord, OrderStatus orderStatus, PaymentStatus paymentStatus, PaymentMethod paymentMethod)
         //{
@@ -258,33 +266,34 @@ namespace MilkStore.Services.Service
             }
 
             // Cập nhật tồn kho
-            if (orderStatus == OrderStatus.Confirmed && !order.IsInventoryUpdated || orderStatus == OrderStatus.Delivered && !order.IsInventoryUpdated)
+            //if (orderStatus == OrderStatus.Confirmed && !order.IsInventoryUpdated || orderStatus == OrderStatus.Delivered && !order.IsInventoryUpdated)
+            //{
+            //    foreach (var orderDetail in order.OrderDetailss.Where(od => od.DeletedTime == null))
+            //    {
+            //        var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(orderDetail.ProductID)
+            //            ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderDetail.ProductID} not found");
+
+            //        if (product.QuantityInStock >= orderDetail.Quantity)
+            //        {
+            //            product.QuantityInStock -= orderDetail.Quantity; // Giảm số lượng
+            //            await _unitOfWork.GetRepository<Products>().UpdateAsync(product);
+            //        }
+            //        else
+            //        {
+            //            throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Not enough stock for product {product.ProductName}");
+            //        }
+            //    }
+            //    order.IsInventoryUpdated = true;
+            //}
+            //else if (orderStatus == OrderStatus.Refunded && order.IsInventoryUpdated)
+            if (orderStatus == OrderStatus.Refunded && order.IsInventoryUpdated)
             {
                 foreach (var orderDetail in order.OrderDetailss.Where(od => od.DeletedTime == null))
                 {
                     var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(orderDetail.ProductID)
                         ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderDetail.ProductID} not found");
 
-                    if (product.QuantityInStock >= orderDetail.Quantity)
-                    {
-                        product.QuantityInStock -= orderDetail.Quantity; // Giảm số lượng
-                        await _unitOfWork.GetRepository<Products>().UpdateAsync(product);
-                    }
-                    else
-                    {
-                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Not enough stock for product {product.ProductName}");
-                    }
-                }
-                order.IsInventoryUpdated = true;
-            }
-            else if (orderStatus == OrderStatus.Refunded && order.IsInventoryUpdated)
-            {
-                foreach (var orderDetail in order.OrderDetailss.Where(od => od.DeletedTime == null))
-                {
-                    var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(orderDetail.ProductID)
-                        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderDetail.ProductID} not found");
-
-                    product.QuantityInStock += orderDetail.Quantity; // Tăng số lượng
+                    product.QuantityInStock += orderDetail.Quantity; 
                     await _unitOfWork.GetRepository<Products>().UpdateAsync(product);
                 }
             }
@@ -430,13 +439,13 @@ namespace MilkStore.Services.Service
 
             if (order.PaymentMethod == PaymentMethod.Online && order.PaymentStatuss == PaymentStatus.Paid && order.OrderStatuss == OrderStatus.Confirmed)
             {
-                await _emailService.SendEmailAsync(user.Email, "Đơn hàng " + order.Id + " đã thanh toán thành công.", "Thời gian giao hàng dự kiến " + order.estimatedDeliveryDate + ". Cảm ơn quý khách đã mua hàng tại MilkStore");                        
+                await _emailService.SendEmailAsync(user.Email, "Đơn hàng " + order.Id + " đã thanh toán thành công. Đơn hàng chưa bao gồm phí ship", "Thời gian giao hàng dự kiến " + order.estimatedDeliveryDate + ". Quý khách vui lòng thanh toán phí ship khi nhận hàng. Cảm ơn quý khách đã mua hàng tại MilkStore");                        
             }
             if (order.PaymentMethod == PaymentMethod.COD && order.PaymentStatuss == PaymentStatus.Unpaid)
             {
                 if(order.OrderStatuss == OrderStatus.Confirmed)
                 {
-                    await _emailService.SendEmailAsync(user.Email, "Đơn hàng " + order.Id + " đã được xác nhận.", "Thời gian giao hàng dự kiến " + order.estimatedDeliveryDate + ". Quý khách vui lòng thanh toán số tiền: " + order.TotalAmount + "VNĐ khi nhận hàng. Cảm ơn quý khách đã mua hàng tại MilkStore!");
+                    await _emailService.SendEmailAsync(user.Email, "Đơn hàng " + order.Id + " đã được xác nhận. Đơn hàng chưa bao gồm phí ship", "Thời gian giao hàng dự kiến " + order.estimatedDeliveryDate + ". Quý khách vui lòng thanh toán số tiền: " + order.TotalAmount + "VNĐ và phí ship khi nhận hàng. Cảm ơn quý khách đã mua hàng tại MilkStore!");
                 }
             }
                           
