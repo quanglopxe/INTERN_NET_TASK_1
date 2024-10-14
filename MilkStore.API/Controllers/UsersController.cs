@@ -19,7 +19,7 @@ namespace MilkStore.API.Controllers
         public async Task<IActionResult> AddUserWithRoleAsync(UserModelView userModel)
         {
             await _userService.AddUserWithRoleAsync(userModel);
-            return Ok(BaseResponse<object>.OkResponse("Create user successfully"));
+            return Ok(BaseResponse<object>.OkResponse("Tạo người dùng thành công"));
         }
 
         [HttpPut]
@@ -27,7 +27,7 @@ namespace MilkStore.API.Controllers
         public async Task<IActionResult> UpdateUser([FromBody] UserUpdateModelView userModel)
         {
             await _userService.UpdateUser(userModel);
-            return Ok(BaseResponse<object>.OkResponse("Update user successfully"));
+            return Ok(BaseResponse<object>.OkResponse("Cập nhật thành công"));
         }
 
         [HttpPatch("Admin_Update")]
@@ -35,7 +35,7 @@ namespace MilkStore.API.Controllers
         public async Task<IActionResult> UpdateUserByAdmin([FromQuery] string userId, [FromBody] UserUpdateByAdminModel userModel)
         {
             await _userService.UpdateUserByAdmin(userId, userModel);
-            return Ok(BaseResponse<object>.OkResponse("Update user successfully"));
+            return Ok(BaseResponse<object>.OkResponse("Cập nhật người dùng thành công"));
         }
 
         [HttpDelete]
@@ -44,7 +44,7 @@ namespace MilkStore.API.Controllers
         {
 
             await _userService.DeleteUser(userId);
-            return Ok(BaseResponse<object>.OkResponse("Delete user successfully"));
+            return Ok(BaseResponse<object>.OkResponse("Xóa người dùng thành công"));
         }
 
 
