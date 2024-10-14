@@ -142,7 +142,7 @@ namespace MilkStore.Services.Service
 
         }
 
-        public async Task AccumulatePoints(string userId, double totalAmount)
+        public async Task AccumulatePoints(string userId, double totalAmount, OrderStatus orderStatus)
         {
             // Kiểm tra nếu totalAmount <= 0 thì không cần cộng điểm
             if (totalAmount <= 0)
@@ -154,10 +154,15 @@ namespace MilkStore.Services.Service
              ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, "NotFound", "Không tìm thấy người dùng");
 
             // Tính điểm thưởng: 10 điểm cho mỗi 10.000 VND
-            int earnedPoints = (int)(totalAmount / 10000) * 10;
-
-            user.Points += earnedPoints;
-
+            int Points = (int)(totalAmount / 10000) * 10;
+            if(user.Points > 0 && orderStatus == OrderStatus.Refunded)
+            {
+                user.Points -= Points;
+            }
+            else
+            {
+                user.Points += Points;
+            }
             await _unitOfWork.GetRepository<ApplicationUser>().UpdateAsync(user);
             await _unitOfWork.SaveAsync();
         }

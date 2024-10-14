@@ -17,3 +17,4 @@ namespace MilkStore.Contract.Repositories.Entity
         public virtual Voucher Voucher { get; set; }
     }
 }
+

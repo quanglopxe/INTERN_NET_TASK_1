@@ -17,10 +17,8 @@ namespace MilkStore.Contract.Repositories.Entity
 
 
         [StringLength(6, ErrorMessage = "Mã voucher phải có đúng 6 ký tự.")]
-        public string Code { get; set; }
-
-        //public virtual ICollection<Order> Orders { get; set; }
-        //public virtual ICollection<OrderVoucher> OrderVouchers { get; set; }
+        public string VoucherCode { get; set; }
+        
 
     }
 }
