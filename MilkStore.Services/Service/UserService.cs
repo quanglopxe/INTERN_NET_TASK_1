@@ -155,7 +155,7 @@ namespace MilkStore.Services.Service
 
             // Tính điểm thưởng: 10 điểm cho mỗi 10.000 VND
             int Points = (int)(totalAmount / 10000) * 10;
-            if(user.Points > 0 && orderStatus == OrderStatus.Refunded)
+            if (user.Points > 0 && orderStatus == OrderStatus.Refunded)
             {
                 user.Points -= Points;
             }
