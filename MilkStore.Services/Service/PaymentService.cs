@@ -26,7 +26,7 @@ public class PaymentService : IPaymentService
         VnPayLibrary vnpay = new VnPayLibrary(_httpContext);
         vnpay.AddRequestData("vnp_Version", "2.1.0");
         vnpay.AddRequestData("vnp_Command", "pay");
-        vnpay.AddRequestData("vnp_TmnCode", "262XSFHX");
+        vnpay.AddRequestData("vnp_TmnCode", "YHFJGJCV");
         vnpay.AddRequestData("vnp_Amount", (request.TotalAmount * 100).ToString());
         vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
         vnpay.AddRequestData("vnp_CurrCode", "VND");
@@ -51,12 +51,12 @@ public class PaymentService : IPaymentService
     public async Task HandleIPN(VNPayIPNRequest request)
     {
         VnPayLibrary vnpay = new VnPayLibrary(_httpContext);
-        
-        //bool isValidSignature = vnpay.ValidateSignature(request.vnp_SecureHash, Environment.GetEnvironmentVariable("VNPAY_KEY") ?? throw new Exception("VNPAY_KEY is not set"));
-        //if (!isValidSignature)
-        //{
-        //    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Signature is not valid");
-        //}
+
+        bool isValidSignature = vnpay.ValidateSignature(request.vnp_SecureHash, Environment.GetEnvironmentVariable("VNPAY_KEY") ?? throw new Exception("VNPAY_KEY is not set"));
+        if (!isValidSignature)
+        {
+            throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Signature is not valid");
+        }
         if (request.vnp_ResponseCode == "00")
         {
             string invoiceCode = request.vnp_OrderInfo.Split("+")[^1];

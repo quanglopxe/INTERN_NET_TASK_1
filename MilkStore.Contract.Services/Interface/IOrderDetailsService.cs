@@ -13,8 +13,8 @@ namespace MilkStore.Contract.Services.Interface
     public interface IOrderDetailsService
     {
         Task<OrderDetails> CreateOrderDetails(OrderDetailsModelView model);
-        Task<BasePaginatedList<OrderDetails>> ReadPersonalOrderDetails(string? orderId, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize);
-        Task<BasePaginatedList<OrderDetails>> ReadAllOrderDetails(string? orderId, string? userID, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize);
+        Task<BasePaginatedList<OrderDetailResponseDTO>> ReadPersonalOrderDetails(string? orderId, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize);
+        Task<BasePaginatedList<OrderDetailResponseDTO>> ReadAllOrderDetails(string? orderId, string? userID, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize);
         Task<OrderDetails> UpdateOrderDetails(string id, OrderDetailsModelView model);
         Task DeleteOrderDetails(string id);
     }
