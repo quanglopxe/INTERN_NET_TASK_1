@@ -15,13 +15,22 @@ namespace MilkStore.Contract.Services.Interface
 
         Task UpdateUser(UserUpdateModelView userUpdateModelView);
         Task DeleteUser(string userId);
-        Task<IEnumerable<UserResponeseDTO>> GetUser(string? id, int index = 1, int pageSize = 10);
         Task AddUserWithRoleAsync(UserModelView userModel);
-        Task AccumulatePoints(string userId, double totalAmount);
+        Task AccumulatePoints(string userId, double totalAmount, OrderStatus orderStatus);
         Task<UserProfileResponseModelView> GetUserProfile();
-        Task<BasePaginatedList<UserResponeseDTO>> GetUserByRole(string roleId, int index, int pageSize);
+
         Task UpdateUserByAdmin(string userID, UserUpdateByAdminModel model);
-        Task<BasePaginatedList<UserResponeseDTO>> SearchUser(string keySearch, SearchUserCode search, int index, int pageSize);
+        Task<BasePaginatedList<UserResponseDTO>> GetAsync(
+            int? page,
+            int? pageSize,
+            string? name,
+            string? phone,
+            string? email,
+            SortBy sortBy,
+            SortOrder sortOrder,
+            string? role,
+            string? id
+            );
 
     }
 }

@@ -26,18 +26,18 @@ public class PaymentService : IPaymentService
         VnPayLibrary vnpay = new VnPayLibrary(_httpContext);
         vnpay.AddRequestData("vnp_Version", "2.1.0");
         vnpay.AddRequestData("vnp_Command", "pay");
-        vnpay.AddRequestData("vnp_TmnCode", "262XSFHX");
+        vnpay.AddRequestData("vnp_TmnCode", "YHFJGJCV");
         vnpay.AddRequestData("vnp_Amount", (request.TotalAmount * 100).ToString());
         vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
         vnpay.AddRequestData("vnp_CurrCode", "VND");
 
-        string clientIp = vnpay.GetClientIpAddress();        
+        string clientIp = vnpay.GetClientIpAddress();
         vnpay.AddRequestData("vnp_IpAddr", clientIp);
 
         vnpay.AddRequestData("vnp_Locale", "vn");
         vnpay.AddRequestData("vnp_OrderInfo", request.InvoiceCode);
-        vnpay.AddRequestData("vnp_OrderType", "other");
-        string returnUrl = $"{Environment.GetEnvironmentVariable("SERVER_DOMAIN")}/api/payment/ipn";
+        vnpay.AddRequestData("vnp_OrderType", request.OrderType);
+        string returnUrl = $"{Environment.GetEnvironmentVariable("CLIENT_DOMAIN")}";
         vnpay.AddRequestData("vnp_ReturnUrl", returnUrl ?? throw new Exception("SERVER_DOMAIN is not set"));
         vnpay.AddRequestData("vnp_TxnRef", DateTime.Now.ToString("yyyyMMddHHmmssfff"));
         vnpay.AddRequestData("vnp_ExpireDate", DateTime.Now.AddMinutes(30).ToString("yyyyMMddHHmmss"));
@@ -50,39 +50,48 @@ public class PaymentService : IPaymentService
     }
     public async Task HandleIPN(VNPayIPNRequest request)
     {
-        VnPayLibrary vnpay = new VnPayLibrary(_httpContext);
-        
-        //bool isValidSignature = vnpay.ValidateSignature(request.vnp_SecureHash, Environment.GetEnvironmentVariable("VNPAY_KEY") ?? throw new Exception("VNPAY_KEY is not set"));
-        //if (!isValidSignature)
-        //{
-        //    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Signature is not valid");
-        //}
-        if (request.vnp_ResponseCode == "00")
-        {
-            //string invoiceCode = request.vnp_OrderInfo[(request.vnp_OrderInfo.IndexOf(" ") + 1)..];
-            string invoiceCode = request.vnp_OrderInfo.Split("+")[^1];
-            Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(invoiceCode)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
-            
-            OrderModelView ord = new OrderModelView
-            {                
-                ShippingAddress = order.ShippingAddress,
-            };
-            //gọi đến service để cập nhật order
-            await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Delivered, PaymentStatus.Paid, PaymentMethod.Online);            
-            await _unitOfWork.SaveAsync();
-            List<OrderDetails>? orderDetails = _unitOfWork.GetRepository<OrderDetails>().Entities
-                .Where(od => od.OrderID == order.Id && od.DeletedTime == null).ToList();  
-            //cập nhật trạng thái của các order detail
-            orderDetails.ForEach(od => od.Status = OrderDetailStatus.Ordered);
-            await _unitOfWork.GetRepository<OrderDetails>().UpdateRangeAsync(orderDetails);
-            await _unitOfWork.SaveAsync();
+        Console.WriteLine("This is request handle");
+        // VnPayLibrary vnpay = new VnPayLibrary(_httpContext);
 
-        }
-        else
-        {
-            throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "ErrorCode: " + request.vnp_ResponseCode);
-        }
+        // bool isValidSignature = vnpay.ValidateSignature(request.vnp_SecureHash, Environment.GetEnvironmentVariable("VNPAY_KEY") ?? throw new Exception("VNPAY_KEY is not set"));
+        // if (!isValidSignature)
+        // {
+        //     throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Signature is not valid");
+        // }
+        // if (request.vnp_ResponseCode == "00")
+        // {
+        //     string invoiceCode = request.vnp_OrderInfo.Split("+")[^1];
+        //     Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(invoiceCode)
+        //         ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
+
+        //     OrderModelView ord = new OrderModelView
+        //     {
+        //         ShippingAddress = order.ShippingAddress,
+        //     };
+        //     if (request.vnp_OrderType == "InStore")
+        //     {                
+        //         //gọi đến service để cập nhật order
+        //         await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Delivered, PaymentStatus.Paid, PaymentMethod.Online);
+        //         await _unitOfWork.SaveAsync();                
+        //     }
+        //     else
+        //     {
+        //         //gọi đến service để cập nhật order
+        //         await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Pending, PaymentStatus.Paid, PaymentMethod.Online);
+        //         await _unitOfWork.SaveAsync();
+        //     }
+        //     List<OrderDetails>? orderDetails = _unitOfWork.GetRepository<OrderDetails>().Entities
+        //             .Where(od => od.OrderID == order.Id && od.DeletedTime == null).ToList();
+        //     //cập nhật trạng thái của các order detail
+        //     orderDetails.ForEach(od => od.Status = OrderDetailStatus.Ordered);
+        //     await _unitOfWork.GetRepository<OrderDetails>().BulkUpdateAsync(orderDetails);
+        //     await _unitOfWork.SaveAsync();
+        //     Console.WriteLine("this is response from vnpay: " + request.vnp_ResponseCode);
+        // }
+        // else
+        // {
+        //     throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "ErrorCode: " + request.vnp_ResponseCode);
+        // }
 
     }
 

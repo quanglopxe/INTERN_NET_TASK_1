@@ -15,7 +15,6 @@ using MilkStore.Contract.Repositories.Entity;
 using Microsoft.Extensions.Caching.Memory;
 using Google.Apis.Auth;
 using MilkStore.Contract.Services.Interface;
-using MilkStore.Repositories.UOW;
 namespace MilkStore.Services.Service;
 public class AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
       IMapper mapper, IHttpContextAccessor httpContextAccessor,

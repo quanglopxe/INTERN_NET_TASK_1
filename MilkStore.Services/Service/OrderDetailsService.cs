@@ -33,19 +33,25 @@ namespace MilkStore.Services.Service
             _httpContextAccessor = httpContextAccessor;
             _preOrdersService = preOrdersService;
         }
-        //private OrderDetailResponseDTO MapToOrderDetailResponseDTO(OrderDetails details)
-        //{
-        //    return _mapper.Map<OrderDetailResponseDTO>(details);
-        //}
-
-        // Create OrderDetails check PreOrder
-        public async Task<OrderDetails> CreateOrderDetails(OrderDetailsModelView model)
+        private string GetCurrentUserId()
         {
             string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrWhiteSpace(userID))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
             }
+            return userID;
+        }
+        private async Task<Products> GetProductByIdAsync(string productId)
+        {
+            return await _unitOfWork.GetRepository<Products>().Entities
+                .FirstOrDefaultAsync(p => p.Id == productId)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Product is not found!");
+        }
+
+        public async Task<OrderDetails> CreateOrderDetails(OrderDetailsModelView model)
+        {
+            string userID = GetCurrentUserId();
             // Kiểm tra xem số lượng có hợp lệ không
             if (model.Quantity <= 0 || model.Quantity % 1 != 0)
             {
@@ -53,9 +59,7 @@ namespace MilkStore.Services.Service
             }
 
             // Truy cập trực tiếp để tìm sản phẩm
-            Products product = await _unitOfWork.GetRepository<Products>().Entities
-                .FirstOrDefaultAsync(p => p.Id == model.ProductID)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Product is not found!");
+            Products product = await GetProductByIdAsync(model.ProductID);
             //PreOrder
             if (product.QuantityInStock < model.Quantity)
             {
@@ -100,16 +104,12 @@ namespace MilkStore.Services.Service
         }
 
 
-        public async Task<BasePaginatedList<OrderDetails>> ReadPersonalOrderDetails(string? orderId, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize)
+        public async Task<BasePaginatedList<OrderDetailResponseDTO>> ReadPersonalOrderDetails(string? orderId, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize)
         {
-            string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrWhiteSpace(userID))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
-            }
+            string userID = GetCurrentUserId();
 
             // Lọc dữ liệu cơ bản: không có DeletedTime và CreatedBy
-            IQueryable<OrderDetails>? query = _unitOfWork.GetRepository<OrderDetails>().Entities
+            IQueryable<OrderDetails>? query = _unitOfWork.GetRepository<OrderDetails>().Entities.AsNoTracking()
                 .Where(od => od.DeletedTime == null && od.CreatedBy == userID);
 
             // Lọc theo OrderId nếu có
@@ -127,9 +127,9 @@ namespace MilkStore.Services.Service
             // Thực hiện phân trang với query hiện tại
             BasePaginatedList<OrderDetails>? paginatedOrderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetPagging(query, pageIndex, pageSize);
 
-            // Trả về danh sách kết quả đã phân trang
-            List<OrderDetails>? odDtosResult = _mapper.Map<List<OrderDetails>>(paginatedOrderDetails.Items);
-            return new BasePaginatedList<OrderDetails>(
+            // Ánh xạ sang OrderDetailResponseDTO
+            List<OrderDetailResponseDTO> odDtosResult = _mapper.Map<List<OrderDetailResponseDTO>>(paginatedOrderDetails.Items);
+            return new BasePaginatedList<OrderDetailResponseDTO>(
                 odDtosResult,
                 paginatedOrderDetails.TotalItems,
                 paginatedOrderDetails.CurrentPage,
@@ -137,11 +137,10 @@ namespace MilkStore.Services.Service
             );
         }
 
-
-        public async Task<BasePaginatedList<OrderDetails>> ReadAllOrderDetails(string? orderId, string? userID, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize)
-        {   
+        public async Task<BasePaginatedList<OrderDetailResponseDTO>> ReadAllOrderDetails(string? orderId, string? userID, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize)
+        {
             // Lọc dữ liệu cơ bản: không có DeletedTime
-            IQueryable<OrderDetails>? query = _unitOfWork.GetRepository<OrderDetails>().Entities
+            IQueryable<OrderDetails>? query = _unitOfWork.GetRepository<OrderDetails>().Entities.AsNoTracking()
                 .Where(od => od.DeletedTime == null);
 
             // Lọc theo OrderId nếu có
@@ -164,34 +163,10 @@ namespace MilkStore.Services.Service
 
             // Thực hiện phân trang với query hiện tại
             BasePaginatedList<OrderDetails>? paginatedOrderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetPagging(query, pageIndex, pageSize);
-            //if (!paginatedOrderDetails.Items.Any())
-            //{
-            //    if (!string.IsNullOrWhiteSpace(orderId))
-            //    {
-            //        OrderDetails? odById = await _unitOfWork.GetRepository<OrderDetails>().Entities
-            //            .FirstOrDefaultAsync(od => od.Id == orderId && od.DeletedTime == null);
-            //        if (odById != null)
-            //        {
-            //            OrderDetails? odDto = _mapper.Map<OrderDetails>(odById);
-            //            return new BasePaginatedList<OrderDetails>(new List<OrderDetails> { odDto }, 1, 1, 1);
-            //        }
-            //    }
 
-            //    if (!string.IsNullOrWhiteSpace(userID))
-            //    {
-            //        List<OrderDetails>? odsByUserID = await _unitOfWork.GetRepository<OrderDetails>().Entities
-            //            .Where(od => od.CreatedBy.Contains(userID) && od.DeletedTime == null)
-            //            .ToListAsync();
-            //        if (odsByUserID.Any())
-            //        {
-            //            List<OrderDetails>? paginatedOrderDetailsDtos = _mapper.Map<List<OrderDetails>>(odsByUserID);
-            //            return new BasePaginatedList<OrderDetails>(paginatedOrderDetailsDtos, 1, 1, odsByUserID.Count());
-            //        }
-            //    }
-            //}
-            // Trả về danh sách kết quả đã phân trang
-            List<OrderDetails>? odDtosResult = _mapper.Map<List<OrderDetails>>(paginatedOrderDetails.Items);
-            return new BasePaginatedList<OrderDetails>(
+            // Ánh xạ sang OrderDetailResponseDTO
+            List<OrderDetailResponseDTO> odDtosResult = _mapper.Map<List<OrderDetailResponseDTO>>(paginatedOrderDetails.Items);
+            return new BasePaginatedList<OrderDetailResponseDTO>(
                 odDtosResult,
                 paginatedOrderDetails.TotalItems,
                 paginatedOrderDetails.CurrentPage,
@@ -214,16 +189,15 @@ namespace MilkStore.Services.Service
                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Không tìm thấy Chi tiết đơn hàng có ID: {id} !");
 
             string productID = orderDetails.ProductID;
-            Products? product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(productID)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Không tìm thấy Sản phẩm có ID: {productID} !");
-            
+            Products product = await GetProductByIdAsync(model.ProductID);
             orderDetails.Quantity = model.Quantity;
             orderDetails.UnitPrice = product.Price;
 
             await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(orderDetails);
-            await _unitOfWork.SaveAsync();
+            // Cập nhật tổng tiền cho đơn hàng
+            await UpdateOrderTotal(orderDetails.OrderID);
 
-            await _orderService.UpdateToTalAmount(orderDetails.OrderID);
+            await _unitOfWork.SaveAsync();
             return orderDetails;
         }
 
@@ -232,13 +206,28 @@ namespace MilkStore.Services.Service
         {
             //OrderDetails od = await _unitOfWork.GetRepository<OrderDetails>().GetAllAsync()
             //    .ContinueWith(task => task.Result.FirstOrDefault(od => od.OrderID == orderId && od.ProductID == productId));
-            OrderDetails? od = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id)
+            OrderDetails od = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(id)
                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Không tìm thấy Chi tiết đơn hàng có ID: {id} !");
 
             od.DeletedTime = CoreHelper.SystemTimeNow;
             await _unitOfWork.GetRepository<OrderDetails>().UpdateAsync(od);
+            await UpdateOrderTotal(od.OrderID);
             await _unitOfWork.SaveAsync();
-            await _orderService.UpdateToTalAmount(od.OrderID);
+        }
+        private async Task UpdateOrderTotal(string orderId)
+        {
+            var order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(orderId)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID {orderId} not found.");
+
+            // Tính tổng tiền mới
+            var orderDetails = await _unitOfWork.GetRepository<OrderDetails>().Entities
+                .Where(od => od.OrderID == orderId && od.DeletedTime == null)
+                .ToListAsync();
+
+            order.TotalAmount = orderDetails.Sum(od => od.Quantity * od.UnitPrice);
+
+            // Cập nhật đơn hàng với tổng tiền mới
+            await _unitOfWork.GetRepository<Order>().UpdateAsync(order);
         }
     }
 }
