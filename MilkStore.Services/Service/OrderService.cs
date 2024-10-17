@@ -24,6 +24,7 @@ using System;
 using Microsoft.VisualBasic;
 using MilkStore.ModelViews;
 using ShippingType = MilkStore.ModelViews.OrderModelViews.ShippingType;
+using Newtonsoft.Json;
 
 namespace MilkStore.Services.Service
 {
@@ -44,14 +45,19 @@ namespace MilkStore.Services.Service
             _httpContextAccessor = httpContextAccessor;
             _userService = userService;                        
         }
-        private string GetCurrentUserId()
+        //private string GetCurrentUserId()
+        //{
+        //    string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (string.IsNullOrWhiteSpace(userID))
+        //    {
+        //        throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
+        //    }
+        //    return userID;
+        //}
+        public string GetUserIdFromSession()
         {
-            string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrWhiteSpace(userID))
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
-            }
-            return userID;
+            return _httpContextAccessor.HttpContext.Session.GetString("UserID") 
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
         }
         public async Task<BasePaginatedList<OrderResponseDTO>> GetAsync(string? id, OrderStatus? orderStatus, PaymentStatus? paymentStatus, int pageIndex, int pageSize)
         {
@@ -98,7 +104,7 @@ namespace MilkStore.Services.Service
 
         public async Task AddAsync(List<string>? voucherCode, List<OrderDetails> orderItems, PaymentMethod paymentMethod, ShippingType shippingAddress)
         {
-            string userID = GetCurrentUserId();
+            string userID = GetUserIdFromSession();
             var user = await _userManager.FindByIdAsync(userID)
                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
 
@@ -108,7 +114,15 @@ namespace MilkStore.Services.Service
             }
 
             string shipMethod = shippingAddress == ShippingType.InStore ? "Milk Store" : user.ShippingAddress;
+            // Kiểm tra nếu giỏ hàng đang có OrderID của đơn hàng cũ
+            var oldOrder = await _unitOfWork.GetRepository<Order>().Entities
+                .FirstOrDefaultAsync(o => o.UserId == Guid.Parse(userID) && o.PaymentStatuss == PaymentStatus.Unpaid && o.OrderStatuss == OrderStatus.Pending);
 
+            if (oldOrder != null)
+            {                
+                oldOrder.OrderStatuss = OrderStatus.Cancelled;
+                await _unitOfWork.GetRepository<Order>().UpdateAsync(oldOrder);
+            }
             // Khởi tạo đơn hàng mới
             Order order = new Order
             {
@@ -190,7 +204,8 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
 
             orderItems.ForEach(item => item.OrderID = order.Id);
-            await _unitOfWork.GetRepository<OrderDetails>().BulkUpdateAsync(orderItems);
+            await _unitOfWork.GetRepository<OrderDetails>().BulkUpdateAsync(orderItems); 
+            await _unitOfWork.SaveAsync();
         }
 
 
@@ -233,13 +248,12 @@ namespace MilkStore.Services.Service
         //}
         public async Task UpdateOrder(string id, OrderModelView ord, OrderStatus orderStatus, PaymentStatus paymentStatus, PaymentMethod paymentMethod)
         {
-            string userID = GetCurrentUserId();
+            string userID = GetUserIdFromSession();
             
             var order = await _unitOfWork.GetRepository<Order>().Entities
                 .Include(o => o.OrderDetailss) // Bao gồm OrderDetails để cập nhật tồn kho
                 .FirstOrDefaultAsync(o => o.Id == id && !o.DeletedTime.HasValue)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy đơn hàng có ID {id} hoặc đã bị xóa.");
-
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy đơn hàng có ID {id} hoặc đã bị xóa.");            
             var user = await _userManager.FindByIdAsync(order.UserId.ToString())
                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
 
@@ -264,28 +278,7 @@ namespace MilkStore.Services.Service
                     order.IsPointAdded = true;
                 }                    
             }
-
-            // Cập nhật tồn kho
-            //if (orderStatus == OrderStatus.Confirmed && !order.IsInventoryUpdated || orderStatus == OrderStatus.Delivered && !order.IsInventoryUpdated)
-            //{
-            //    foreach (var orderDetail in order.OrderDetailss.Where(od => od.DeletedTime == null))
-            //    {
-            //        var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(orderDetail.ProductID)
-            //            ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderDetail.ProductID} not found");
-
-            //        if (product.QuantityInStock >= orderDetail.Quantity)
-            //        {
-            //            product.QuantityInStock -= orderDetail.Quantity; // Giảm số lượng
-            //            await _unitOfWork.GetRepository<Products>().UpdateAsync(product);
-            //        }
-            //        else
-            //        {
-            //            throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Not enough stock for product {product.ProductName}");
-            //        }
-            //    }
-            //    order.IsInventoryUpdated = true;
-            //}
-            //else if (orderStatus == OrderStatus.Refunded && order.IsInventoryUpdated)
+            
             if (orderStatus == OrderStatus.Refunded && order.IsInventoryUpdated)
             {
                 foreach (var orderDetail in order.OrderDetailss.Where(od => od.DeletedTime == null))
@@ -300,7 +293,7 @@ namespace MilkStore.Services.Service
 
             // Cập nhật đơn hàng
             await _unitOfWork.GetRepository<Order>().UpdateAsync(order);
-            await _unitOfWork.SaveAsync();
+            await _unitOfWork.SaveAsync();                        
 
             // Gửi email trạng thái thanh toán và đơn hàng
             await SendingPaymentStatus_Mail(id);

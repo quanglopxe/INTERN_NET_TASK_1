@@ -54,16 +54,19 @@ namespace MilkStore.Services.Service
                 
                 // Tạo đơn hàng
                 await _orderService.AddAsync(voucherCode, cartItems, paymentMethod, shippingAddress);
-                
+
                 Order order = await _unitOfWork.GetRepository<Order>().Entities
-                    .FirstOrDefaultAsync(o => o.CreatedBy == userID && o.OrderStatuss == OrderStatus.Pending && o.PaymentStatuss == PaymentStatus.Unpaid)
+                    .Include(or => or.OrderDetailss)
+                    .Where(o => o.CreatedBy == userID && o.OrderStatuss == OrderStatus.Pending && o.PaymentStatuss == PaymentStatus.Unpaid)
+                    .OrderByDescending(o => o.OrderDate)
+                    .FirstOrDefaultAsync() // Lấy đơn hàng mới nhất
                     ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
 
                 // Tính tổng giá trị đơn hàng               
                 double totalAmount = order.DiscountedAmount;
 
                 // Tạo mã hóa đơn duy nhất
-                string invoiceCode = $"HD-{DateTime.Now:yyyyMMddHHmmssfff} {order.Id}";
+                string invoiceCode = $"{shippingAddress}-{DateTime.Now:yyyyMMddHHmmssfff} {order.Id}";
 
                 var paymentRequest = new PaymentRequest
                 {
@@ -81,20 +84,12 @@ namespace MilkStore.Services.Service
             {
                 // Tạo đơn hàng
                 await _orderService.AddAsync(voucherCode, cartItems, paymentMethod, shippingAddress);
-                Order order = await _unitOfWork.GetRepository<Order>().Entities.Include(or => or.OrderDetailss)
-                    .FirstOrDefaultAsync(o => o.CreatedBy == userID && o.OrderStatuss == OrderStatus.Pending && o.PaymentStatuss == PaymentStatus.Unpaid)
+                Order order = await _unitOfWork.GetRepository<Order>().Entities
+                    .Include(or => or.OrderDetailss)
+                    .Where(o => o.CreatedBy == userID && o.OrderStatuss == OrderStatus.Pending && o.PaymentStatuss == PaymentStatus.Unpaid)
+                    .OrderByDescending(o => o.OrderDate)
+                    .FirstOrDefaultAsync() // Lấy đơn hàng mới nhất
                     ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
-
-                //OrderModelView ord = new OrderModelView
-                //{
-                //    ShippingAddress = order.ShippingAddress,
-                //};
-
-                //if(shippingAddress == ShippingType.InStore && )
-                //{
-                //    await _orderService.UpdateOrder(order.Id, ord, OrderStatus.Delivered, PaymentStatus.Paid, paymentMethod);
-                //    await _unitOfWork.SaveAsync();
-                //}
 
                 List<OrderDetails>? orderDetails = order.OrderDetailss.Where(od => od.DeletedTime == null).ToList();
                 //cập nhật trạng thái của các order detail
@@ -104,5 +99,6 @@ namespace MilkStore.Services.Service
                 return "Đặt hàng thành công! Vui lòng kiểm tra email để theo dõi đơn hàng!";
             }
         }
+
     }
 }
