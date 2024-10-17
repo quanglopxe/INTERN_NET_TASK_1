@@ -84,35 +84,38 @@ public class PaymentService : IPaymentService
         }
         if (request.vnp_ResponseCode == "00")
         {
-            string invoiceCode = request.vnp_OrderInfo.Split(" ")[^1];
-            string[] parts = request.vnp_OrderInfo.Split('-');
-            string shippingAddress = parts[0];            
-            Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(invoiceCode)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
+            if(request.vnp_OrderInfo.Contains("checkout"))
+            {
+                string invoiceCode = request.vnp_OrderInfo.Split(" ")[^1];
+                string[] parts = request.vnp_OrderInfo.Split('-');
+                string shippingAddress = parts[0];
+                Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(invoiceCode)
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
 
-            OrderModelView ord = new OrderModelView
-            {
-                ShippingAddress = order.ShippingAddress,
-            };
-            if (shippingAddress == "InStore")
-            {
-                //gọi đến service để cập nhật order
-                await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Delivered, PaymentStatus.Paid, PaymentMethod.Online);
+                OrderModelView ord = new OrderModelView
+                {
+                    ShippingAddress = order.ShippingAddress,
+                };
+                if (shippingAddress == "InStore")
+                {
+                    //gọi đến service để cập nhật order
+                    await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Delivered, PaymentStatus.Paid, PaymentMethod.Online);
+                    await _unitOfWork.SaveAsync();
+                }
+                else
+                {
+                    //gọi đến service để cập nhật order
+                    await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Pending, PaymentStatus.Paid, PaymentMethod.Online);
+                    await _unitOfWork.SaveAsync();
+                }
+                List<OrderDetails>? orderDetails = _unitOfWork.GetRepository<OrderDetails>().Entities
+                        .Where(od => od.OrderID == order.Id && od.DeletedTime == null).ToList();
+                //cập nhật trạng thái của các order detail
+                orderDetails.ForEach(od => od.Status = OrderDetailStatus.Ordered);
+                await _unitOfWork.GetRepository<OrderDetails>().BulkUpdateAsync(orderDetails);
                 await _unitOfWork.SaveAsync();
-            }
-            else
-            {
-                //gọi đến service để cập nhật order
-                await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Pending, PaymentStatus.Paid, PaymentMethod.Online);
-                await _unitOfWork.SaveAsync();
-            }
-            List<OrderDetails>? orderDetails = _unitOfWork.GetRepository<OrderDetails>().Entities
-                    .Where(od => od.OrderID == order.Id && od.DeletedTime == null).ToList();
-            //cập nhật trạng thái của các order detail
-            orderDetails.ForEach(od => od.Status = OrderDetailStatus.Ordered);
-            await _unitOfWork.GetRepository<OrderDetails>().BulkUpdateAsync(orderDetails);
-            await _unitOfWork.SaveAsync();
-            Console.WriteLine("this is response from vnpay: " + request.vnp_ResponseCode);
+            }    
+            
         }
         else
         {

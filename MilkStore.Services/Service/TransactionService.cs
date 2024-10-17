@@ -66,7 +66,7 @@ namespace MilkStore.Services.Service
                 double totalAmount = order.DiscountedAmount;
 
                 // Tạo mã hóa đơn duy nhất
-                string invoiceCode = $"{shippingAddress}-{DateTime.Now:yyyyMMddHHmmssfff} {order.Id}";
+                string invoiceCode = $"{shippingAddress}-checkout{DateTime.Now:yyyyMMddHHmmssfff} {order.Id}";
 
                 var paymentRequest = new PaymentRequest
                 {
@@ -99,6 +99,31 @@ namespace MilkStore.Services.Service
                 return "Đặt hàng thành công! Vui lòng kiểm tra email để theo dõi đơn hàng!";
             }
         }
+        public async Task<string> Topup(double amount)
+        {
+            if(amount <= 0)
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Số tiền không hợp lệ");
+            }
+            if (amount < 10000)
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Số tiền nạp tối thiểu là 10.000 VND.");
+            }
+            string userID = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "User not found");
+            var _paymentService = _serviceProvider.GetRequiredService<IPaymentService>();
+            var _orderService = _serviceProvider.GetRequiredService<IOrderService>();
 
+            var paymentRequest = new PaymentRequest
+            {
+                TotalAmount = amount,
+                InvoiceCode = $"Topup{DateTime.Now:yyyyMMddHHmmssfff} {userID}",
+                OrderType = "Topup",
+            };
+
+            string paymentUrl = _paymentService.CreatePayment(paymentRequest);
+
+            return paymentUrl;
+        }
     }
 }
