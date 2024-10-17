@@ -18,8 +18,7 @@ public class PaymentController(IPaymentService paymentService) : ControllerBase
     [HttpGet("IPN")]
     public async Task<IActionResult> IPN([FromQuery] VNPayIPNRequest request)
     {
-        await paymentService.HandleIPN(request);
-        Console.WriteLine("This is response from vnpay: " + request.vnp_ResponseCode);
+        await paymentService.HandleIPN(request);        
         return Ok(BaseResponse<object>.OkResponse("Thanh toán thành công!"));
     }
 
