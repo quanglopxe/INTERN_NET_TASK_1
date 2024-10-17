@@ -28,7 +28,7 @@ namespace MilkStore.API.Controllers
 
         [HttpGet()]
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAll(string? id, int index = 1, int pageSize = 10)
         {            
             BasePaginatedList<OrderResponseDTO> ord = await _orderService.GetAsync(id,index,pageSize);
@@ -57,7 +57,7 @@ namespace MilkStore.API.Controllers
 
 
         [HttpPut("Update{id}")]
-        //[Authorize(Roles = "Guest, Member")]
+        [Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Update(string id, OrderModelView item, [FromQuery] OrderStatus orderStatus, [FromQuery] PaymentStatus paymentStatus, [FromQuery] PaymentMethod paymentMethod)
         {            
             await _orderService.UpdateOrder(id, item, orderStatus, paymentStatus, paymentMethod);
@@ -65,7 +65,7 @@ namespace MilkStore.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Guest, Member")]
+        [Authorize(Roles = "Guest, Member")]
         public async Task<IActionResult> Delete(string id)
         {            
             await _orderService.DeleteAsync(id);

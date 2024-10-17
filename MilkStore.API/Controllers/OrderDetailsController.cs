@@ -21,22 +21,25 @@ namespace MilkStore.API.Controllers
         }
 
         // GET
+        [Authorize(Roles = "Guest, Member")]
         [HttpGet("Get_personal_order_detail")]
         public async Task<IActionResult> GetOrderDetails(string? orderId, OrderDetailStatus? orderDetailStatus, int page = 1, int pageSize = 10)
         {
             BasePaginatedList<OrderDetails> detail = await _orderDetailsService.ReadPersonalOrderDetails(orderId, orderDetailStatus, page, pageSize);
             return Ok(BaseResponse<BasePaginatedList<OrderDetails>>.OkResponse(detail));
         }
-        //[Authorize(Roles = "Admin")]
+
         // GET ALL
+        [Authorize(Roles = "Admin")]
         [HttpGet("Get_all_order_detail")]
         public async Task<IActionResult> GetAllOrderDetails(string? orderId, string? userID, OrderDetailStatus? orderDetailStatus, int page = 1, int pageSize = 10)
         {
             BasePaginatedList<OrderDetails> detail = await _orderDetailsService.ReadAllOrderDetails(orderId, userID, orderDetailStatus, page, pageSize);
             return Ok(BaseResponse<BasePaginatedList<OrderDetails>>.OkResponse(detail));
         }
+
         // POST
-        //[Authorize(Roles = "Guest, Member")]
+        [Authorize(Roles = "Guest, Member")]
         [HttpPost("Add_to_cart")]
         public async Task<IActionResult> CreateOrderDetails(OrderDetailsModelView model)
         {
@@ -45,7 +48,7 @@ namespace MilkStore.API.Controllers
         }
 
         // PUT
-        //[Authorize(Roles = "Guest, Member")]
+        [Authorize(Roles = "Guest, Member")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateOrderDetails(string id, OrderDetailsModelView model)
         {            
@@ -54,7 +57,7 @@ namespace MilkStore.API.Controllers
         }
 
         // DELETE
-        //[Authorize(Roles = "Guest, Member")]
+        [Authorize(Roles = "Guest, Member")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrderDetails(string id)
         {            
