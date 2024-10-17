@@ -130,6 +130,7 @@ namespace MilkStore.API
             services.AddScoped<IStatisticalService, StatisticalService>();
             services.AddScoped<IStatisticalProductService, StatisticalProductService>();
             services.AddScoped<ITransactionService, TransactionService>();
+            services.AddSingleton<ICloudinaryService,CloudinaryService>();
             services.AddHttpContextAccessor();
         }
 

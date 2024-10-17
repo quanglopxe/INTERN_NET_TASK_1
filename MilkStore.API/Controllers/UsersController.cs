@@ -56,7 +56,7 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<UserProfileResponseModelView>.OkResponse(userProfile));
         }
         [HttpGet]
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Get(
             [FromQuery] int? page = 1,
             [FromQuery] int? pageSize = 10,
