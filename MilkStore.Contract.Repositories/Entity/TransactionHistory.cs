@@ -11,8 +11,8 @@ namespace MilkStore.Contract.Repositories.Entity
 {
     public enum TransactionType
     {
-        Deposit,   // Nạp tiền
-        Withdrawal // Rút tiền (hoặc sử dụng)
+        Vnpay,
+        UserWallet,
     }
 
     public class TransactionHistory : BaseEntity
@@ -29,6 +29,7 @@ namespace MilkStore.Contract.Repositories.Entity
         public double Amount { get; set; } // Số tiền của giao dịch
 
         public double BalanceAfterTransaction { get; set; } // Số dư sau giao dịch
+        public string? Content { get; set; } // Nội dung giao dịch
     }
 
 }

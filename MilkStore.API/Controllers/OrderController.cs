@@ -12,6 +12,7 @@ using MilkStore.Core;
 using MilkStore.Repositories.Entity;
 using MilkStore.Core.Utils;
 using System.Security.Claims;
+using MilkStore.ModelViews.CustomerModelViews;
 
 namespace MilkStore.API.Controllers
 {
@@ -56,12 +57,18 @@ namespace MilkStore.API.Controllers
         //}
 
 
-        [HttpPut("Update{id}")]
-        //[Authorize(Roles = "Guest, Member")]
+        [HttpPut("UpdateByStaff{id}")]
+        //[Authorize(Roles = "Staff")]
         public async Task<IActionResult> Update(string id, OrderModelView item, [FromQuery] OrderStatus orderStatus, [FromQuery] PaymentStatus paymentStatus, [FromQuery] PaymentMethod paymentMethod)
         {            
             await _orderService.UpdateOrder(id, item, orderStatus, paymentStatus, paymentMethod);
             return Ok(BaseResponse<string>.OkResponse("Order was updated successfully!"));           
+        }
+        [HttpPut("UpdateByCustomer{id}")]
+        public async Task<IActionResult> UpdateByCustomer(string id, CustomerOrderAction action, string? newAddress)
+        {
+            await _orderService.UpdateOrderByCustomer(id, action, newAddress);
+            return Ok(BaseResponse<string>.OkResponse("Order was updated successfully!"));
         }
 
         [HttpDelete("{id}")]

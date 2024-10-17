@@ -6,6 +6,7 @@ using MilkStore.Core.Base;
 using MilkStore.Core.Constants;
 using MilkStore.ModelViews;
 using MilkStore.ModelViews.OrderModelViews;
+using MilkStore.Repositories.Entity;
 using MilkStore.Services.Service.lib;
 
 
@@ -84,14 +85,23 @@ public class PaymentService : IPaymentService
         }
         if (request.vnp_ResponseCode == "00")
         {
-            if(request.vnp_OrderInfo.Contains("checkout"))
+            if (request.vnp_OrderInfo.Contains("checkout"))
             {
                 string invoiceCode = request.vnp_OrderInfo.Split(" ")[^1];
                 string[] parts = request.vnp_OrderInfo.Split('-');
                 string shippingAddress = parts[0];
                 Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(invoiceCode)
                     ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
-
+                var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(order.UserId)
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
+                user.TransactionHistories.Add(new TransactionHistory
+                {
+                    UserId = user.Id,
+                    TransactionDate = DateTime.Now,
+                    Type = TransactionType.Vnpay,
+                    Amount = order.DiscountedAmount,                    
+                    Content = "Thanh toán đơn hàng" + order.Id
+                });
                 OrderModelView ord = new OrderModelView
                 {
                     ShippingAddress = order.ShippingAddress,
@@ -99,14 +109,12 @@ public class PaymentService : IPaymentService
                 if (shippingAddress == "InStore")
                 {
                     //gọi đến service để cập nhật order
-                    await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Delivered, PaymentStatus.Paid, PaymentMethod.Online);
-                    await _unitOfWork.SaveAsync();
+                    await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Delivered, PaymentStatus.Paid, PaymentMethod.Online);                    
                 }
                 else
                 {
                     //gọi đến service để cập nhật order
-                    await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Pending, PaymentStatus.Paid, PaymentMethod.Online);
-                    await _unitOfWork.SaveAsync();
+                    await _orderService.UpdateOrder(invoiceCode, ord, OrderStatus.Pending, PaymentStatus.Paid, PaymentMethod.Online);                    
                 }
                 List<OrderDetails>? orderDetails = _unitOfWork.GetRepository<OrderDetails>().Entities
                         .Where(od => od.OrderID == order.Id && od.DeletedTime == null).ToList();
@@ -114,8 +122,27 @@ public class PaymentService : IPaymentService
                 orderDetails.ForEach(od => od.Status = OrderDetailStatus.Ordered);
                 await _unitOfWork.GetRepository<OrderDetails>().BulkUpdateAsync(orderDetails);
                 await _unitOfWork.SaveAsync();
-            }    
-            
+            }
+            if (request.vnp_OrderInfo.Contains("Topup"))
+            {
+                string userID = request.vnp_OrderInfo.Split(" ")[^1];
+                double amount = double.Parse(request.vnp_Amount) / 100;
+                //cập nhật số dư của user
+                var user = await _unitOfWork.GetRepository<ApplicationUser>().GetByIdAsync(Guid.Parse(userID))
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
+                user.Balance += amount;
+
+                user.TransactionHistories.Add(new TransactionHistory
+                {
+                    UserId = user.Id,
+                    TransactionDate = DateTime.Now,
+                    Type = TransactionType.UserWallet,
+                    Amount = amount,
+                    BalanceAfterTransaction = user.Balance,
+                    Content = "Nạp tiền vào tài khoản"
+                });
+                await _unitOfWork.SaveAsync();
+            }
         }
         else
         {

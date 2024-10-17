@@ -107,34 +107,7 @@ namespace MilkStore.Services.Service
         public async Task<BasePaginatedList<OrderDetailResponseDTO>> ReadPersonalOrderDetails(string? orderId, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize)
         {
             string userID = GetCurrentUserId();
-
-            // Lọc dữ liệu cơ bản: không có DeletedTime và CreatedBy
-            IQueryable<OrderDetails>? query = _unitOfWork.GetRepository<OrderDetails>().Entities.AsNoTracking()
-                .Where(od => od.DeletedTime == null && od.CreatedBy == userID);
-
-            // Lọc theo OrderId nếu có
-            if (!string.IsNullOrWhiteSpace(orderId))
-            {
-                query = query.Where(od => od.OrderID == orderId);
-            }
-
-            // Lọc theo OrderDetailStatus nếu có
-            if (orderDetailStatus.HasValue)
-            {
-                query = query.Where(od => od.Status == orderDetailStatus);
-            }
-
-            // Thực hiện phân trang với query hiện tại
-            BasePaginatedList<OrderDetails>? paginatedOrderDetails = await _unitOfWork.GetRepository<OrderDetails>().GetPagging(query, pageIndex, pageSize);
-
-            // Ánh xạ sang OrderDetailResponseDTO
-            List<OrderDetailResponseDTO> odDtosResult = _mapper.Map<List<OrderDetailResponseDTO>>(paginatedOrderDetails.Items);
-            return new BasePaginatedList<OrderDetailResponseDTO>(
-                odDtosResult,
-                paginatedOrderDetails.TotalItems,
-                paginatedOrderDetails.CurrentPage,
-                paginatedOrderDetails.PageSize
-            );
+            return await ReadAllOrderDetails(orderId, userID, orderDetailStatus, pageIndex, pageSize);
         }
 
         public async Task<BasePaginatedList<OrderDetailResponseDTO>> ReadAllOrderDetails(string? orderId, string? userID, OrderDetailStatus? orderDetailStatus, int pageIndex, int pageSize)
