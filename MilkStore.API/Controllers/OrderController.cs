@@ -58,26 +58,25 @@ namespace MilkStore.API.Controllers
 
 
         [HttpPut("UpdateByStaff{id}")]
-        //[Authorize(Roles = "Staff")]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> Update(string id, OrderModelView item, [FromQuery] OrderStatus orderStatus, [FromQuery] PaymentStatus paymentStatus, [FromQuery] PaymentMethod paymentMethod)
         {            
             await _orderService.UpdateOrder(id, item, orderStatus, paymentStatus, paymentMethod);
-            return Ok(BaseResponse<string>.OkResponse("Order was updated successfully!"));           
+            return Ok(BaseResponse<string>.OkResponse("Đơn hàng đã được cập nhật!"));           
         }
         [HttpPut("UpdateByCustomer{id}")]
         public async Task<IActionResult> UpdateByCustomer(string id, CustomerOrderAction action, string? newAddress)
         {
             await _orderService.UpdateOrderByCustomer(id, action, newAddress);
-            return Ok(BaseResponse<string>.OkResponse("Order was updated successfully!"));
+            return Ok(BaseResponse<string>.OkResponse("Đơn hàng đã được cập nhật!"));
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Guest, Member")]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> Delete(string id)
         {            
             await _orderService.DeleteAsync(id);
-            return Ok(BaseResponse<string>.OkResponse("Order was deleted successfully!"));
-            
+            return Ok(BaseResponse<string>.OkResponse("Đơn hàng đã xóa!"));            
         }
     }
 }

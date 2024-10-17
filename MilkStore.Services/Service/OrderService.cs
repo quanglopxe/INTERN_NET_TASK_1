@@ -51,14 +51,14 @@ namespace MilkStore.Services.Service
             string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrWhiteSpace(userID))
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Vui lòng đăng nhập!");
             }
             return userID;
         }
         public string GetUserIdFromSession()
         {
             return _httpContextAccessor.HttpContext.Session.GetString("UserID") 
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Please log in first!");
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Vui lòng đăng nhập!");
         }        
         public async Task<BasePaginatedList<OrderResponseDTO>> GetAsync(string? id, OrderStatus? orderStatus, PaymentStatus? paymentStatus, int pageIndex, int pageSize)
         {
@@ -107,11 +107,11 @@ namespace MilkStore.Services.Service
         {
             string userID = GetUserIdFromSession();
             var user = await _userManager.FindByIdAsync(userID)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Không tìm thấy người dùng");
 
             if (string.IsNullOrWhiteSpace(user.ShippingAddress))
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Please update your shipping address before checkout!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Vui lòng thêm địa chỉ giao hàng trước khi thanh toán!");
             }
 
             string shipMethod = shippingAddress == ShippingType.InStore ? "Milk Store" : user.ShippingAddress;
@@ -128,7 +128,7 @@ namespace MilkStore.Services.Service
                 foreach (var orderDetail in oldOrder.OrderDetailss.Where(od => od.DeletedTime == null))
                 {
                     var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(orderDetail.ProductID)
-                        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderDetail.ProductID} not found");
+                        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy sản phẩm có id {orderDetail.ProductID}");
 
                     product.QuantityInStock += orderDetail.Quantity;
                     await _unitOfWork.GetRepository<Products>().UpdateAsync(product);
@@ -154,11 +154,11 @@ namespace MilkStore.Services.Service
             foreach (var orderDetail in orderItems)
             {
                 var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(orderDetail.ProductID)
-                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderDetail.ProductID} not found");
+                    ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy sản phẩm có id {orderDetail.ProductID}");
 
                 if (product.QuantityInStock < orderDetail.Quantity)
                 {
-                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Not enough stock for product {product.ProductName}");
+                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Không đủ số lượng sản phẩm: {product.ProductName}");
                 }
                 
                 product.QuantityInStock -= orderDetail.Quantity;                
@@ -168,7 +168,7 @@ namespace MilkStore.Services.Service
             // Kiểm tra và xử lý voucher
             if (voucherCode is not null && voucherCode.Count > 3)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "You can apply a maximum of 3 vouchers to an order.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Bạn chỉ có thể áp dụng tối đa 3 voucher.");
             }
 
             order.TotalAmount = orderItems.Sum(o => o.TotalAmount);
@@ -182,16 +182,16 @@ namespace MilkStore.Services.Service
                 {
                     Voucher vch = await _unitOfWork.GetRepository<Voucher>().Entities
                         .FirstOrDefaultAsync(v => v.VoucherCode == voucher && !v.DeletedTime.HasValue)
-                        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Voucher with ID {voucher} not found.");
+                        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy voucher {voucher}");
 
                     if (vch.ExpiryDate < order.OrderDate)
                     {
-                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The voucher with ID {voucher} has expired.");
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Voucher {voucher} đã hết hạn.");
                     }
 
                     if (discountedTotal < Convert.ToDouble(vch.LimitSalePrice))
                     {
-                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"The total amount does not meet the requirements to apply voucher {voucher}.");
+                        throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Tổng tiền chưa đạt điều kiện áp dụng voucher {voucher}.");
                     }
 
                     double discountAmount = (discountedTotal * vch.SalePercent) / 100.0;
@@ -266,7 +266,7 @@ namespace MilkStore.Services.Service
                 .FirstOrDefaultAsync(o => o.Id == id && !o.DeletedTime.HasValue)
                 ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy đơn hàng có ID {id} hoặc đã bị xóa.");            
             var user = await _userManager.FindByIdAsync(order.UserId.ToString())
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Không tìm thấy người dùng");
 
             // Ánh xạ các thuộc tính từ ord vào order
             _mapper.Map(ord, order);
@@ -295,7 +295,7 @@ namespace MilkStore.Services.Service
                 foreach (var orderDetail in order.OrderDetailss.Where(od => od.DeletedTime == null))
                 {
                     var product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(orderDetail.ProductID)
-                        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderDetail.ProductID} not found");
+                        ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy sản phẩm có id {orderDetail.ProductID}");
 
                     product.QuantityInStock += orderDetail.Quantity; 
                     await _unitOfWork.GetRepository<Products>().UpdateAsync(product);
@@ -493,7 +493,7 @@ namespace MilkStore.Services.Service
         {
             Order orderss = await _unitOfWork.GetRepository<Order>().Entities
                 .FirstOrDefaultAsync(or => or.Id == id && !or.DeletedTime.HasValue)
-                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Order with ID  {id}  not found or has already been deleted.");
+                ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy đơn hàng {id} ");
 
             // Kiểm tra xem Order này có bất kỳ OrderDetails nào liên kết không
             bool hasOrderDetails = await _unitOfWork.GetRepository<OrderDetails>().Entities
@@ -502,7 +502,7 @@ namespace MilkStore.Services.Service
             if (hasOrderDetails)
             {
                 // Trả về thông báo lỗi nếu tồn tại OrderDetails
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Order with ID {id} is linked to OrderDetails and cannot be deleted.");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, $"Không tìm thấy chi tiết đơn hàng");
             }
 
             orderss.DeletedTime = CoreHelper.SystemTimeNow;
@@ -515,17 +515,17 @@ namespace MilkStore.Services.Service
         {
             if(string.IsNullOrWhiteSpace(id))
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order ID cannot be null");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Vui lòng nhập mã đơn hàng");
             }
             Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
             if (order == null || order.DeletedTime != null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Không tìm thấy đơn hàng");
             }
             ApplicationUser? user = await _userManager.FindByIdAsync(order.UserId.ToString());
             if (user == null)
             {
-                   throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
+                   throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Không tìm thấy user");
             }
 
             if (order.PaymentMethod == PaymentMethod.Online && order.PaymentStatuss == PaymentStatus.Paid && order.OrderStatuss == OrderStatus.Confirmed)
@@ -545,17 +545,17 @@ namespace MilkStore.Services.Service
         {
             if (string.IsNullOrWhiteSpace(id))
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order ID cannot be null");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Vui lòng nhập mã đơn hàng");
             }
             Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(id);
             if (order == null || order.DeletedTime != null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Order not found");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Không tìm thấy đơn hàng");
             }
             ApplicationUser? user = await _userManager.FindByIdAsync(order.UserId.ToString());
             if (user == null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "User not found");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Không tìm thấy người dùng");
             }
             if (order.OrderStatuss != OrderStatus.Pending)
             {
@@ -584,7 +584,7 @@ namespace MilkStore.Services.Service
         //    foreach (var orderDetail in orderDetailsList)
         //    {
         //        Products product = await _unitOfWork.GetRepository<Products>().GetByIdAsync(orderDetail.ProductID)
-        //            ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Product with ID {orderDetail.ProductID} not found");
+        //            ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy sản phẩm có id {orderDetail.ProductID}");
         //        if (order.OrderStatuss == OrderStatus.Confirmed && !order.IsInventoryUpdated)
         //        {
         //            if (product.QuantityInStock >= orderDetail.Quantity)
