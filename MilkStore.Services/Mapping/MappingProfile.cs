@@ -96,6 +96,7 @@ namespace MilkStore.Services.Mapping
 
             CreateMap<PreOrders, PreOrdersModelView>().ReverseMap()
                 .ForMember(dest => dest.UserID, opt => opt.Ignore()); // Bỏ qua UserID khi map từ PreOrdersModelView sang PreOrders
+            CreateMap<PreOrders, PreOdersResponseDTO>();
 
             CreateMap<Voucher, VoucherModelView>().ReverseMap();
             CreateMap<Voucher, VoucherResponseDTO>();
