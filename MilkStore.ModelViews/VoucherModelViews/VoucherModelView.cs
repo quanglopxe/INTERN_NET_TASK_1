@@ -21,6 +21,6 @@ namespace MilkStore.ModelViews.VoucherModelViews
         [Required(ErrorMessage = "Không được để trống")]
         public string Name { get; set; }
         public DateTime? DeletedTime { get; set; } = null;
-        public string Code { get; set; } = string.Empty;
+        public string VoucherCode { get; set; } = string.Empty;
     }
 }
