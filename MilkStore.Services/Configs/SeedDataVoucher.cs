@@ -27,7 +27,7 @@ namespace MilkStore.Services.Configs
                         UsingLimit = 100,
                         UsedCount = 0,
                         Status = 1,
-                        VoucherCode = "SUMMER23",
+                        VoucherCode = "SUMMER",
                         CreatedTime = CoreHelper.SystemTimeNow
                     },
                     new Voucher
@@ -42,7 +42,7 @@ namespace MilkStore.Services.Configs
                         UsingLimit = 50,
                         UsedCount = 0,
                         Status = 1,
-                        VoucherCode = "FIXED50",
+                        VoucherCode = "FIXED3",
                         CreatedTime = CoreHelper.SystemTimeNow
                     },
                     new Voucher
@@ -57,7 +57,7 @@ namespace MilkStore.Services.Configs
                         UsingLimit = 200,
                         UsedCount = 0,
                         Status = 1,
-                        VoucherCode = "NEWUSER",
+                        VoucherCode = "NEWUSE",
                         CreatedTime = CoreHelper.SystemTimeNow
                     },
                     new Voucher
@@ -72,7 +72,7 @@ namespace MilkStore.Services.Configs
                         UsingLimit = 100,
                         UsedCount = 0,
                         Status = 1,
-                        VoucherCode = "WEEKEND",
+                        VoucherCode = "WEEKEN",
                         CreatedTime = CoreHelper.SystemTimeNow
                     },
                     new Voucher
@@ -87,7 +87,7 @@ namespace MilkStore.Services.Configs
                         UsingLimit = 50,
                         UsedCount = 0,
                         Status = 1,
-                        VoucherCode = "BIRTH23",
+                        VoucherCode = "BIRTH2",
                         CreatedTime = CoreHelper.SystemTimeNow
                     },
                     new Voucher
@@ -102,7 +102,7 @@ namespace MilkStore.Services.Configs
                         UsingLimit = 30,
                         UsedCount = 0,
                         Status = 1,
-                        VoucherCode = "BULK25",
+                        VoucherCode = "BULK23",
                         CreatedTime = CoreHelper.SystemTimeNow
                     },
                     new Voucher
@@ -117,7 +117,7 @@ namespace MilkStore.Services.Configs
                         UsingLimit = 20,
                         UsedCount = 0,
                         Status = 1,
-                        VoucherCode = "FLASH40",
+                        VoucherCode = "FLASH4",
                         CreatedTime = CoreHelper.SystemTimeNow
                     },
                     new Voucher
@@ -147,7 +147,7 @@ namespace MilkStore.Services.Configs
                         UsingLimit = 40,
                         UsedCount = 0,
                         Status = 1,
-                        VoucherCode = "COMBO70",
+                        VoucherCode = "COMBO7",
                         CreatedTime = CoreHelper.SystemTimeNow
                     },
                     new Voucher
@@ -162,7 +162,7 @@ namespace MilkStore.Services.Configs
                         UsingLimit = 100,
                         UsedCount = 0,
                         Status = 1,
-                        VoucherCode = "ONLINE5",
+                        VoucherCode = "ONLINE",
                         CreatedTime = CoreHelper.SystemTimeNow
                     }
                 };

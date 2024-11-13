@@ -23,6 +23,7 @@ namespace MilkStore.Services.Configs
                         Id = Guid.NewGuid().ToString(),
                         UserID = users[0].Id,
                         Status = OrderGiftStatus.Pending,
+                        Address = "123 Nguyen Van Linh, Da Nang",
                         CreatedTime = DateTime.UtcNow.AddDays(-10)
                     },
                     new OrderGift
@@ -30,6 +31,7 @@ namespace MilkStore.Services.Configs
                         Id = Guid.NewGuid().ToString(),
                         UserID = users[1].Id,
                         Status = OrderGiftStatus.Confirmed,
+                        Address = "123 Nguyen Van Linh, Da Nang",
                         CreatedTime = DateTime.UtcNow.AddDays(-9)
                     },
                     new OrderGift
@@ -37,6 +39,7 @@ namespace MilkStore.Services.Configs
                         Id = Guid.NewGuid().ToString(),
                         UserID = users[2].Id,
                         Status = OrderGiftStatus.Cancelled,
+                        Address = "123 Nguyen Van Linh, Da Nang",
                         CreatedTime = DateTime.UtcNow.AddDays(-8)
                     },
                     new OrderGift
@@ -44,6 +47,7 @@ namespace MilkStore.Services.Configs
                         Id = Guid.NewGuid().ToString(),
                         UserID = users[0].Id,
                         Status = OrderGiftStatus.Pending,
+                        Address = "123 Nguyen Van Linh, Da Nang",
                         CreatedTime = DateTime.UtcNow.AddDays(-7)
                     },
                     new OrderGift
@@ -51,6 +55,7 @@ namespace MilkStore.Services.Configs
                         Id = Guid.NewGuid().ToString(),
                         UserID = users[1].Id,
                         Status = OrderGiftStatus.Confirmed,
+                        Address = "123 Nguyen Van Linh, Da Nang",
                         CreatedTime = DateTime.UtcNow.AddDays(-6)
                     },
                     new OrderGift
@@ -58,6 +63,7 @@ namespace MilkStore.Services.Configs
                         Id = Guid.NewGuid().ToString(),
                         UserID = users[2].Id,
                         Status = OrderGiftStatus.Delivered,
+                        Address = "123 Nguyen Van Linh, Da Nang",
                         CreatedTime = DateTime.UtcNow.AddDays(-5)
                     },
                     new OrderGift
@@ -65,6 +71,7 @@ namespace MilkStore.Services.Configs
                         Id = Guid.NewGuid().ToString(),
                         UserID = users[0].Id,
                         Status = OrderGiftStatus.Cancelled,
+                        Address = "123 Nguyen Van Linh, Da Nang",
                         CreatedTime = DateTime.UtcNow.AddDays(-4)
                     },
                     new OrderGift
@@ -72,6 +79,7 @@ namespace MilkStore.Services.Configs
                         Id = Guid.NewGuid().ToString(),
                         UserID = users[1].Id,
                         Status = OrderGiftStatus.Delivered,
+                        Address = "123 Nguyen Van Linh, Da Nang",
                         CreatedTime = DateTime.UtcNow.AddDays(-3)
                     },
                     new OrderGift
@@ -79,6 +87,7 @@ namespace MilkStore.Services.Configs
                         Id = Guid.NewGuid().ToString(),
                         UserID = users[2].Id,
                         Status = OrderGiftStatus.Pending,
+                        Address = "123 Nguyen Van Linh, Da Nang",
                         CreatedTime = DateTime.UtcNow.AddDays(-2)
                     },
                     new OrderGift
@@ -86,6 +95,7 @@ namespace MilkStore.Services.Configs
                         Id = Guid.NewGuid().ToString(),
                         UserID = users[0].Id,
                         Status = OrderGiftStatus.Confirmed,
+                        Address = "123 Nguyen Van Linh, Da Nang",
                         CreatedTime = DateTime.UtcNow.AddDays(-1)
                     }
                 };
