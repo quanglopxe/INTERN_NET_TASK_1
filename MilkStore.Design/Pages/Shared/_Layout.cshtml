@@ -1,57 +1,110 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - MilkStore.Design</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/MilkStore.Design.styles.css" asp-append-version="true" />
+    <title>MilkStore</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">MilkStore.Design</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
-                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/About">About</a>
-                        </li>
-                    </ul>
+<body class="font-sans bg-gray-50">
+    <!-- Top Bar -->
+    <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+        <div class="container mx-auto px-4 py-2 flex justify-between items-center">
+            <div class="flex items-center space-x-6">
+                <span><i class="fas fa-phone-volume mr-2"></i>1900 xxxx</span>
+                <span class="hidden md:inline"><i class="fas fa-envelope mr-2"></i>support@milkstore.com</span>
+            </div>
+            <div class="flex items-center space-x-6">
+                <span><i class="fas fa-truck mr-2"></i>Theo dõi đơn hàng</span>
+                <span><i class="fas fa-user mr-2"></i>Đăng nhập</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="text-2xl font-bold text-blue-600">MilkStore</div>
+
+                <div class="hidden md:block flex-1 max-w-xl mx-8">
+                    <div class="relative">
+                        <input type="text" placeholder="Tìm kiếm sản phẩm..."
+                            class="w-full px-4 py-2 rounded-full border-2 border-gray-200">
+                        <i class="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
                 </div>
+
+                <div class="relative">
+                    <i class="fas fa-shopping-cart text-xl"></i>
+                    <span
+                        class="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="border-t border-gray-100">
+            <div class="container mx-auto px-4">
+                <ul class="flex space-x-8 py-4">
+                    <li class="text-gray-600 hover:text-blue-600">Trang chủ</li>
+                    <li class="text-gray-600 hover:text-blue-600">Sản phẩm</li>
+                    <li class="text-gray-600 hover:text-blue-600">Khuyến mãi</li>
+                    <li class="text-gray-600 hover:text-blue-600">Tin tức</li>
+                    <li class="text-gray-600 hover:text-blue-600">Liên hệ</li>
+                </ul>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2024 - MilkStore.Design - <a asp-area="" asp-page="/Privacy">Privacy</a>
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-400">
+        <div class="container mx-auto px-4 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h5 class="text-lg font-bold text-white mb-4">Về MilkStore</h5>
+                    <p>Chuyên cung cấp các sản phẩm sữa chất lượng cao</p>
+                </div>
+                <div>
+                    <h5 class="text-lg font-bold text-white mb-4">Thông tin</h5>
+                    <ul class="space-y-2">
+                        <li>Về chúng tôi</li>
+                        <li>Chính sách bảo mật</li>
+                        <li>Điều khoản sử dụng</li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="text-lg font-bold text-white mb-4">Liên hệ</h5>
+                    <ul class="space-y-2">
+                        <li><i class="fas fa-map-marker-alt mr-2"></i>123 ABC Street</li>
+                        <li><i class="fas fa-phone mr-2"></i>1900 xxxx</li>
+                        <li><i class="fas fa-envelope mr-2"></i>contact@milkstore.com</li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="text-lg font-bold text-white mb-4">Kết nối</h5>
+                    <div class="flex space-x-4">
+                        <i class="fab fa-facebook text-2xl"></i>
+                        <i class="fab fa-instagram text-2xl"></i>
+                        <i class="fab fa-youtube text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="border-t border-gray-700 py-4">
+            <div class="container mx-auto px-4 text-center">
+                &copy; 2024 MilkStore. All rights reserved.
+            </div>
         </div>
     </footer>
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-
-    @await RenderSectionAsync("Scripts", required: false)
 </body>
 
 </html>
