@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core;
 using MilkStore.Core.Base;
 using MilkStore.Core.Constants;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.ReviewsModelView;
 
 
@@ -21,27 +23,27 @@ namespace MilkStore.API.Controllers
             _reviewsService = reviewsService;
         }
         [HttpGet]
-        public async Task<IActionResult> GetReviews(string? id, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> GetReviews(string? id, string? productName,int page = 1, int pageSize = 10)
         {
-            IList<Review> reviews = (IList<Review>)await _reviewsService.GetReviews(id, page, pageSize);
-            return Ok(BaseResponse<IList<Review>>.OkResponse(reviews));
+            BasePaginatedList<ReviewResponseDTO> reviews = await _reviewsService.GetAsync(id, productName, page, pageSize);
+            return Ok(BaseResponse<BasePaginatedList<ReviewResponseDTO>>.OkResponse(reviews));
         }
         [HttpPost()]
-        [Authorize(Roles = "Member")]
+        [Authorize(Roles = "Member, Staff")]
         public async Task<IActionResult> CreateReviews(ReviewsModel reviewsModel)
         {            
             await _reviewsService.CreateReviews(reviewsModel);
             return Ok(BaseResponse<string>.OkResponse("Thêm đánh giá thành công!"));
         }
         [HttpPut("{id}")]
-        [Authorize(Roles = "Member")]
+        [Authorize(Roles = "Member, Staff")]
         public async Task<IActionResult> UpdateReview(string id, [FromBody] ReviewsModel reviewsModel)
         {
-            Review Reviews = await _reviewsService.UpdateReviews(id, reviewsModel);
-            return Ok(BaseResponse<Review>.OkResponse(Reviews));            
+            await _reviewsService.UpdateReviews(id, reviewsModel);
+            return Ok(BaseResponse<string>.OkResponse("Sửa đánh giá thành công!"));            
         }
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Member , Staff")]
         public async Task<IActionResult> DeleteReview(string id)
         {
             await _reviewsService.DeletReviews(id);
