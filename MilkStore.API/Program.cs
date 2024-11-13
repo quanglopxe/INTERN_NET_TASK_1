@@ -55,5 +55,15 @@ using (IServiceScope scope = app.Services.CreateScope())
 {
     IServiceProvider? services = scope.ServiceProvider;
     SeedDataAccount.SeedAsync(services).Wait();
+    SeedDataCategory.SeedAsync(services).Wait();
+    SeedDataProduct.SeedAsync(services).Wait();
+    SeedDataGift.SeedAsync(services).Wait();
+    SeedDataVoucher.SeedAsync(services).Wait();
+    SeedDataOrder.SeedAsync(services).Wait();
+    SeedDataOrderGift.SeedAsync(services).Wait();
+    SeedDataReview.SeedAsync(services).Wait();
+    SeedDataPost.SeedAsync(services).Wait();
+    SeedDataPreOrder.SeedAsync(services).Wait();
+    SeedDataTransaction.SeedAsync(services).Wait();
 }
 app.Run();
