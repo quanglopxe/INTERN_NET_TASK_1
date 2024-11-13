@@ -36,14 +36,14 @@ namespace MilkStore.API.Controllers
             return Ok(BaseResponse<string>.OkResponse("Thêm đánh giá thành công!"));
         }
         [HttpPut("{id}")]
-        [Authorize(Roles = "Member, Staff")]
+        [Authorize(Roles = "Admin, Staff")]
         public async Task<IActionResult> UpdateReview(string id, [FromBody] ReviewsModel reviewsModel)
         {
             await _reviewsService.UpdateReviews(id, reviewsModel);
             return Ok(BaseResponse<string>.OkResponse("Sửa đánh giá thành công!"));            
         }
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin, Member , Staff")]
+        [Authorize(Roles = "Admin, Staff")]
         public async Task<IActionResult> DeleteReview(string id)
         {
             await _reviewsService.DeletReviews(id);
