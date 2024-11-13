@@ -1,0 +1,191 @@
+@page
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - Fresh Dairy Store</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            overflow: hidden;
+            background-image: url('https://images.unsplash.com/photo-1550583724-b2692b85b150?q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-overlay {
+            background: linear-gradient(135deg,
+                    rgba(255, 255, 255, 0.9),
+                    rgba(255, 255, 255, 0.8));
+        }
+
+        .custom-gradient {
+            background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body class="h-full">
+    <div class="page-overlay absolute inset-0"></div>
+    <div class="min-h-screen flex items-center justify-center p-4 relative">
+        <div class="w-full max-w-xl">
+            <div class="glass-card rounded-2xl p-8 mx-auto">
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Tạo Tài Khoản Mới</h2>
+                    <p class="text-gray-600">Chào mừng bạn đến với Fresh Dairy Store</p>
+                </div>
+
+                <form class="space-y-6">
+                    <!-- Two columns for name and phone -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Họ và tên</label>
+                            <div class="relative">
+                                <input type="text" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                                              text-gray-900 text-sm
+                                              focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent
+                                              hover:border-sky-400 transition-all duration-200"
+                                    placeholder="Nguyễn Văn A">
+                                <i class="fas fa-user input-icon text-gray-400"></i>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Số điện thoại</label>
+                            <div class="relative">
+                                <input type="tel" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                                              text-gray-900 text-sm
+                                              focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent
+                                              hover:border-sky-400 transition-all duration-200"
+                                    placeholder="0912345678">
+                                <i class="fas fa-phone input-icon text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        <div class="relative">
+                            <input type="email" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                                          text-gray-900 text-sm
+                                          focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent
+                                          hover:border-sky-400 transition-all duration-200"
+                                placeholder="example@gmail.com">
+                            <i class="fas fa-envelope input-icon text-gray-400"></i>
+                        </div>
+                    </div>
+
+                    <!-- Password fields -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Mật khẩu</label>
+                            <div class="relative">
+                                <input type="password" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                                              text-gray-900 text-sm
+                                              focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent
+                                              hover:border-sky-400 transition-all duration-200" placeholder="••••••••">
+                                <i class="fas fa-lock input-icon text-gray-400"></i>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Xác nhận mật khẩu</label>
+                            <div class="relative">
+                                <input type="password" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                                              text-gray-900 text-sm
+                                              focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent
+                                              hover:border-sky-400 transition-all duration-200" placeholder="••••••••">
+                                <i class="fas fa-lock input-icon text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Terms -->
+                    <div class="flex items-start space-x-3">
+                        <input type="checkbox" required class="mt-1 h-4 w-4 text-sky-500 rounded border-gray-300
+                                      focus:ring-sky-500 transition duration-200">
+                        <label class="text-sm text-gray-600">
+                            Tôi đồng ý với
+                            <a href="#" class="text-sky-600 hover:text-sky-500 font-medium">Điều khoản</a>
+                            và
+                            <a href="#" class="text-sky-600 hover:text-sky-500 font-medium">Chính sách bảo mật</a>
+                        </label>
+                    </div>
+
+                    <!-- Register Button -->
+                    <button type="submit" class="w-full custom-gradient text-white py-3.5 rounded-xl font-medium
+                                   hover:opacity-90 active:scale-[0.99]
+                                   transform transition-all duration-200">
+                        Đăng ký tài khoản
+                    </button>
+
+                    <!-- Divider -->
+                    <div class="relative my-6">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-200"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-4 bg-white text-gray-500">Hoặc</span>
+                        </div>
+                    </div>
+
+                    <!-- Google Login -->
+                    <button type="button" class="w-full flex items-center justify-center px-4 py-3 
+                                       border border-gray-200 rounded-xl
+                                       text-sm font-medium text-gray-700 bg-white 
+                                       hover:bg-gray-50 hover:border-gray-300
+                                       transition-all duration-200">
+                        <img src="https://www.google.com/favicon.ico" class="h-5 w-5 mr-2" alt="Google">
+                        Đăng ký với Google
+                    </button>
+
+                    <!-- Login Link -->
+                    <p class="text-center text-sm text-gray-600">
+                        Đã có tài khoản?
+                        <a href="/Auth/Login" class="font-medium text-sky-600 hover:text-sky-500">
+                            Đăng nhập ngay
+                        </a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
