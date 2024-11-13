@@ -5,9 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using MilkStore.Contract.Repositories.Entity;
 using MilkStore.Contract.Repositories.Interface;
 using MilkStore.Contract.Services.Interface;
+using MilkStore.Core;
 using MilkStore.Core.Base;
 using MilkStore.Core.Constants;
 using MilkStore.Core.Utils;
+using MilkStore.ModelViews.ResponseDTO;
 using MilkStore.ModelViews.ReviewsModelView;
 using MilkStore.Repositories.Context;
 using MilkStore.Services.EmailSettings;
@@ -31,61 +33,54 @@ namespace MilkStore.Services.Service
 
         public async Task CreateReviews(ReviewsModel reviewsModel)
         {            
-            OrderDetails? orderDetail = await _unitOfWork.GetRepository<OrderDetails>().GetByIdAsync(reviewsModel.OrderDetailID);
-            if (orderDetail == null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy chi tiết đơn hàng nào với mã {reviewsModel.OrderDetailID}!!");
-            }
-                        
-            Order? order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(orderDetail.OrderID);
-            string? userID = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier).Value;
-            string? userEmail = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.Email).Value;
-
-            if(string.IsNullOrWhiteSpace(userID) || string.IsNullOrWhiteSpace(userEmail))
+            string? userId = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            string? userEmail = _httpContextAccessor.HttpContext.User?.FindFirst(ClaimTypes.Email)?.Value;
+            
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(userEmail))
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Vui lòng đăng nhập vào bằng tài khoản đã xác thực!");
             }
-            if (order == null || order.UserId.ToString() != userID)
+            
+            OrderDetails? orderDetail = await _unitOfWork.GetRepository<OrderDetails>()
+                .Entities
+                .AsNoTracking()
+                .FirstOrDefaultAsync(od => od.ProductID == reviewsModel.ProductsID
+                                           && od.Order.UserId.ToString() == userId
+                                           && od.Order.OrderStatuss == OrderStatus.Delivered
+                                           && od.Order.PaymentStatuss == PaymentStatus.Paid);
+
+            if (orderDetail == null)
             {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Bạn không có quyền đánh giá sản phẩm này!");
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy sản phẩm đã mua với mã {reviewsModel.ProductsID} trong đơn hàng của bạn!");
             }
-            //Kiểm tra đơn hàng đã được giao và thanh toán
-            if (order.OrderStatuss != OrderStatus.Delivered && order.PaymentStatuss != PaymentStatus.Paid)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.Forbidden, "Bạn chỉ có thể đánh giá đơn hàng sau khi đơn hàng đã được giao và thanh toán!");
-            }
-            var productInOrder = order.OrderDetailss.Where(od => od.ProductID.Contains(orderDetail.ProductID)).FirstOrDefault();
-            if (productInOrder == null)
-            {
-                throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy mã sản phẩm {orderDetail.ProductID} trong đơn hàng!!");
-            }
+            
             Review newReview = _mapper.Map<Review>(reviewsModel);
-            newReview.UserID = Guid.Parse(userID);
-            newReview.ProductsID = orderDetail.ProductID;
+            newReview.UserID = Guid.Parse(userId);            
             newReview.OrderID = orderDetail.OrderID;
             newReview.CreatedTime = CoreHelper.SystemTimeNow;
-            newReview.CreatedBy = userID;
+            newReview.CreatedBy = userId;
+            newReview.OrderDetailID = orderDetail.Id;
             await _unitOfWork.GetRepository<Review>().InsertAsync(newReview);
             await _unitOfWork.SaveAsync();
 
-            // Gửi email phản hồi
             if (!string.IsNullOrEmpty(userEmail))
             {
                 var subject = "Cảm ơn bạn đã đánh giá sản phẩm!";
                 var body = $@"
             <p>Xin chào,</p>
-            <p>Cảm ơn bạn đã đánh giá sản phẩm {productInOrder.Products.ProductName}. Đánh giá của bạn giúp chúng tôi cải thiện dịch vụ.</p>
+            <p>Cảm ơn bạn đã đánh giá sản phẩm {orderDetail.Products.ProductName}. Đánh giá của bạn giúp chúng tôi cải thiện dịch vụ.</p>
             <p>Thông tin đánh giá:</p>
             <ul>
-                <li>Sản phẩm: {productInOrder.Products.ProductName}</li>
+                <li>Sản phẩm: {orderDetail.Products.ProductName}</li>
                 <li>Đánh giá: {reviewsModel.Rating} sao</li>
                 <li>Nhận xét: {reviewsModel.Comment}</li>
             </ul>
-            <p>Trân trọng,<br>MilkStore</p>
-        ";
+            <p>Trân trọng,<br>MilkStore</p>";
+
                 await _emailService.SendEmailAsync(userEmail, subject, body);
             }
         }
+
 
         public async Task DeletReviews(string id)
         {
@@ -100,37 +95,49 @@ namespace MilkStore.Services.Service
             await _unitOfWork.SaveAsync();
         }
 
-        public async Task<IEnumerable<Review>> GetReviews(string? id, int page, int pageSize)
+        public async Task<BasePaginatedList<ReviewResponseDTO>> GetAsync(string? id, string? productName, int pageIndex, int pageSize)
         {
-            if (id == null)
+            IQueryable<Review>? query = _unitOfWork.GetRepository<Review>()
+                .Entities
+                .AsNoTracking()
+                .Include(rv => rv.OrderDetails) 
+                .ThenInclude(od => od.Products) 
+                .Where(rv => rv.DeletedTime == null);
+
+            if (!string.IsNullOrWhiteSpace(id))
             {
-                var query = _unitOfWork.GetRepository<Review>()
-                    .Entities
-                    .Where(detail => detail.DeletedTime == null)
-                    .OrderBy(detail => detail.ProductsID);
-
-
-                var paginated = await _unitOfWork.GetRepository<Review>()
-                .GetPagging(query, page, pageSize);
-
-                return paginated.Items;
-
+                query = query.Where(rv => rv.Id == id);
             }
-            else
+            if (!string.IsNullOrWhiteSpace(productName))
             {
-                var review = await _unitOfWork.GetRepository<Review>()
-                    .Entities
-                    .FirstOrDefaultAsync(r => r.Id == id && r.DeletedTime == null);
-                if (review == null)
+                query = query.Where(rv => rv.OrderDetails != null && rv.OrderDetails.Products != null && rv.OrderDetails.Products.ProductName == productName);
+            }
+
+            BasePaginatedList<Review>? paginatedReviews = await _unitOfWork.GetRepository<Review>()
+                .GetPagging(query, pageIndex, pageSize);
+
+            if (!paginatedReviews.Items.Any() && !string.IsNullOrWhiteSpace(id))
+            {
+                Review? rvById = await query.FirstOrDefaultAsync();
+                if (rvById != null)
                 {
-                    throw new BaseException.ErrorException(Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, $"Không tìm thấy đánh giá nào có mã {id}!!");
+                    ReviewResponseDTO? rvDto = _mapper.Map<ReviewResponseDTO>(rvById);
+                    return new BasePaginatedList<ReviewResponseDTO>(new List<ReviewResponseDTO> { rvDto }, 1, 1, 1);
                 }
-                return _mapper.Map<List<Review>>(review);
             }
 
+            List<ReviewResponseDTO>? rvDtosResult = _mapper.Map<List<ReviewResponseDTO>>(paginatedReviews.Items);
+            return new BasePaginatedList<ReviewResponseDTO>(
+                rvDtosResult,
+                paginatedReviews.TotalItems,
+                paginatedReviews.CurrentPage,
+                paginatedReviews.PageSize
+            );
         }
 
-        public async Task<Review> UpdateReviews(string id, ReviewsModel reviewsModel)
+
+
+        public async Task UpdateReviews(string id, ReviewsModel reviewsModel)
         {
 
             Review? review = await _unitOfWork.GetRepository<Review>().GetByIdAsync(id);            
@@ -143,12 +150,16 @@ namespace MilkStore.Services.Service
             {
                 throw new BaseException.ErrorException(Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Vui lòng đăng nhập vào bằng tài khoản đã xác thực!");
             }
+            if (review.ProductsID != reviewsModel.ProductsID)
+            {
+                throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.NotFound, "ProductID không khớp với sản phẩm được đánh giá!");
+            }
             _mapper.Map(reviewsModel, review);            
             review.LastUpdatedTime = CoreHelper.SystemTimeNow;            
             review.LastUpdatedBy = userID;
             await _unitOfWork.GetRepository<Review>().UpdateAsync(review);
             await _unitOfWork.SaveAsync();
-            return review;
+
         }
     }
 }

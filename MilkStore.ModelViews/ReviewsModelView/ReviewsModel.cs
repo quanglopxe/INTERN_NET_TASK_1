@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 namespace MilkStore.ModelViews.ReviewsModelView
 {
     public class ReviewsModel
-    {        
-        public required string OrderDetailID { get; set; }
-        //public required string ProductsID { get; set; }
+    {
+        //public required string OrderDetailID { get; set; }
+        public required string ProductsID { get; set; }
         //public required string OrderID { get; set; }
         [Required(ErrorMessage = "Rating không được để trống")]
         [Range(1, 5, ErrorMessage = "Đánh giá từ 1 đến 5 sao")]
