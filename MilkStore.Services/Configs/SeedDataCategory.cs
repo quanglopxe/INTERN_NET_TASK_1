@@ -13,7 +13,7 @@ namespace MilkStore.Services.Configs
 
             if (!context.Category.Any())
             {
-                var categories = new List<Category>
+                List<Category>? categories = new List<Category>
                 {
                     new Category
                     {
