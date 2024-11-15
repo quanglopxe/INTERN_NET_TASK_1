@@ -123,7 +123,7 @@ public class AuthService(UserManager<ApplicationUser> userManager, SignInManager
     public async Task<AuthResponse> Login(LoginModelView loginModel)
     {
         ApplicationUser? user = await userManager.FindByEmailAsync(loginModel.Email)
-         ?? throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Không tìm thấy user");
+         ?? throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.NotFound, ErrorCode.NotFound, "Không tìm thấy user"); // 404
 
         if (user.DeletedTime.HasValue)
         {
@@ -138,6 +138,7 @@ public class AuthService(UserManager<ApplicationUser> userManager, SignInManager
         {
             throw new BaseException.ErrorException(MilkStore.Core.Constants.StatusCodes.Unauthorized, ErrorCode.Unauthorized, "Mật khẩu không đúng");
         }
+        httpContextAccessor.HttpContext.Session.SetString("UserID", user.Id.ToString());
         (string token, IEnumerable<string> roles) = GenerateJwtToken(user);
         string refreshToken = await GenerateRefreshToken(user);
         return new AuthResponse

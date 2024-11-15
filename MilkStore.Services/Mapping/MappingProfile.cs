@@ -92,13 +92,19 @@ namespace MilkStore.Services.Mapping
 
             CreateMap<Review, ReviewsModel>().ReverseMap()
                 .ForMember(dest => dest.UserID, opt => opt.Ignore()); // Bỏ qua UserID khi map từ ReviewsModel sang Review
+            CreateMap<Review, ReviewResponseDTO>()
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.OrderDetails.Products.ProductName))
+                .ForMember(dest => dest.ProductImage, opt => opt.MapFrom(src => src.OrderDetails.Products.ImageUrl)); // Ánh xạ ProductImage
 
 
             CreateMap<PreOrders, PreOrdersModelView>().ReverseMap()
                 .ForMember(dest => dest.UserID, opt => opt.Ignore()); // Bỏ qua UserID khi map từ PreOrdersModelView sang PreOrders
+            CreateMap<PreOrders, PreOdersResponseDTO>();
 
             CreateMap<Voucher, VoucherModelView>().ReverseMap();
             CreateMap<Voucher, VoucherResponseDTO>();
+            CreateMap<TransactionHistory, TransactionHistoryResponseDTO>();
+            
         }
     }
 }

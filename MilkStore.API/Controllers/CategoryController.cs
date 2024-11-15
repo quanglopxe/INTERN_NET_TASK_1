@@ -19,7 +19,7 @@ namespace MilkStore.API.Controllers
             _CategoryService = CategoryService;
         }
         [HttpGet]
-        [Authorize(Roles = "Admin,Member")]
+        //[Authorize(Roles = "Admin,Member")]
         public async Task<IActionResult> GetCategory(string? id)
         {
             IEnumerable<CategoryResponseDTO>? Category = await _CategoryService.GetCategory(id);
