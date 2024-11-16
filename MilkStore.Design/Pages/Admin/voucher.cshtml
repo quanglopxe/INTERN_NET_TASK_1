@@ -1,0 +1,469 @@
+@page
+@{
+    Layout = "_Layout.admin";
+}
+
+<div class="container mx-auto px-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Quản lý voucher</h1>
+                <p class="mt-1 text-sm text-gray-600">Quản lý và điều chỉnh thông tin voucher trong hệ thống</p>
+            </div>
+            <button onclick="openModal('addVoucherModal')"
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                <i class="fas fa-plus mr-2"></i>
+                Thêm voucher
+            </button>
+        </div>
+    </div>
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                    <i class="fas fa-ticket-alt text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Tổng số voucher</p>
+                    <p class="text-2xl font-semibold text-gray-900">500</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                    <i class="fas fa-ban text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Đã hết lượt sử dụng</p>
+                    <p class="text-2xl font-semibold text-gray-900">10</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-red-100 text-red-600">
+                    <i class="fas fa-ban text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Hết hạn</p>
+                    <p class="text-2xl font-semibold text-gray-900">50</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tìm theo mã</label>
+                    <div class="relative">
+                        <input type="text"
+                               class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="Nhập mã voucher...">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tìm theo tên</label>
+                    <input type="text"
+                           class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Nhập tên voucher...">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Phần trăm giảm giá</label>
+                    <input type="number"
+                           class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Nhập phần trăm giảm giá...">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Giá giảm</label>
+                    <input type="number"
+                           class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Nhập giá giảm...">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+                    <select class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="1">Đang hoạt động</option>
+                        <option value="0">Hết hạn</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-4 flex justify-end space-x-3">
+                <button class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50">
+                    Đặt lại
+                </button>
+                <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    Áp dụng bộ lọc
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vouchers Table -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã Voucher</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phần trăm giảm</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giá giảm</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày hết hạn</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng tối đa</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng đã sử dụng</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @* Dữ liệu mẫu *@
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">VC2024-001</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Giảm giá 20%</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">20%</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">100,000 VNĐ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">01/06/2024</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">10</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">3</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Đang hoạt động</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <button class="text-amber-600 hover:text-amber-900" onclick="openEditVoucherModal(this)"
+                                    data-voucher='{
+                    "name": "Giảm giá 20%",
+                    "voucherCode": "VC2024-001",
+                    "salePrice": 100000,
+                    "salePercent": 20,
+                    "limitSalePrice": 200000,
+                    "expiryDate": "2024-06-01",
+                    "usingLimit": 100,
+                    "status": "Active",
+                    "usedCount": 3,
+                    "description": "Voucher giảm giá cho sản phẩm"
+                }'>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="text-red-600 hover:text-red-900">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+            <div class="flex items-center justify-between">
+                <div class="flex-1 flex items-center">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Hiển thị <span class="font-medium">1</span> đến <span class="font-medium">10</span> trong số
+                            <span class="font-medium">100</span> kết quả
+                        </p>
+                    </div>
+                    <div class="ml-4">
+                        <select class="rounded-lg border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option>10 / trang</option>
+                            <option>20 / trang</option>
+                            <option>50 / trang</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <button class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            1
+                        </button>
+                        <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600 hover:bg-blue-100">
+                            2
+                        </button>
+                        <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            3
+                        </button>
+                        <button class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Create Voucher Modal -->
+<div id="addVoucherModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 w-full max-w-3xl">
+        <div class="relative bg-white rounded-2xl shadow-2xl transform transition-all">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-lime-50 rounded-t-2xl">
+                <div class="flex items-center space-x-3">
+                    <div class="p-3 bg-gradient-to-br from-green-500 to-lime-600 rounded-xl shadow-lg">
+                        <i class="fas fa-ticket-alt text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">Thêm voucher mới</h3>
+                </div>
+                <button onclick="closeModal('addVoucherModal')" class="p-2 hover:bg-white/80 rounded-lg transition-all duration-200 group">
+                    <i class="fas fa-times text-gray-500 text-xl group-hover:rotate-90 transition-transform duration-200"></i>
+                </button>
+            </div>
+
+            <!-- Form -->
+            <form class="p-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Voucher Name -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Tên voucher</label>
+                        <input type="text" required class="block w-full p-2.5 border rounded-lg focus:ring-green-500 focus:border-green-500"
+                               placeholder="Nhập tên voucher">
+                    </div>
+
+                    <!-- Voucher Code -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Mã voucher</label>
+                        <input type="text" required class="block w-full p-2.5 border rounded-lg focus:ring-green-500 focus:border-green-500"
+                               placeholder="Nhập mã voucher">
+                    </div>
+
+                    <!-- Description -->
+                    <div class="space-y-2 col-span-2">
+                        <label class="text-sm font-semibold text-gray-700">Mô tả</label>
+                        <textarea class="block w-full p-2.5 border rounded-lg focus:ring-green-500 focus:border-green-500" rows="3"
+                                  placeholder="Mô tả chi tiết voucher"></textarea>
+                    </div>
+
+                    <!-- Sale Price -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Giá giảm</label>
+                        <input type="number" min="0" class="block w-full p-2.5 border rounded-lg focus:ring-green-500 focus:border-green-500"
+                               placeholder="Nhập giá giảm">
+                    </div>
+
+                    <!-- Sale Percent -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Phần trăm giảm</label>
+                        <input type="number" min="0" max="100" class="block w-full p-2.5 border rounded-lg focus:ring-green-500 focus:border-green-500"
+                               placeholder="Nhập phần trăm giảm">
+                    </div>
+
+                    <!-- Limit Sale Price -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Giới hạn giảm giá</label>
+                        <input type="number" min="0" class="block w-full p-2.5 border rounded-lg focus:ring-green-500 focus:border-green-500"
+                               placeholder="Nhập giới hạn giảm giá">
+                    </div>
+
+                    <!-- Expiry Date -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Ngày hết hạn</label>
+                        <input type="date" required class="block w-full p-2.5 border rounded-lg focus:ring-green-500 focus:border-green-500">
+                    </div>
+
+                    <!-- Using Limit -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Số lần sử dụng tối đa</label>
+                        <input type="number" min="1" class="block w-full p-2.5 border rounded-lg focus:ring-green-500 focus:border-green-500"
+                               placeholder="Nhập số lần sử dụng tối đa">
+                    </div>
+
+                    <!-- Status -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Trạng thái</label>
+                        <select required class="block w-full p-2.5 border rounded-lg focus:ring-green-500 focus:border-green-500">
+                            <option value="Active">Hoạt động</option>
+                            <option value="Inactive">Không hoạt động</option>
+                        </select>
+                    </div>
+
+                    <!-- Used Count -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Số lần đã sử dụng</label>
+                        <input type="number" min="0" disabled class="block w-full p-2.5 border rounded-lg focus:ring-green-500 focus:border-green-500"
+                               value="0">
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                    <button type="button" onclick="closeModal('addVoucherModal')" class="px-6 py-2.5 border-2 rounded-lg text-gray-700
+                                       hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 flex items-center space-x-2">
+                        <i class="fas fa-times"></i>
+                        <span>Hủy</span>
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-green-600 to-lime-600 text-white rounded-lg
+                                       hover:from-green-700 hover:to-lime-700 transition-all duration-200 flex items-center space-x-2
+                                       focus:ring-2 focus:ring-green-500/50 focus:ring-offset-2 shadow-lg shadow-green-500/25">
+                        <i class="fas fa-plus"></i>
+                        <span>Thêm voucher</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script>
+        function openModal(id) {
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+</script>
+
+@* Edit Voucher Modal *@
+<!-- Edit Voucher Modal -->
+<div id="editVoucherModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 w-full max-w-2xl">
+        <div class="relative bg-white rounded-2xl shadow-2xl transform transition-all">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-2xl">
+                <div class="flex items-center space-x-3">
+                    <div class="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg">
+                        <i class="fas fa-ticket-alt text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">
+                        Chỉnh sửa Voucher
+                    </h3>
+                </div>
+                <button onclick="closeModal('editVoucherModal')"
+                        class="p-2 hover:bg-white/80 rounded-lg transition-all duration-200 group">
+                    <i class="fas fa-times text-gray-500 text-xl group-hover:rotate-90 transition-transform duration-200"></i>
+                </button>
+            </div>
+
+            <!-- Form -->
+            <form class="p-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Voucher Name Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                            <span>Tên Voucher</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" required class="block w-full pl-3 pr-3 py-2.5 border border-gray-200 rounded-lg placeholder:text-gray-400 text-gray-700 transition-all duration-200" placeholder="Nhập tên voucher">
+                    </div>
+
+                    <!-- Voucher Code Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                            <span>Mã Voucher</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" required class="block w-full pl-3 pr-3 py-2.5 border border-gray-200 rounded-lg placeholder:text-gray-400 text-gray-700 transition-all duration-200" placeholder="Nhập mã voucher">
+                    </div>
+
+                    <!-- Sale Price Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Giá Giảm (VNĐ)</label>
+                        <input type="number" min="0" class="block w-full pl-3 pr-3 py-2.5 border border-gray-200 rounded-lg placeholder:text-gray-400 text-gray-700 transition-all duration-200" placeholder="Nhập số tiền giảm">
+                    </div>
+
+                    <!-- Sale Percent Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Phần Trăm Giảm (%)</label>
+                        <input type="number" min="0" max="100" class="block w-full pl-3 pr-3 py-2.5 border border-gray-200 rounded-lg placeholder:text-gray-400 text-gray-700 transition-all duration-200" placeholder="Nhập phần trăm giảm">
+                    </div>
+
+                    <!-- Limit Sale Price Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Giới Hạn Giá Giảm (VNĐ)</label>
+                        <input type="number" min="0" class="block w-full pl-3 pr-3 py-2.5 border border-gray-200 rounded-lg placeholder:text-gray-400 text-gray-700 transition-all duration-200" placeholder="Nhập giới hạn giá giảm">
+                    </div>
+
+                    <!-- Expiry Date Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Ngày Hết Hạn</label>
+                        <input type="date" required class="block w-full pl-3 pr-3 py-2.5 border border-gray-200 rounded-lg text-gray-700 transition-all duration-200">
+                    </div>
+
+                    <!-- Using Limit Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Giới Hạn Sử Dụng</label>
+                        <input type="number" min="0" class="block w-full pl-3 pr-3 py-2.5 border border-gray-200 rounded-lg placeholder:text-gray-400 text-gray-700 transition-all duration-200" placeholder="Nhập số lần sử dụng">
+                    </div>
+
+                    <!-- Status Select -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Trạng Thái</label>
+                        <select required class="block w-full pl-3 pr-3 py-2.5 border border-gray-200 rounded-lg text-gray-700 transition-all duration-200">
+                            <option value="Active">Hoạt động</option>
+                            <option value="Inactive">Ngừng hoạt động</option>
+                        </select>
+                    </div>
+
+                    <!-- Used Count Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Số Lần Đã Sử Dụng</label>
+                        <input type="number" min="0" class="block w-full pl-3 pr-3 py-2.5 border border-gray-200 rounded-lg placeholder:text-gray-400 text-gray-700 transition-all duration-200" placeholder="Nhập số lần đã sử dụng">
+                    </div>
+
+                    <!-- Description Input -->
+                    <div class="md:col-span-2 space-y-2">
+                        <label class="text-sm font-semibold text-gray-700">Mô Tả</label>
+                        <textarea class="block w-full p-3 border border-gray-200 rounded-lg placeholder:text-gray-400 text-gray-700 transition-all duration-200" rows="3" placeholder="Nhập mô tả cho voucher"></textarea>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                    <button type="button" onclick="closeModal('editVoucherModal')" class="px-6 py-2.5 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 flex items-center space-x-2">
+                        <i class="fas fa-times"></i>
+                        <span>Hủy</span>
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center space-x-2 focus:ring-2 focus:ring-green-500/50 focus:ring-offset-2 shadow-lg shadow-green-500/25">
+                        <i class="fas fa-save"></i>
+                        <span>Lưu thay đổi</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openEditVoucherModal(button) {
+        const voucherData = JSON.parse(button.dataset.voucher);
+        const modal = document.getElementById('editVoucherModal');
+
+        // Populate form with voucher data
+        modal.querySelector('input[placeholder="Nhập tên voucher"]').value = voucherData.name;
+        modal.querySelector('input[placeholder="Nhập mã voucher"]').value = voucherData.voucherCode;
+        modal.querySelector('input[placeholder="Nhập số tiền giảm"]').value = voucherData.salePrice;
+        modal.querySelector('input[placeholder="Nhập phần trăm giảm"]').value = voucherData.salePercent;
+        modal.querySelector('input[placeholder="Nhập giới hạn giá giảm"]').value = voucherData.limitSalePrice;
+        modal.querySelector('input[type="date"]').value = voucherData.expiryDate;
+        modal.querySelector('input[placeholder="Nhập số lần sử dụng"]').value = voucherData.usingLimit;
+        modal.querySelector('select').value = voucherData.status;
+        modal.querySelector('input[placeholder="Nhập số lần đã sử dụng"]').value = voucherData.usedCount;
+        modal.querySelector('textarea').value = voucherData.description;
+
+        // Show modal
+        modal.classList.remove('hidden');
+    }
+
+</script>

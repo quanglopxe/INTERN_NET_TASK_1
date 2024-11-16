@@ -1,0 +1,203 @@
+<div id="profileModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 w-full max-w-2xl">
+        <div class="relative bg-white rounded-2xl shadow-2xl">
+            <!-- Header -->
+            <div
+                class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
+                <div class="flex items-center space-x-3">
+                    <div class="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                        <i class="fas fa-user text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">
+                        Thông tin cá nhân
+                    </h3>
+                </div>
+                <button onclick="closeProfileModal()"
+                    class="p-2 hover:bg-white/80 rounded-lg transition-all duration-200">
+                    <i class="fas fa-times text-gray-500 text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="border-b border-gray-200">
+                <div class="flex space-x-8 px-8">
+                    <button onclick="switchTab('profile')"
+                        class="tab-btn active py-4 text-sm font-medium border-b-2 border-transparent hover:border-gray-300 transition-colors"
+                        data-tab="profile">
+                        Thông tin cơ bản
+                    </button>
+                    <button onclick="switchTab('security')"
+                        class="tab-btn py-4 text-sm font-medium border-b-2 border-transparent hover:border-gray-300 transition-colors"
+                        data-tab="security">
+                        Bảo mật
+                    </button>
+                </div>
+            </div>
+
+            <!-- Profile Tab Content -->
+            <div id="profileTab" class="tab-content p-8">
+                <div class="flex items-center space-x-6 mb-8">
+                    <div class="relative">
+                        <img class="h-24 w-24 rounded-full object-cover border-4 border-white shadow-lg"
+                            src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff"
+                            alt="Profile picture">
+                        <button
+                            class="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-camera text-gray-600"></i>
+                        </button>
+                    </div>
+                    <div>
+                        <h4 class="text-2xl font-bold text-gray-900">Admin Name</h4>
+                        <p class="text-gray-500">admin@example.com</p>
+                        <span
+                            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mt-2">
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            Admin
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Personal Information -->
+                    <div class="space-y-4">
+                        <h5 class="font-semibold text-gray-900">Thông tin cơ bản</h5>
+                        <div class="space-y-2">
+                            <label class="text-sm text-gray-600">Họ và tên</label>
+                            <input type="text" value="Admin Name"
+                                class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm text-gray-600">Số điện thoại</label>
+                            <input type="tel" value="0123456789"
+                                class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Account Settings -->
+                    <div class="space-y-4">
+                        <h5 class="font-semibold text-gray-900">Thông tin tài khoản</h5>
+                        <div class="space-y-2">
+                            <label class="text-sm text-gray-600">Email</label>
+                            <input type="email" value="admin@example.com" readonly
+                                class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm text-gray-600">Vai trò</label>
+                            <input type="text" value="Admin" readonly
+                                class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Tab Content -->
+            <div id="securityTab" class="tab-content hidden p-8">
+                <div class="max-w-md mx-auto space-y-6">
+                    <h5 class="font-semibold text-gray-900 mb-4">Thay đổi mật khẩu</h5>
+
+                    <!-- Current Password -->
+                    <div class="space-y-2">
+                        <label class="text-sm text-gray-600">Mật khẩu hiện tại</label>
+                        <div class="relative">
+                            <input type="password"
+                                class="w-full pl-4 pr-10 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                placeholder="Nhập mật khẩu hiện tại">
+                            <button type="button" onclick="togglePassword(this)"
+                                class="absolute inset-y-0 right-0 px-3 flex items-center">
+                                <i class="fas fa-eye text-gray-400"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- New Password -->
+                    <div class="space-y-2">
+                        <label class="text-sm text-gray-600">Mật khẩu mới</label>
+                        <div class="relative">
+                            <input type="password"
+                                class="w-full pl-4 pr-10 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                placeholder="Nhập mật khẩu mới">
+                            <button type="button" onclick="togglePassword(this)"
+                                class="absolute inset-y-0 right-0 px-3 flex items-center">
+                                <i class="fas fa-eye text-gray-400"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Confirm New Password -->
+                    <div class="space-y-2">
+                        <label class="text-sm text-gray-600">Xác nhận mật khẩu mới</label>
+                        <div class="relative">
+                            <input type="password"
+                                class="w-full pl-4 pr-10 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                placeholder="Nhập lại mật khẩu mới">
+                            <button type="button" onclick="togglePassword(this)"
+                                class="absolute inset-y-0 right-0 px-3 flex items-center">
+                                <i class="fas fa-eye text-gray-400"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-end space-x-4 p-6 border-t border-gray-200">
+                <button onclick="closeProfileModal()" class="px-6 py-2.5 border-2 border-gray-300 rounded-lg text-gray-700
+                               hover:bg-gray-100 hover:border-gray-400
+                               transition-all duration-200">
+                    Hủy
+                </button>
+                <button class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600
+                              text-white rounded-lg shadow-lg
+                              hover:from-blue-700 hover:to-indigo-700
+                              focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2
+                              transition-all duration-200">
+                    Lưu thay đổi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.add('hidden');
+        });
+
+        // Show selected tab content
+        document.getElementById(tabName + 'Tab').classList.remove('hidden');
+
+        // Update tab buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active', 'text-blue-600', 'border-blue-600');
+            btn.classList.add('text-gray-500', 'border-transparent');
+        });
+
+        // Highlight active tab
+        const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+        activeBtn.classList.add('active', 'text-blue-600', 'border-blue-600');
+        activeBtn.classList.remove('text-gray-500', 'border-transparent');
+    }
+
+    function togglePassword(button) {
+        const input = button.parentElement.querySelector('input');
+        const icon = button.querySelector('i');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+</script>
+
+<style>
+    .tab-btn.active {
+        border-bottom-width: 2px;
+    }
+</style>

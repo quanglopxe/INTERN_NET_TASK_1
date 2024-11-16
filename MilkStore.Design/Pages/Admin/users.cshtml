@@ -1,0 +1,551 @@
+@page
+@{
+    Layout = "_Layout.admin";
+}
+
+<div class="container mx-auto px-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Quản lý người dùng</h1>
+                <p class="mt-1 text-sm text-gray-600">Quản lý và điều chỉnh thông tin người dùng trong hệ thống</p>
+            </div>
+            <button onclick="openModal('createUserModal')"
+                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                <i class="fas fa-plus mr-2"></i>
+                Thêm người dùng
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                    <i class="fas fa-users text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Tổng người dùng</p>
+                    <p class="text-2xl font-semibold text-gray-900">2,453</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                    <i class="fas fa-user-check text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Đang hoạt động</p>
+                    <p class="text-2xl font-semibold text-gray-900">2,128</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                    <i class="fas fa-user-clock text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Chờ xác nhận</p>
+                    <p class="text-2xl font-semibold text-gray-900">245</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-red-100 text-red-600">
+                    <i class="fas fa-user-slash text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Bị khóa</p>
+                    <p class="text-2xl font-semibold text-gray-900">80</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tìm theo tên</label>
+                    <div class="relative">
+                        <input type="text"
+                            class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Nhập tên người dùng...">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email"
+                        class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Nhập email...">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại</label>
+                    <input type="tel"
+                        class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Nhập số điện thoại...">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Vai trò</label>
+                    <select
+                        class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Tất cả vai trò</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Staff">Staff</option>
+                        <option value="Member">Member</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-4 flex justify-end space-x-3">
+                <button class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50">
+                    Đặt lại
+                </button>
+                <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    Áp dụng bộ lọc
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Người dùng
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Email
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Số điện thoại
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Vai trò
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Trạng thái
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Thao tác
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <img class="h-10 w-10 rounded-full object-cover"
+                                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                                        alt="">
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">Nguyễn Văn A</div>
+                                    <div class="text-sm text-gray-500">#USR-2024-001</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">example@email.com</div>
+                            <div class="text-sm text-gray-500">0123456789</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span
+                                class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                Admin
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span
+                                class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                Hoạt động
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            20/03/2024
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <button onclick="openEditModal(this)"
+                                data-user='{"name":"Nguyễn Văn A","email":"example@email.com","phone":"0123456789","role":"Admin"}'
+                                class="text-amber-600 hover:text-amber-900">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="text-red-600 hover:text-red-900">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+            <div class="flex items-center justify-between">
+                <div class="flex-1 flex items-center">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Hiển thị <span class="font-medium">1</span> đến <span class="font-medium">10</span> trong số
+                            <span class="font-medium">100</span> kết quả
+                        </p>
+                    </div>
+                    <div class="ml-4">
+                        <select class="rounded-lg border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option>10 / trang</option>
+                            <option>20 / trang</option>
+                            <option>50 / trang</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <button
+                            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            1
+                        </button>
+                        <button
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600 hover:bg-blue-100">
+                            2
+                        </button>
+                        <button
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            3
+                        </button>
+                        <button
+                            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create User Modal -->
+<div id="createUserModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 w-full max-w-2xl">
+        <div class="relative bg-white rounded-2xl shadow-2xl transform transition-all">
+            <!-- Header -->
+            <div
+                class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
+                <div class="flex items-center space-x-3">
+                    <div class="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                        <i class="fas fa-user-plus text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">
+                        Thêm người dùng mới
+                    </h3>
+                </div>
+                <button onclick="closeModal('createUserModal')"
+                    class="p-2 hover:bg-white/80 rounded-lg transition-all duration-200 group">
+                    <i
+                        class="fas fa-times text-gray-500 text-xl group-hover:rotate-90 transition-transform duration-200"></i>
+                </button>
+            </div>
+
+            <!-- Form -->
+            <form class="p-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Username Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                            <span>Tên người dùng</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i
+                                    class="fas fa-user text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200"></i>
+                            </div>
+                            <input type="text" required class="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg
+                                          focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+                                          placeholder:text-gray-400 text-gray-700
+                                          transition-all duration-200" placeholder="Nhập tên người dùng">
+                        </div>
+                    </div>
+
+                    <!-- Email Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                            <span>Email</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i
+                                    class="fas fa-envelope text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200"></i>
+                            </div>
+                            <input type="email" required class="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg
+                                          focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+                                          placeholder:text-gray-400 text-gray-700
+                                          transition-all duration-200" placeholder="example@email.com">
+                        </div>
+                    </div>
+
+                    <!-- Phone Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                            <span>Số điện thoại</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i
+                                    class="fas fa-phone text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200"></i>
+                            </div>
+                            <input type="tel" required pattern="[0-9]{10}" class="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg
+                                          focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+                                          placeholder:text-gray-400 text-gray-700
+                                          transition-all duration-200" placeholder="0123456789">
+                        </div>
+                    </div>
+
+                    <!-- Role Select -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                            <span>Vai trò</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i
+                                    class="fas fa-user-tag text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200"></i>
+                            </div>
+                            <select required class="block w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg
+                                           focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+                                           text-gray-700 appearance-none
+                                           transition-all duration-200">
+                                <option value="">Chọn vai trò</option>
+                                <option value="Member">Member</option>
+                                <option value="Staff">Staff</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+
+                <!-- Footer -->
+                <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                    <button type="button" onclick="closeModal('createUserModal')" class="px-6 py-2.5 border-2 border-gray-300 rounded-lg text-gray-700
+                                   hover:bg-gray-100 hover:border-gray-400
+                                   transition-all duration-200 flex items-center space-x-2">
+                        <i class="fas fa-times"></i>
+                        <span>Hủy</span>
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600
+                                   text-white rounded-lg 
+                                   hover:from-blue-700 hover:to-indigo-700
+                                   transition-all duration-200 flex items-center space-x-2
+                                   focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2
+                                   shadow-lg shadow-blue-500/25">
+                        <i class="fas fa-plus"></i>
+                        <span>Thêm người dùng</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePassword(button) {
+        const input = button.parentElement.querySelector('input');
+        const icon = button.querySelector('i');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+</script>
+
+@* Edit User Modal *@
+<div id="editUserModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 w-full max-w-2xl">
+        <div class="relative bg-white rounded-2xl shadow-2xl transform transition-all">
+            <!-- Header -->
+            <div
+                class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50 rounded-t-2xl">
+                <div class="flex items-center space-x-3">
+                    <div class="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg">
+                        <i class="fas fa-user-edit text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">
+                        Chỉnh sửa người dùng
+                    </h3>
+                </div>
+                <button onclick="closeModal('editUserModal')"
+                    class="p-2 hover:bg-white/80 rounded-lg transition-all duration-200 group">
+                    <i
+                        class="fas fa-times text-gray-500 text-xl group-hover:rotate-90 transition-transform duration-200"></i>
+                </button>
+            </div>
+
+            <!-- Form -->
+            <form class="p-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Username Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                            <span>Tên người dùng</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i
+                                    class="fas fa-user text-gray-400 group-focus-within:text-amber-500 transition-colors duration-200"></i>
+                            </div>
+                            <input type="text" required class="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg
+                                          focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500
+                                          placeholder:text-gray-400 text-gray-700
+                                          transition-all duration-200" placeholder="Nhập tên người dùng">
+                        </div>
+                    </div>
+
+                    <!-- Email Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                            <span>Email</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i
+                                    class="fas fa-envelope text-gray-400 group-focus-within:text-amber-500 transition-colors duration-200"></i>
+                            </div>
+                            <input type="email" required class="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg
+                                          focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500
+                                          placeholder:text-gray-400 text-gray-700
+                                          transition-all duration-200" placeholder="example@email.com">
+                        </div>
+                    </div>
+
+                    <!-- Phone Input -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                            <span>Số điện thoại</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i
+                                    class="fas fa-phone text-gray-400 group-focus-within:text-amber-500 transition-colors duration-200"></i>
+                            </div>
+                            <input type="tel" required pattern="[0-9]{10}" class="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg
+                                          focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500
+                                          placeholder:text-gray-400 text-gray-700
+                                          transition-all duration-200" placeholder="0123456789">
+                        </div>
+                    </div>
+
+                    <!-- Role Select -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-700 flex items-center space-x-1">
+                            <span>Vai trò</span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i
+                                    class="fas fa-user-tag text-gray-400 group-focus-within:text-amber-500 transition-colors duration-200"></i>
+                            </div>
+                            <select required class="block w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg
+                                           focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500
+                                           text-gray-700 appearance-none
+                                           transition-all duration-200">
+                                <option value="">Chọn vai trò</option>
+                                <option value="Member">Member</option>
+                                <option value="Staff">Staff</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                    <button type="button" onclick="closeModal('editUserModal')" class="px-6 py-2.5 border-2 border-gray-300 rounded-lg text-gray-700
+                                   hover:bg-gray-100 hover:border-gray-400
+                                   transition-all duration-200 flex items-center space-x-2">
+                        <i class="fas fa-times"></i>
+                        <span>Hủy</span>
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600
+                                   text-white rounded-lg 
+                                   hover:from-amber-600 hover:to-orange-700
+                                   transition-all duration-200 flex items-center space-x-2
+                                   focus:ring-2 focus:ring-amber-500/50 focus:ring-offset-2
+                                   shadow-lg shadow-amber-500/25">
+                        <i class="fas fa-save"></i>
+                        <span>Lưu thay đổi</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <script>
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function openEditModal(button) {
+            const userData = JSON.parse(button.dataset.user);
+            const modal = document.getElementById('editUserModal');
+
+            // Fill form data
+            modal.querySelector('input[type="text"]').value = userData.name;
+            modal.querySelector('input[type="email"]').value = userData.email;
+            modal.querySelector('input[type="tel"]').value = userData.phone;
+            modal.querySelector('select').value = userData.role;
+
+            // Show modal
+            modal.classList.remove('hidden');
+        }
+    </script>
+}

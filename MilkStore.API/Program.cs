@@ -4,9 +4,9 @@ using MilkStore.API.Middleware;
 using MilkStore.Services.Configs;
 
 
-DotEnv.Load();
 
 WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
+DotEnv.Load();
 
 // config appsettings by env
 builder.Services.AddConfig(builder.Configuration);
