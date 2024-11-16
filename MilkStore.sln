@@ -25,6 +25,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MilkStore.Contract.Services
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MilkStore.ModelViews", "MilkStore.ModelViews\MilkStore.ModelViews.csproj", "{FBAA5C63-0D97-469D-A24D-212E029657C8}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MilkStore.Design", "MilkStore.Design\MilkStore.Design.csproj", "{F2208A25-922E-44B1-9ED1-2535F5757C0E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +61,10 @@ Global
 		{FBAA5C63-0D97-469D-A24D-212E029657C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FBAA5C63-0D97-469D-A24D-212E029657C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FBAA5C63-0D97-469D-A24D-212E029657C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2208A25-922E-44B1-9ED1-2535F5757C0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2208A25-922E-44B1-9ED1-2535F5757C0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2208A25-922E-44B1-9ED1-2535F5757C0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2208A25-922E-44B1-9ED1-2535F5757C0E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
