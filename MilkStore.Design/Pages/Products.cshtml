@@ -1,0 +1,75 @@
+@page
+@* @model MilkStore.Design.Pages.ProductsModel *@
+@{
+    ViewData["Title"] = "Sản phẩm";
+}
+
+<div class="container mx-auto px-4 py-8">
+    <!-- Filters Section -->
+    <div class="mb-8">
+        <div class="flex flex-wrap gap-4 items-center">
+            <div class="relative">
+                <select class="px-4 py-2 border rounded-lg appearance-none pr-8">
+                    <option>Tất cả danh mục</option>
+                    <option>Sữa tươi</option>
+                    <option>Sữa bột</option>
+                    <option>Sữa đặc</option>
+                </select>
+                <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2"></i>
+            </div>
+            <div class="relative">
+                <select class="px-4 py-2 border rounded-lg appearance-none pr-8">
+                    <option>Sắp xếp theo</option>
+                    <option>Giá tăng dần</option>
+                    <option>Giá giảm dần</option>
+                    <option>Mới nhất</option>
+                </select>
+                <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        @for (int i = 1; i <= 12; i++)
+        {
+            <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div class="relative">
+                    <img src="https://via.placeholder.com/300x300" alt="Product Image" class="w-full h-48 object-cover">
+                    @if (i % 3 == 0)
+                    {
+                        <span class="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-sm">-20%</span>
+                    }
+                </div>
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold mb-2">Sản phẩm @i</h3>
+                    <p class="text-gray-600 text-sm mb-2">Mô tả ngắn về sản phẩm @i</p>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-blue-600 font-bold">150.000đ</span>
+                            @if (i % 3 == 0)
+                            {
+                                <span class="text-gray-400 line-through text-sm ml-2">180.000đ</span>
+                            }
+                        </div>
+                        <button class="bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-shopping-cart mr-1"></i>
+                            Thêm
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-8 flex justify-center">
+        <nav class="flex space-x-2">
+            <a href="#" class="px-3 py-1 border rounded hover:bg-gray-100">&laquo;</a>
+            <a href="#" class="px-3 py-1 border rounded bg-blue-600 text-white">1</a>
+            <a href="#" class="px-3 py-1 border rounded hover:bg-gray-100">2</a>
+            <a href="#" class="px-3 py-1 border rounded hover:bg-gray-100">3</a>
+            <a href="#" class="px-3 py-1 border rounded hover:bg-gray-100">&raquo;</a>
+        </nav>
+    </div>
+</div> 

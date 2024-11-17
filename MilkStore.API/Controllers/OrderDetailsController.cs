@@ -5,7 +5,6 @@ using MilkStore.Contract.Services.Interface;
 using MilkStore.Core.Base;
 using Microsoft.AspNetCore.Authorization;
 using MilkStore.ModelViews.ResponseDTO;
-using MilkStore.Services.Service;
 using MilkStore.Core;
 
 namespace MilkStore.API.Controllers
