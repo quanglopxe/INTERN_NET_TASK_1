@@ -103,7 +103,7 @@ namespace MilkStore.Services.Service
             else
             {
                 // Lấy sản phẩm theo ID
-                Gift Gift = await _unitOfWork.GetRepository<Gift>().GetByIdAsync(id) 
+                OrderDetailGift Gift = await _unitOfWork.GetRepository<OrderDetailGift>().GetByIdAsync(id) 
                     ?? throw new BaseException.ErrorException(Core.Constants.StatusCodes.BadRequest, ErrorCode.BadRequest, "Error!!! Gift null");
 
                 if ( Gift.DeletedTime == null)
